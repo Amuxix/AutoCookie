@@ -5,23 +5,6 @@ const NOTE_UPDATE_FREQUENCY = 500;
 const TIME_SAVED_DURATION = 10000;
 const NOTES_HEIGHT = 37;
 
-const CURSOR = Game.Objects.Cursor;
-const GRANDMA = Game.Objects.Grandma;
-const FARM = Game.Objects.Farm;
-const MINE = Game.Objects.Mine;
-const FACTORY = Game.Objects.Factory;
-const BANK = Game.Objects.Bank;
-const TEMPLE = Game.Objects.Temple;
-const WIZARD_TOWER = Game.Objects["Wizard tower"];
-const SHIPMENT = Game.Objects.Shipment;
-const ALCHEMY_LAB = Game.Objects["Alchemy lab"];
-const PORTAL = Game.Objects.Portal;
-const TIME_MACHINE = Game.Objects["Time machine"];
-const ANTIMATTER_CONDENSER = Game.Objects["Antimatter condenser"];
-const PRISM = Game.Objects.Prism;
-const CHANCEMAKER = Game.Objects.Chancemaker;
-const FRACTAL_ENGINE = Game.Objects["Fractal engine"];
-
 /*const GAME_WIN_FUNCTION = Game.Win;
 const GAME_ASCEND_FUNCTION = Game.Ascend;
 const GAME_REINCARNATE_FUNCTION = Game.Reincarnate;
@@ -374,7 +357,7 @@ function round(number, digits) {
  * @returns {number} Amount of non cursor buildings.
  */
 function getAmountOfNonCursors() {
-  return Game.ObjectsById.reduce((acc, b) => acc + b.amount, 0) - CURSOR.amount;
+  return Game.ObjectsById.reduce((acc, b) => acc + b.amount, 0) - Game.Objects.Cursor.amount;
 }
 
 function hasOrIsChoice(upgradeName, choice) {
@@ -450,7 +433,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if (hasOrIsInChoices("Octillion fingers", upgrades)) add *= 20;
     if (hasOrIsInChoices("Nonillion fingers", upgrades)) add *= 20;
     add *= nonCursors;
-    let multiplier = 1 + CURSOR.level * 0.01;
+    let multiplier = 1 + Game.Objects.Cursor.level * 0.01;
     if (hasOrIsInChoices("Mice clicking mice", upgrades)) multiplier *= 1 + fractalEngines * .05;
     let exponent = 0;
     if (hasOrIsInChoices("Reinforced index finger", upgrades)) exponent++;
@@ -496,13 +479,13 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if (hasOrIsInChoices("One mind", upgrades)) baseIncrease += grandmas * 0.02;
     if (hasOrIsInChoices("Communal brainsweep", upgrades)) baseIncrease += grandmas * 0.02;
     if (hasOrIsInChoices("Elder Pact", upgrades)) baseIncrease += portals * 0.05;
-    const baseCps = GRANDMA.baseCps + baseIncrease;
-    const multiplier = 1 + GRANDMA.level * 0.01;
+    const baseCps = Game.Objects.Grandma.baseCps + baseIncrease;
+    const multiplier = 1 + Game.Objects.Grandma.level * 0.01;
     return Game.ComputeCps(baseCps, exponent) * grandmas * multiplier * buildMult;
   }
 
   function calculateFarmsCps(upgrades, farms, grandmas, timeMachines, temples, wizardTowers, portals) {
-    let multiplier = 1 + FARM.level * 0.01;
+    let multiplier = 1 + Game.Objects.Farm.level * 0.01;
     if (hasOrIsInChoices("Farmer grandmas", upgrades)) {
       multiplier *= 1 + grandmas * .01;
     }
@@ -532,11 +515,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Barnstars", upgrades)) exponent++;
     if(hasOrIsInChoices("Lindworms", upgrades)) exponent++;
 
-    return Game.ComputeCps(FARM.baseCps, exponent) * farms * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects.Farm.baseCps, exponent) * farms * multiplier * buildMult;
   }
 
   function calculateMinesCps(upgrades, mines, grandmas, wizardTowers, shipments, alchemyLabs, chancemakers) {
-    let multiplier = 1 + MINE.level * 0.01;
+    let multiplier = 1 + Game.Objects.Mine.level * 0.01;
     if (hasOrIsInChoices("Miner grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 2 * .01;
     }
@@ -569,11 +552,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Mine canaries", upgrades)) exponent++;
     if(hasOrIsInChoices("Bore again", upgrades)) exponent++;
 
-    return Game.ComputeCps(MINE.baseCps, exponent) * mines * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects.Mine.baseCps, exponent) * mines * multiplier * buildMult;
   }
 
   function calculateFactoriesCps(upgrades, factories, grandmas, antimatterCondensers, timeMachines, banks, shipments) {
-    let multiplier = 1 + FACTORY.level * 0.01;
+    let multiplier = 1 + Game.Objects.Factory.level * 0.01;
     if (hasOrIsInChoices("Worker grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 3 * .01;
     }
@@ -603,11 +586,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Brownie point system", upgrades)) exponent++;
     if(hasOrIsInChoices("\"Volunteer\" interns", upgrades)) exponent++;
 
-    return Game.ComputeCps(FACTORY.baseCps, exponent) * factories * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects.Factory.baseCps, exponent) * factories * multiplier * buildMult;
   }
 
   function calculateBanksCps(upgrades, banks, grandmas, portals, factories, alchemyLabs, antimatterCondensers) {
-    let multiplier = 1 + BANK.level * 0.01;
+    let multiplier = 1 + Game.Objects.Bank.level * 0.01;
     if (hasOrIsInChoices("Banker grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 4 * .01;
     }
@@ -637,11 +620,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Grand supercycles", upgrades)) exponent++;
     if(hasOrIsInChoices("Rules of acquisition", upgrades)) exponent++;
 
-    return Game.ComputeCps(BANK.baseCps, exponent) * banks * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects.Bank.baseCps, exponent) * banks * multiplier * buildMult;
   }
 
   function calculateTemplesCps(upgrades, temples, grandmas, farms, portals, antimatterCondensers, prisms) {
-    let multiplier = 1 + TEMPLE.level * 0.01;
+    let multiplier = 1 + Game.Objects.Temple.level * 0.01;
     if (hasOrIsInChoices("Priestess grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 5 * .01;
     }
@@ -671,11 +654,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Psalm-reading", upgrades)) exponent++;
     if(hasOrIsInChoices("War of the gods", upgrades)) exponent++;
 
-    return Game.ComputeCps(TEMPLE.baseCps, exponent) * temples * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects.Temple.baseCps, exponent) * temples * multiplier * buildMult;
   }
 
   function calculateWizardTowersCps(upgrades, wizardTowers, grandmas, mines, alchemyLabs, farms, prisms) {
-    let multiplier = 1 + WIZARD_TOWER.level * 0.01;
+    let multiplier = 1 + Game.Objects["Wizard tower"].level * 0.01;
     if (hasOrIsInChoices("Witch grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 6 * .01;
     }
@@ -705,11 +688,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Immobile spellcasting", upgrades)) exponent++;
     if(hasOrIsInChoices("Electricity", upgrades)) exponent++;
 
-    return Game.ComputeCps(WIZARD_TOWER.baseCps, exponent) * wizardTowers * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects["Wizard tower"].baseCps, exponent) * wizardTowers * multiplier * buildMult;
   }
 
   function calculateShipmentsCps(upgrades, shipments, grandmas, mines, alchemyLabs, farms, prisms) {
-    let multiplier = 1 + SHIPMENT.level * 0.01;
+    let multiplier = 1 + Game.Objects.Shipment.level * 0.01;
     if (hasOrIsInChoices("Cosmic grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 7 * .01;
     }
@@ -739,11 +722,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Restaurants at the end of the universe", upgrades)) exponent++;
     if(hasOrIsInChoices("Universal alphabet", upgrades)) exponent++;
 
-    return Game.ComputeCps(SHIPMENT.baseCps, exponent) * shipments * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects.Shipment.baseCps, exponent) * shipments * multiplier * buildMult;
   }
 
   function calculateAlchemyLabsCps(upgrades, alchemyLabs, grandmas, wizardTowers, mines, banks, antimatterCondensers) {
-    let multiplier = 1 + ALCHEMY_LAB.level * 0.01;
+    let multiplier = 1 + Game.Objects["Alchemy lab"].level * 0.01;
     if (hasOrIsInChoices("Transmuted grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 8 * .01;
     }
@@ -773,11 +756,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("On second thought", upgrades)) exponent++;
     if(hasOrIsInChoices("Public betterment", upgrades)) exponent++;
 
-    return Game.ComputeCps(ALCHEMY_LAB.baseCps, exponent) * alchemyLabs * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects["Alchemy lab"].baseCps, exponent) * alchemyLabs * multiplier * buildMult;
   }
 
   function calculatePortalsCps(upgrades, portals, grandmas, banks, temples, farms, prisms) {
-    let multiplier = 1 + PORTAL.level * 0.01;
+    let multiplier = 1 + Game.Objects.Portal.level * 0.01;
     if (hasOrIsInChoices("Altered grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 9 * .01;
     }
@@ -807,11 +790,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Dimensional garbage gulper", upgrades)) exponent++;
     if(hasOrIsInChoices("Embedded microportals", upgrades)) exponent++;
 
-    return Game.ComputeCps(PORTAL.baseCps, exponent) * portals * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects.Portal.baseCps, exponent) * portals * multiplier * buildMult;
   }
 
   function calculateTimeMachinesCps(upgrades, timeMachines, grandmas, farms, factories, shipments, prisms) {
-    let multiplier = 1 + TIME_MACHINE.level * 0.01;
+    let multiplier = 1 + Game.Objects["Time machine"].level * 0.01;
     if (hasOrIsInChoices("Grandmas\' grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 10 * .01;
     }
@@ -841,11 +824,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Additional clock hands", upgrades)) exponent++;
     if(hasOrIsInChoices("Nostalgia", upgrades)) exponent++;
 
-    return Game.ComputeCps(TIME_MACHINE.baseCps, exponent) * timeMachines * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects["Time machine"].baseCps, exponent) * timeMachines * multiplier * buildMult;
   }
 
   function calculateAntimatterCondensersCps(upgrades, antimatterCondensers, grandmas, factories, temples, banks, alchemyLabs, chancemakers) {
-    let multiplier = 1 + ANTIMATTER_CONDENSER.level * 0.01;
+    let multiplier = 1 + Game.Objects["Antimatter condenser"].level * 0.01;
     if (hasOrIsInChoices("Antigrandmas", upgrades)) {
       multiplier *= 1 + grandmas / 11 * .01;
     }
@@ -878,11 +861,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Baking Nobel prize", upgrades)) exponent++;
     if(hasOrIsInChoices("The definite molecule", upgrades)) exponent++;
 
-    return Game.ComputeCps(ANTIMATTER_CONDENSER.baseCps, exponent) * antimatterCondensers * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects["Antimatter condenser"].baseCps, exponent) * antimatterCondensers * multiplier * buildMult;
   }
 
   function calculatePrismsCps(upgrades, prisms, grandmas, portals, timeMachines, wizardTowers, temples, antimatterCondensers) {
-    let multiplier =  1 + PRISM.level * 0.01;
+    let multiplier =  1 + Game.Objects.Prism.level * 0.01;
     if (hasOrIsInChoices("Rainbow grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 12 * .01;
     }
@@ -915,11 +898,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Reverse theory of light", upgrades)) exponent++;
     if(hasOrIsInChoices("Light capture measures", upgrades)) exponent++;
 
-    return Game.ComputeCps(PRISM.baseCps, exponent) * prisms * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects.Prism.baseCps, exponent) * prisms * multiplier * buildMult;
   }
 
   function calculateChancemakersCps(upgrades, chancemakers, grandmas, mines, antimatterCondensers) {
-    let multiplier =  1 + CHANCEMAKER.level * 0.01;
+    let multiplier =  1 + Game.Objects.Chancemaker.level * 0.01;
     if (hasOrIsInChoices("Lucky grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 13 * .01;
     }
@@ -943,11 +926,11 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Revised probabilistics", upgrades)) exponent++;
     if(hasOrIsInChoices("0-sided dice", upgrades)) exponent++;
 
-    return Game.ComputeCps(CHANCEMAKER.baseCps, exponent) * chancemakers * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects.Chancemaker.baseCps, exponent) * chancemakers * multiplier * buildMult;
   }
 
   function calculateFractalEnginesCps(upgrades, fractalEngines, grandmas, prisms, cursors) {
-    let multiplier =  1 + FRACTAL_ENGINE.level * 0.01;
+    let multiplier =  1 + Game.Objects["Fractal engine"].level * 0.01;
     if (hasOrIsInChoices("Metagrandmas", upgrades)) {
       multiplier *= 1 + grandmas / 14 * .01;
     }
@@ -971,7 +954,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     if(hasOrIsInChoices("Endless book of prose", upgrades)) exponent++;
     if(hasOrIsInChoices("The set of all sets", upgrades)) exponent++;
 
-    return Game.ComputeCps(FRACTAL_ENGINE.baseCps, exponent) * fractalEngines * multiplier * buildMult;
+    return Game.ComputeCps(Game.Objects["Fractal engine"].baseCps, exponent) * fractalEngines * multiplier * buildMult;
   }
 
   const requirements = buildingRequirements.reduce((acc, requirement) => {
@@ -979,22 +962,22 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return acc;
   }, []);
 
-  const cursors = requirements[CURSOR.name] || CURSOR.amount;
-  const grandmas = requirements[GRANDMA.name] || GRANDMA.amount;
-  const farms = requirements[FARM.name] || FARM.amount;
-  const mines = requirements[MINE.name] || MINE.amount;
-  const factories = requirements[FACTORY.name] || FACTORY.amount;
-  const banks = requirements[BANK.name] || BANK.amount;
-  const temples = requirements[TEMPLE.name] || TEMPLE.amount;
-  const wizardTowers = requirements[WIZARD_TOWER.name] || WIZARD_TOWER.amount;
-  const shipments = requirements[SHIPMENT.name] || SHIPMENT.amount;
-  const alchemyLabs = requirements[ALCHEMY_LAB.name] || ALCHEMY_LAB.amount;
-  const portals = requirements[PORTAL.name] || PORTAL.amount;
-  const timeMachines = requirements[TIME_MACHINE.name] || TIME_MACHINE.amount;
-  const antimatterCondensers = requirements[ANTIMATTER_CONDENSER.name] || ANTIMATTER_CONDENSER.amount;
-  const prisms = requirements[PRISM.name] || PRISM.amount;
-  const chancemakers = requirements[CHANCEMAKER.name] || CHANCEMAKER.amount;
-  const fractalEngines = requirements[FRACTAL_ENGINE.name] || FRACTAL_ENGINE.amount;
+  const cursors = requirements[Game.Objects.Cursor.name] || Game.Objects.Cursor.amount;
+  const grandmas = requirements[Game.Objects.Grandma.name] || Game.Objects.Grandma.amount;
+  const farms = requirements[Game.Objects.Farm.name] || Game.Objects.Farm.amount;
+  const mines = requirements[Game.Objects.Mine.name] || Game.Objects.Mine.amount;
+  const factories = requirements[Game.Objects.Factory.name] || Game.Objects.Factory.amount;
+  const banks = requirements[Game.Objects.Bank.name] || Game.Objects.Bank.amount;
+  const temples = requirements[Game.Objects.Temple.name] || Game.Objects.Temple.amount;
+  const wizardTowers = requirements[Game.Objects["Wizard tower"].name] || Game.Objects["Wizard tower"].amount;
+  const shipments = requirements[Game.Objects.Shipment.name] || Game.Objects.Shipment.amount;
+  const alchemyLabs = requirements[Game.Objects["Alchemy lab"].name] || Game.Objects["Alchemy lab"].amount;
+  const portals = requirements[Game.Objects.Portal.name] || Game.Objects.Portal.amount;
+  const timeMachines = requirements[Game.Objects["Time machine"].name] || Game.Objects["Time machine"].amount;
+  const antimatterCondensers = requirements[Game.Objects["Antimatter condenser"].name] || Game.Objects["Antimatter condenser"].amount;
+  const prisms = requirements[Game.Objects.Prism.name] || Game.Objects.Prism.amount;
+  const chancemakers = requirements[Game.Objects.Chancemaker.name] || Game.Objects.Chancemaker.amount;
+  const fractalEngines = requirements[Game.Objects["Fractal engine"].name] || Game.Objects["Fractal engine"].amount;
   const nonCursors = grandmas + farms + mines + factories + banks + temples + wizardTowers + shipments + alchemyLabs + portals + timeMachines + antimatterCondensers + prisms + chancemakers + fractalEngines;
 
   const cursorsCps = calculateCursorsCps(upgrades, cursors, nonCursors, fractalEngines);
@@ -1014,27 +997,27 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
   const chancemakersCps = calculateChancemakersCps(upgrades, chancemakers, grandmas, mines, antimatterCondensers);
   const fractalEnginesCps = calculateFractalEnginesCps(upgrades, fractalEngines, grandmas, prisms, cursors);
 
-  const oldBuildingCps = CURSOR.storedTotalCps + GRANDMA.storedTotalCps + FARM.storedTotalCps + MINE.storedTotalCps + FACTORY.storedTotalCps
-    + BANK.storedTotalCps + TEMPLE.storedTotalCps + WIZARD_TOWER.storedTotalCps + SHIPMENT.storedTotalCps + ALCHEMY_LAB.storedTotalCps + PORTAL.storedTotalCps
-    + TIME_MACHINE.storedTotalCps + ANTIMATTER_CONDENSER.storedTotalCps + PRISM.storedTotalCps + CHANCEMAKER.storedTotalCps + FRACTAL_ENGINE.storedTotalCps;
+  const oldBuildingCps = Game.Objects.Cursor.storedTotalCps + Game.Objects.Grandma.storedTotalCps + Game.Objects.Farm.storedTotalCps + Game.Objects.Mine.storedTotalCps + Game.Objects.Factory.storedTotalCps
+    + Game.Objects.Bank.storedTotalCps + Game.Objects.Temple.storedTotalCps + Game.Objects["Wizard tower"].storedTotalCps + Game.Objects.Shipment.storedTotalCps + Game.Objects["Alchemy lab"].storedTotalCps + Game.Objects.Portal.storedTotalCps
+    + Game.Objects["Time machine"].storedTotalCps + Game.Objects["Antimatter condenser"].storedTotalCps + Game.Objects.Prism.storedTotalCps + Game.Objects.Chancemaker.storedTotalCps + Game.Objects["Fractal engine"].storedTotalCps;
 
   if (debug) {
-    console.log(round(cursorsCps - CURSOR.storedTotalCps, 3));
-    console.log(round(grandmasCps - GRANDMA.storedTotalCps, 3));
-    console.log(round(farmsCps - FARM.storedTotalCps, 3));
-    console.log(round(minesCps - MINE.storedTotalCps, 3));
-    console.log(round(factoriesCps - FACTORY.storedTotalCps, 3));
-    console.log(round(banksCps - BANK.storedTotalCps, 3));
-    console.log(round(templesCps - TEMPLE.storedTotalCps, 3));
-    console.log(round(wizardTowersCps - WIZARD_TOWER.storedTotalCps, 3));
-    console.log(round(shipmentsCps - SHIPMENT.storedTotalCps, 3));
-    console.log(round(alchemyLabsCps - ALCHEMY_LAB.storedTotalCps, 3));
-    console.log(round(portalsCps - PORTAL.storedTotalCps, 3));
-    console.log(round(timeMachinesCps - TIME_MACHINE.storedTotalCps, 3));
-    console.log(round(antimatterCondensersCps - ANTIMATTER_CONDENSER.storedTotalCps, 3));
-    console.log(round(prismsCps - PRISM.storedTotalCps, 3));
-    console.log(round(chancemakersCps - CHANCEMAKER.storedTotalCps, 3));
-    console.log(round(fractalEnginesCps - FRACTAL_ENGINE.storedTotalCps, 3));
+    console.log(round(cursorsCps - Game.Objects.Cursor.storedTotalCps, 3));
+    console.log(round(grandmasCps - Game.Objects.Grandma.storedTotalCps, 3));
+    console.log(round(farmsCps - Game.Objects.Farm.storedTotalCps, 3));
+    console.log(round(minesCps - Game.Objects.Mine.storedTotalCps, 3));
+    console.log(round(factoriesCps - Game.Objects.Factory.storedTotalCps, 3));
+    console.log(round(banksCps - Game.Objects.Bank.storedTotalCps, 3));
+    console.log(round(templesCps - Game.Objects.Temple.storedTotalCps, 3));
+    console.log(round(wizardTowersCps - Game.Objects["Wizard tower"].storedTotalCps, 3));
+    console.log(round(shipmentsCps - Game.Objects.Shipment.storedTotalCps, 3));
+    console.log(round(alchemyLabsCps - Game.Objects["Alchemy lab"].storedTotalCps, 3));
+    console.log(round(portalsCps - Game.Objects.Portal.storedTotalCps, 3));
+    console.log(round(timeMachinesCps - Game.Objects["Time machine"].storedTotalCps, 3));
+    console.log(round(antimatterCondensersCps - Game.Objects["Antimatter condenser"].storedTotalCps, 3));
+    console.log(round(prismsCps - Game.Objects.Prism.storedTotalCps, 3));
+    console.log(round(chancemakersCps - Game.Objects.Chancemaker.storedTotalCps, 3));
+    console.log(round(fractalEnginesCps - Game.Objects["Fractal engine"].storedTotalCps, 3));
   }
 
   /**
@@ -2319,7 +2302,7 @@ class ReserveNote extends Note {
     this.buttons = [
       new ReserveButton("🍀 ", LUCKY, () => true),
       new ReserveButton("🔗 ", CHAIN, () => Game.cookiesEarned >= 100000),
-      new ReserveButton("ɮ ", BAKED_GOODS, () => WIZARD_TOWER.level > 0),
+      new ReserveButton("ɮ ", BAKED_GOODS, () => Game.Objects["Wizard tower"].level > 0),
       new ReserveButton("🍪 ", FRENZY, () => Game.elderWrath < 3 && Game.Has("Get lucky")),
       new ReserveButton("🐉 ", DRAGON_HARVEST, () => Game.hasAura("Reaper of Fields")),
     ]
@@ -2712,262 +2695,262 @@ class AutoCookie {
     new LegacyUpgrade("Box of pastries", "Sugar crystal cookies");
     //endregion
     //region Cursor
-    new BuildingUpgradeWithAchievement("Reinforced index finger", new BuildingRequirement(CURSOR, 1), "Click");
-    new BuildingUpgradeWithAchievement("Carpal tunnel prevention cream", new BuildingRequirement(CURSOR, 1), "Click");
-    new BuildingUpgrade("Ambidextrous", new BuildingRequirement(CURSOR, 10));
-    new BuildingUpgrade("Thousand fingers", new BuildingRequirement(CURSOR, 25));
-    new BuildingUpgradeWithAchievement("Million fingers", new BuildingRequirement(CURSOR, 50), "Mouse wheel");
-    new BuildingUpgradeWithAchievement("Billion fingers", new BuildingRequirement(CURSOR, 100), "Of Mice and Men");
-    new BuildingUpgrade("Trillion fingers", new BuildingRequirement(CURSOR, 150));
-    new BuildingUpgradeWithAchievement("Quadrillion fingers", new BuildingRequirement(CURSOR, 200), "The Digital");
-    new BuildingUpgrade("Quintillion fingers", new BuildingRequirement(CURSOR, 250));
-    new BuildingUpgradeWithAchievement("Sextillion fingers", new BuildingRequirement(CURSOR, 300), "Extreme polydactyly");
-    new BuildingUpgrade("Septillion fingers", new BuildingRequirement(CURSOR, 350));
-    new BuildingUpgradeWithAchievement("Octillion fingers", new BuildingRequirement(CURSOR, 400), "Dr. T");
-    new BuildingUpgrade("Nonillion fingers", new BuildingRequirement(CURSOR, 450));
+    new BuildingUpgradeWithAchievement("Reinforced index finger", new BuildingRequirement(Game.Objects.Cursor, 1), "Click");
+    new BuildingUpgradeWithAchievement("Carpal tunnel prevention cream", new BuildingRequirement(Game.Objects.Cursor, 1), "Click");
+    new BuildingUpgrade("Ambidextrous", new BuildingRequirement(Game.Objects.Cursor, 10));
+    new BuildingUpgrade("Thousand fingers", new BuildingRequirement(Game.Objects.Cursor, 25));
+    new BuildingUpgradeWithAchievement("Million fingers", new BuildingRequirement(Game.Objects.Cursor, 50), "Mouse wheel");
+    new BuildingUpgradeWithAchievement("Billion fingers", new BuildingRequirement(Game.Objects.Cursor, 100), "Of Mice and Men");
+    new BuildingUpgrade("Trillion fingers", new BuildingRequirement(Game.Objects.Cursor, 150));
+    new BuildingUpgradeWithAchievement("Quadrillion fingers", new BuildingRequirement(Game.Objects.Cursor, 200), "The Digital");
+    new BuildingUpgrade("Quintillion fingers", new BuildingRequirement(Game.Objects.Cursor, 250));
+    new BuildingUpgradeWithAchievement("Sextillion fingers", new BuildingRequirement(Game.Objects.Cursor, 300), "Extreme polydactyly");
+    new BuildingUpgrade("Septillion fingers", new BuildingRequirement(Game.Objects.Cursor, 350));
+    new BuildingUpgradeWithAchievement("Octillion fingers", new BuildingRequirement(Game.Objects.Cursor, 400), "Dr. T");
+    new BuildingUpgrade("Nonillion fingers", new BuildingRequirement(Game.Objects.Cursor, 450));
     //endregion
     //region Grandma
-    new BuildingUpgradeWithAchievement("Forwards from grandma", new BuildingRequirement(GRANDMA, 1), "Grandma\'s cookies");
-    new BuildingUpgrade("Steel-plated rolling pins", new BuildingRequirement(GRANDMA, 5));
-    new BuildingUpgrade("Lubricated dentures", new BuildingRequirement(GRANDMA, 25));
-    new BuildingUpgradeWithAchievement("Prune juice", new BuildingRequirement(GRANDMA, 50), "Sloppy kisses");
-    new BuildingUpgradeWithAchievement("Double-thick glasses", new BuildingRequirement(GRANDMA, 100), "Retirement home");
-    new BuildingUpgradeWithAchievement("Aging agents", new BuildingRequirement(GRANDMA, 150), "Friend of the ancients");
-    new BuildingUpgradeWithAchievement("Xtreme walkers", new BuildingRequirement(GRANDMA, 200), "Ruler of the ancients");
-    new BuildingUpgradeWithAchievement("The Unbridling", new BuildingRequirement(GRANDMA, 250), "The old never bothered me anyway");
-    new BuildingUpgradeWithAchievement("Reverse dementia", new BuildingRequirement(GRANDMA, 300), "The agemaster");
-    new BuildingUpgradeWithAchievement("Timeproof hair dyes", new BuildingRequirement(GRANDMA, 350), "To oldly go");
-    new BuildingUpgradeWithAchievement("Good manners", new BuildingRequirement(GRANDMA, 400), "Aged well");
-    new BuildingUpgradeWithAchievement("Generation degeneration", new BuildingRequirement(GRANDMA, 450), "101st birthday");
-    new BuildingUpgradeWithAchievement("Visits", new BuildingRequirement(GRANDMA, 500), "Defense of the ancients");
+    new BuildingUpgradeWithAchievement("Forwards from grandma", new BuildingRequirement(Game.Objects.Grandma, 1), "Grandma\'s cookies");
+    new BuildingUpgrade("Steel-plated rolling pins", new BuildingRequirement(Game.Objects.Grandma, 5));
+    new BuildingUpgrade("Lubricated dentures", new BuildingRequirement(Game.Objects.Grandma, 25));
+    new BuildingUpgradeWithAchievement("Prune juice", new BuildingRequirement(Game.Objects.Grandma, 50), "Sloppy kisses");
+    new BuildingUpgradeWithAchievement("Double-thick glasses", new BuildingRequirement(Game.Objects.Grandma, 100), "Retirement home");
+    new BuildingUpgradeWithAchievement("Aging agents", new BuildingRequirement(Game.Objects.Grandma, 150), "Friend of the ancients");
+    new BuildingUpgradeWithAchievement("Xtreme walkers", new BuildingRequirement(Game.Objects.Grandma, 200), "Ruler of the ancients");
+    new BuildingUpgradeWithAchievement("The Unbridling", new BuildingRequirement(Game.Objects.Grandma, 250), "The old never bothered me anyway");
+    new BuildingUpgradeWithAchievement("Reverse dementia", new BuildingRequirement(Game.Objects.Grandma, 300), "The agemaster");
+    new BuildingUpgradeWithAchievement("Timeproof hair dyes", new BuildingRequirement(Game.Objects.Grandma, 350), "To oldly go");
+    new BuildingUpgradeWithAchievement("Good manners", new BuildingRequirement(Game.Objects.Grandma, 400), "Aged well");
+    new BuildingUpgradeWithAchievement("Generation degeneration", new BuildingRequirement(Game.Objects.Grandma, 450), "101st birthday");
+    new BuildingUpgradeWithAchievement("Visits", new BuildingRequirement(Game.Objects.Grandma, 500), "Defense of the ancients");
 
-    new BuildingUpgrade("Farmer grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(FARM, 15));
-    new BuildingUpgrade("Miner grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(MINE, 15));
-    new BuildingUpgrade("Worker grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(FACTORY, 15));
-    new BuildingUpgrade("Banker grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(BANK, 15));
-    new BuildingUpgrade("Priestess grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(TEMPLE, 15));
-    new BuildingUpgrade("Witch grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(WIZARD_TOWER, 15));
-    new BuildingUpgrade("Cosmic grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(SHIPMENT, 15));
-    new BuildingUpgrade("Transmuted grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(ALCHEMY_LAB, 15));
-    new BuildingUpgrade("Altered grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(PORTAL, 15));
-    new BuildingUpgrade("Grandmas\' grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(TIME_MACHINE, 15));
-    new BuildingUpgrade("Antigrandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(ANTIMATTER_CONDENSER, 15));
-    new BuildingUpgrade("Rainbow grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(PRISM, 15));
-    new BuildingUpgrade("Lucky grandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(CHANCEMAKER, 15));
-    new BuildingUpgrade("Metagrandmas", new BuildingRequirement(GRANDMA, 1), new BuildingRequirement(FRACTAL_ENGINE, 15));
+    new BuildingUpgrade("Farmer grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Farm, 15));
+    new BuildingUpgrade("Miner grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Mine, 15));
+    new BuildingUpgrade("Worker grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Factory, 15));
+    new BuildingUpgrade("Banker grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Bank, 15));
+    new BuildingUpgrade("Priestess grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Temple, 15));
+    new BuildingUpgrade("Witch grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects["Wizard tower"], 15));
+    new BuildingUpgrade("Cosmic grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Shipment, 15));
+    new BuildingUpgrade("Transmuted grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects["Alchemy lab"], 15));
+    new BuildingUpgrade("Altered grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Portal, 15));
+    new BuildingUpgrade("Grandmas\' grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects["Time machine"], 15));
+    new BuildingUpgrade("Antigrandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects["Antimatter condenser"], 15));
+    new BuildingUpgrade("Rainbow grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Prism, 15));
+    new BuildingUpgrade("Lucky grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Chancemaker, 15));
+    new BuildingUpgrade("Metagrandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects["Fractal engine"], 15));
     //endregion
     //region Farm
-    new BuildingUpgradeWithAchievement("Cheap hoes", new BuildingRequirement(FARM, 1), "Bought the farm");
-    new BuildingUpgrade("Fertilizer", new BuildingRequirement(FARM, 5));
-    new BuildingUpgrade("Cookie trees", new BuildingRequirement(FARM, 25));
-    new BuildingUpgradeWithAchievement("Genetically-modified cookies", new BuildingRequirement(FARM, 50), "Reap what you sow");
-    new BuildingUpgradeWithAchievement("Gingerbread scarecrows", new BuildingRequirement(FARM, 100), "Farm ill");
-    new BuildingUpgradeWithAchievement("Pulsar sprinklers", new BuildingRequirement(FARM, 150), "Perfected agriculture");
-    new BuildingUpgradeWithAchievement("Fudge fungus", new BuildingRequirement(FARM, 200), "Homegrown");
-    new BuildingUpgradeWithAchievement("Wheat triffids", new BuildingRequirement(FARM, 250), "Gardener extraordinaire");
-    new BuildingUpgradeWithAchievement("Humane pesticides", new BuildingRequirement(FARM, 300), "Seedy business");
-    new BuildingUpgradeWithAchievement("Barnstars", new BuildingRequirement(FARM, 350), "You and the beanstalk");
-    new BuildingUpgradeWithAchievement("Lindworms", new BuildingRequirement(FARM, 400), "Harvest moon");
-    new BuildingUpgradeWithAchievement("Global seed vault", new BuildingRequirement(FARM, 450), "Make like a tree");
-    new BuildingUpgradeWithAchievement("Reverse-veganism", new BuildingRequirement(FARM, 500), "Sharpest tool in the shed");
+    new BuildingUpgradeWithAchievement("Cheap hoes", new BuildingRequirement(Game.Objects.Farm, 1), "Bought the farm");
+    new BuildingUpgrade("Fertilizer", new BuildingRequirement(Game.Objects.Farm, 5));
+    new BuildingUpgrade("Cookie trees", new BuildingRequirement(Game.Objects.Farm, 25));
+    new BuildingUpgradeWithAchievement("Genetically-modified cookies", new BuildingRequirement(Game.Objects.Farm, 50), "Reap what you sow");
+    new BuildingUpgradeWithAchievement("Gingerbread scarecrows", new BuildingRequirement(Game.Objects.Farm, 100), "Farm ill");
+    new BuildingUpgradeWithAchievement("Pulsar sprinklers", new BuildingRequirement(Game.Objects.Farm, 150), "Perfected agriculture");
+    new BuildingUpgradeWithAchievement("Fudge fungus", new BuildingRequirement(Game.Objects.Farm, 200), "Homegrown");
+    new BuildingUpgradeWithAchievement("Wheat triffids", new BuildingRequirement(Game.Objects.Farm, 250), "Gardener extraordinaire");
+    new BuildingUpgradeWithAchievement("Humane pesticides", new BuildingRequirement(Game.Objects.Farm, 300), "Seedy business");
+    new BuildingUpgradeWithAchievement("Barnstars", new BuildingRequirement(Game.Objects.Farm, 350), "You and the beanstalk");
+    new BuildingUpgradeWithAchievement("Lindworms", new BuildingRequirement(Game.Objects.Farm, 400), "Harvest moon");
+    new BuildingUpgradeWithAchievement("Global seed vault", new BuildingRequirement(Game.Objects.Farm, 450), "Make like a tree");
+    new BuildingUpgradeWithAchievement("Reverse-veganism", new BuildingRequirement(Game.Objects.Farm, 500), "Sharpest tool in the shed");
     //endregion
     //region Mine
-    new BuildingUpgradeWithAchievement("Sugar gas", new BuildingRequirement(MINE, 1), "You know the drill");
-    new BuildingUpgrade("Megadrill", new BuildingRequirement(MINE, 5));
-    new BuildingUpgrade("Ultradrill", new BuildingRequirement(MINE, 25));
-    new BuildingUpgradeWithAchievement("Ultimadrill", new BuildingRequirement(MINE, 50), "Excavation site");
-    new BuildingUpgradeWithAchievement("H-bomb mining", new BuildingRequirement(MINE, 100), "Hollow the planet");
-    new BuildingUpgradeWithAchievement("Coreforge", new BuildingRequirement(MINE, 150), "Can you dig it");
-    new BuildingUpgradeWithAchievement("Planetsplitters", new BuildingRequirement(MINE, 200), "The center of the Earth");
-    new BuildingUpgradeWithAchievement("Canola oil wells", new BuildingRequirement(MINE, 250), "Tectonic ambassador");
-    new BuildingUpgradeWithAchievement("Mole people", new BuildingRequirement(MINE, 300), "Freak fracking");
-    new BuildingUpgradeWithAchievement("Mine canaries", new BuildingRequirement(MINE, 350), "Romancing the stone");
-    new BuildingUpgradeWithAchievement("Bore again", new BuildingRequirement(MINE, 400), "Mine?");
-    new BuildingUpgradeWithAchievement("Air mining", new BuildingRequirement(MINE, 450), "Cave story");
-    new BuildingUpgradeWithAchievement("Caramel alloys", new BuildingRequirement(MINE, 500), "Hey now, you're a rock");
+    new BuildingUpgradeWithAchievement("Sugar gas", new BuildingRequirement(Game.Objects.Mine, 1), "You know the drill");
+    new BuildingUpgrade("Megadrill", new BuildingRequirement(Game.Objects.Mine, 5));
+    new BuildingUpgrade("Ultradrill", new BuildingRequirement(Game.Objects.Mine, 25));
+    new BuildingUpgradeWithAchievement("Ultimadrill", new BuildingRequirement(Game.Objects.Mine, 50), "Excavation site");
+    new BuildingUpgradeWithAchievement("H-bomb mining", new BuildingRequirement(Game.Objects.Mine, 100), "Hollow the planet");
+    new BuildingUpgradeWithAchievement("Coreforge", new BuildingRequirement(Game.Objects.Mine, 150), "Can you dig it");
+    new BuildingUpgradeWithAchievement("Planetsplitters", new BuildingRequirement(Game.Objects.Mine, 200), "The center of the Earth");
+    new BuildingUpgradeWithAchievement("Canola oil wells", new BuildingRequirement(Game.Objects.Mine, 250), "Tectonic ambassador");
+    new BuildingUpgradeWithAchievement("Mole people", new BuildingRequirement(Game.Objects.Mine, 300), "Freak fracking");
+    new BuildingUpgradeWithAchievement("Mine canaries", new BuildingRequirement(Game.Objects.Mine, 350), "Romancing the stone");
+    new BuildingUpgradeWithAchievement("Bore again", new BuildingRequirement(Game.Objects.Mine, 400), "Mine?");
+    new BuildingUpgradeWithAchievement("Air mining", new BuildingRequirement(Game.Objects.Mine, 450), "Cave story");
+    new BuildingUpgradeWithAchievement("Caramel alloys", new BuildingRequirement(Game.Objects.Mine, 500), "Hey now, you're a rock");
     //endregion
     //region Factory
-    new BuildingUpgradeWithAchievement("Sturdier conveyor belts", new BuildingRequirement(FACTORY, 1), "Production chain");
-    new BuildingUpgrade("Child labor", new BuildingRequirement(FACTORY, 5));
-    new BuildingUpgrade("Sweatshop", new BuildingRequirement(FACTORY, 25));
-    new BuildingUpgradeWithAchievement("Radium reactors", new BuildingRequirement(FACTORY, 50), "Industrial revolution");
-    new BuildingUpgradeWithAchievement("Recombobulators", new BuildingRequirement(FACTORY, 100), "Global warming");
-    new BuildingUpgradeWithAchievement("Deep-bake process", new BuildingRequirement(FACTORY, 150), "Ultimate automation");
-    new BuildingUpgradeWithAchievement("Cyborg workforce", new BuildingRequirement(FACTORY, 200), "Technocracy");
-    new BuildingUpgradeWithAchievement("78-hour days", new BuildingRequirement(FACTORY, 250), "Rise of the machines");
-    new BuildingUpgradeWithAchievement("Machine learning", new BuildingRequirement(FACTORY, 300), "Modern times");
-    new BuildingUpgradeWithAchievement("Brownie point system", new BuildingRequirement(FACTORY, 350), "Ex machina");
-    new BuildingUpgradeWithAchievement("\"Volunteer\" interns", new BuildingRequirement(FACTORY, 400), "In full gear");
-    new BuildingUpgradeWithAchievement("Behavioral reframing", new BuildingRequirement(FACTORY, 450), "In-cog-neato");
-    new BuildingUpgradeWithAchievement("The infinity engine", new BuildingRequirement(FACTORY, 500), "Break the mold");
+    new BuildingUpgradeWithAchievement("Sturdier conveyor belts", new BuildingRequirement(Game.Objects.Factory, 1), "Production chain");
+    new BuildingUpgrade("Child labor", new BuildingRequirement(Game.Objects.Factory, 5));
+    new BuildingUpgrade("Sweatshop", new BuildingRequirement(Game.Objects.Factory, 25));
+    new BuildingUpgradeWithAchievement("Radium reactors", new BuildingRequirement(Game.Objects.Factory, 50), "Industrial revolution");
+    new BuildingUpgradeWithAchievement("Recombobulators", new BuildingRequirement(Game.Objects.Factory, 100), "Global warming");
+    new BuildingUpgradeWithAchievement("Deep-bake process", new BuildingRequirement(Game.Objects.Factory, 150), "Ultimate automation");
+    new BuildingUpgradeWithAchievement("Cyborg workforce", new BuildingRequirement(Game.Objects.Factory, 200), "Technocracy");
+    new BuildingUpgradeWithAchievement("78-hour days", new BuildingRequirement(Game.Objects.Factory, 250), "Rise of the machines");
+    new BuildingUpgradeWithAchievement("Machine learning", new BuildingRequirement(Game.Objects.Factory, 300), "Modern times");
+    new BuildingUpgradeWithAchievement("Brownie point system", new BuildingRequirement(Game.Objects.Factory, 350), "Ex machina");
+    new BuildingUpgradeWithAchievement("\"Volunteer\" interns", new BuildingRequirement(Game.Objects.Factory, 400), "In full gear");
+    new BuildingUpgradeWithAchievement("Behavioral reframing", new BuildingRequirement(Game.Objects.Factory, 450), "In-cog-neato");
+    new BuildingUpgradeWithAchievement("The infinity engine", new BuildingRequirement(Game.Objects.Factory, 500), "Break the mold");
     //endregion
     //region Bank
-    new BuildingUpgradeWithAchievement("Taller tellers", new BuildingRequirement(BANK, 1), "Pretty penny");
-    new BuildingUpgrade("Scissor-resistant credit cards", new BuildingRequirement(BANK, 5));
-    new BuildingUpgrade("Acid-proof vaults", new BuildingRequirement(BANK, 25));
-    new BuildingUpgradeWithAchievement("Chocolate coins", new BuildingRequirement(BANK, 50), "Fit the bill");
-    new BuildingUpgradeWithAchievement("Exponential interest rates", new BuildingRequirement(BANK, 100), "A loan in the dark");
-    new BuildingUpgradeWithAchievement("Financial zen", new BuildingRequirement(BANK, 150), "Need for greed");
-    new BuildingUpgradeWithAchievement("Way of the wallet", new BuildingRequirement(BANK, 200), "It\'s the economy, stupid");
-    new BuildingUpgradeWithAchievement("The stuff rationale", new BuildingRequirement(BANK, 250), "Acquire currency");
-    new BuildingUpgradeWithAchievement("Edible money", new BuildingRequirement(BANK, 300), "The nerve of war");
-    new BuildingUpgradeWithAchievement("Grand supercycles", new BuildingRequirement(BANK, 350), "And I need it now");
-    new BuildingUpgradeWithAchievement("Rules of acquisition", new BuildingRequirement(BANK, 400), "Treacle tart economics");
-    new BuildingUpgradeWithAchievement("Altruistic loop", new BuildingRequirement(BANK, 450), "Save your breath because that's all you've got left");
-    new BuildingUpgradeWithAchievement("Diminishing tax returns", new BuildingRequirement(BANK, 500), "Get the show on, get paid");
+    new BuildingUpgradeWithAchievement("Taller tellers", new BuildingRequirement(Game.Objects.Bank, 1), "Pretty penny");
+    new BuildingUpgrade("Scissor-resistant credit cards", new BuildingRequirement(Game.Objects.Bank, 5));
+    new BuildingUpgrade("Acid-proof vaults", new BuildingRequirement(Game.Objects.Bank, 25));
+    new BuildingUpgradeWithAchievement("Chocolate coins", new BuildingRequirement(Game.Objects.Bank, 50), "Fit the bill");
+    new BuildingUpgradeWithAchievement("Exponential interest rates", new BuildingRequirement(Game.Objects.Bank, 100), "A loan in the dark");
+    new BuildingUpgradeWithAchievement("Financial zen", new BuildingRequirement(Game.Objects.Bank, 150), "Need for greed");
+    new BuildingUpgradeWithAchievement("Way of the wallet", new BuildingRequirement(Game.Objects.Bank, 200), "It\'s the economy, stupid");
+    new BuildingUpgradeWithAchievement("The stuff rationale", new BuildingRequirement(Game.Objects.Bank, 250), "Acquire currency");
+    new BuildingUpgradeWithAchievement("Edible money", new BuildingRequirement(Game.Objects.Bank, 300), "The nerve of war");
+    new BuildingUpgradeWithAchievement("Grand supercycles", new BuildingRequirement(Game.Objects.Bank, 350), "And I need it now");
+    new BuildingUpgradeWithAchievement("Rules of acquisition", new BuildingRequirement(Game.Objects.Bank, 400), "Treacle tart economics");
+    new BuildingUpgradeWithAchievement("Altruistic loop", new BuildingRequirement(Game.Objects.Bank, 450), "Save your breath because that's all you've got left");
+    new BuildingUpgradeWithAchievement("Diminishing tax returns", new BuildingRequirement(Game.Objects.Bank, 500), "Get the show on, get paid");
     //endregion
     //region Temple
-    new BuildingUpgradeWithAchievement("Golden idols", new BuildingRequirement(TEMPLE, 1), "Your time to shrine");
-    new BuildingUpgrade("Sacrifices", new BuildingRequirement(TEMPLE, 5));
-    new BuildingUpgrade("Delicious blessing", new BuildingRequirement(TEMPLE, 25));
-    new BuildingUpgradeWithAchievement("Sun festival", new BuildingRequirement(TEMPLE, 50), "New-age cult");
-    new BuildingUpgradeWithAchievement("Enlarged pantheon", new BuildingRequirement(TEMPLE, 100), "New-age cult");
-    new BuildingUpgradeWithAchievement("Great Baker in the sky", new BuildingRequirement(TEMPLE, 150), "Organized religion");
-    new BuildingUpgradeWithAchievement("Creation myth", new BuildingRequirement(TEMPLE, 200), "Fanaticism");
-    new BuildingUpgradeWithAchievement("Theocracy", new BuildingRequirement(TEMPLE, 250), "Zealotry");
-    new BuildingUpgradeWithAchievement("Sick rap prayers", new BuildingRequirement(TEMPLE, 300), "Wololo");
-    new BuildingUpgradeWithAchievement("Psalm-reading", new BuildingRequirement(TEMPLE, 350), "Pray on the weak");
-    new BuildingUpgradeWithAchievement("War of the gods", new BuildingRequirement(TEMPLE, 400), "Holy cookies, grandma!");
-    new BuildingUpgradeWithAchievement("A novel idea", new BuildingRequirement(TEMPLE, 450), "Vengeful and almighty");
-    new BuildingUpgradeWithAchievement("Apparitions", new BuildingRequirement(TEMPLE, 500), "My world's on fire, how about yours");
+    new BuildingUpgradeWithAchievement("Golden idols", new BuildingRequirement(Game.Objects.Temple, 1), "Your time to shrine");
+    new BuildingUpgrade("Sacrifices", new BuildingRequirement(Game.Objects.Temple, 5));
+    new BuildingUpgrade("Delicious blessing", new BuildingRequirement(Game.Objects.Temple, 25));
+    new BuildingUpgradeWithAchievement("Sun festival", new BuildingRequirement(Game.Objects.Temple, 50), "New-age cult");
+    new BuildingUpgradeWithAchievement("Enlarged pantheon", new BuildingRequirement(Game.Objects.Temple, 100), "New-age cult");
+    new BuildingUpgradeWithAchievement("Great Baker in the sky", new BuildingRequirement(Game.Objects.Temple, 150), "Organized religion");
+    new BuildingUpgradeWithAchievement("Creation myth", new BuildingRequirement(Game.Objects.Temple, 200), "Fanaticism");
+    new BuildingUpgradeWithAchievement("Theocracy", new BuildingRequirement(Game.Objects.Temple, 250), "Zealotry");
+    new BuildingUpgradeWithAchievement("Sick rap prayers", new BuildingRequirement(Game.Objects.Temple, 300), "Wololo");
+    new BuildingUpgradeWithAchievement("Psalm-reading", new BuildingRequirement(Game.Objects.Temple, 350), "Pray on the weak");
+    new BuildingUpgradeWithAchievement("War of the gods", new BuildingRequirement(Game.Objects.Temple, 400), "Holy cookies, grandma!");
+    new BuildingUpgradeWithAchievement("A novel idea", new BuildingRequirement(Game.Objects.Temple, 450), "Vengeful and almighty");
+    new BuildingUpgradeWithAchievement("Apparitions", new BuildingRequirement(Game.Objects.Temple, 500), "My world's on fire, how about yours");
     //endregion
     //region Wizard tower
-    new BuildingUpgradeWithAchievement("Pointier hats", new BuildingRequirement(WIZARD_TOWER, 1), "Bewitched");
-    new BuildingUpgrade("Beardlier beards", new BuildingRequirement(WIZARD_TOWER, 5));
-    new BuildingUpgrade("Ancient grimoires", new BuildingRequirement(WIZARD_TOWER, 25));
-    new BuildingUpgradeWithAchievement("Kitchen curses", new BuildingRequirement(WIZARD_TOWER, 50), "The sorcerer\'s apprentice");
-    new BuildingUpgradeWithAchievement("School of sorcery", new BuildingRequirement(WIZARD_TOWER, 100), "Charms and enchantments");
-    new BuildingUpgradeWithAchievement("Dark formulas", new BuildingRequirement(WIZARD_TOWER, 150), "Curses and maledictions");
-    new BuildingUpgradeWithAchievement("Cookiemancy", new BuildingRequirement(WIZARD_TOWER, 200), "Magic kingdom");
-    new BuildingUpgradeWithAchievement("Rabbit trick", new BuildingRequirement(WIZARD_TOWER, 250), "The wizarding world");
-    new BuildingUpgradeWithAchievement("Deluxe tailored wands", new BuildingRequirement(WIZARD_TOWER, 300), "And now for my next trick, I'll need a volunteer from the" +
+    new BuildingUpgradeWithAchievement("Pointier hats", new BuildingRequirement(Game.Objects["Wizard tower"], 1), "Bewitched");
+    new BuildingUpgrade("Beardlier beards", new BuildingRequirement(Game.Objects["Wizard tower"], 5));
+    new BuildingUpgrade("Ancient grimoires", new BuildingRequirement(Game.Objects["Wizard tower"], 25));
+    new BuildingUpgradeWithAchievement("Kitchen curses", new BuildingRequirement(Game.Objects["Wizard tower"], 50), "The sorcerer\'s apprentice");
+    new BuildingUpgradeWithAchievement("School of sorcery", new BuildingRequirement(Game.Objects["Wizard tower"], 100), "Charms and enchantments");
+    new BuildingUpgradeWithAchievement("Dark formulas", new BuildingRequirement(Game.Objects["Wizard tower"], 150), "Curses and maledictions");
+    new BuildingUpgradeWithAchievement("Cookiemancy", new BuildingRequirement(Game.Objects["Wizard tower"], 200), "Magic kingdom");
+    new BuildingUpgradeWithAchievement("Rabbit trick", new BuildingRequirement(Game.Objects["Wizard tower"], 250), "The wizarding world");
+    new BuildingUpgradeWithAchievement("Deluxe tailored wands", new BuildingRequirement(Game.Objects["Wizard tower"], 300), "And now for my next trick, I'll need a volunteer from the" +
       " audience");
-    new BuildingUpgradeWithAchievement("Immobile spellcasting", new BuildingRequirement(WIZARD_TOWER, 350), "It's a kind of magic");
-    new BuildingUpgradeWithAchievement("Electricity", new BuildingRequirement(WIZARD_TOWER, 400), "The Prestige");
-    new BuildingUpgradeWithAchievement("Spelling bees", new BuildingRequirement(WIZARD_TOWER, 450), "Spell it out for you");
-    new BuildingUpgradeWithAchievement("Wizard basements", new BuildingRequirement(WIZARD_TOWER, 500), "The meteor men beg to differ");
+    new BuildingUpgradeWithAchievement("Immobile spellcasting", new BuildingRequirement(Game.Objects["Wizard tower"], 350), "It's a kind of magic");
+    new BuildingUpgradeWithAchievement("Electricity", new BuildingRequirement(Game.Objects["Wizard tower"], 400), "The Prestige");
+    new BuildingUpgradeWithAchievement("Spelling bees", new BuildingRequirement(Game.Objects["Wizard tower"], 450), "Spell it out for you");
+    new BuildingUpgradeWithAchievement("Wizard basements", new BuildingRequirement(Game.Objects["Wizard tower"], 500), "The meteor men beg to differ");
     //endregion
     //region Shipment
-    new BuildingUpgradeWithAchievement("Vanilla nebulae", new BuildingRequirement(SHIPMENT, 1), "Expedition");
-    new BuildingUpgrade("Wormholes", new BuildingRequirement(SHIPMENT, 5));
-    new BuildingUpgrade("Frequent flyer", new BuildingRequirement(SHIPMENT, 25));
-    new BuildingUpgradeWithAchievement("Warp drive", new BuildingRequirement(SHIPMENT, 50), "Galactic highway");
-    new BuildingUpgradeWithAchievement("Chocolate monoliths", new BuildingRequirement(SHIPMENT, 100), "Far far away");
-    new BuildingUpgradeWithAchievement("Generation ship", new BuildingRequirement(SHIPMENT, 150), "Type II civilization");
-    new BuildingUpgradeWithAchievement("Dyson sphere", new BuildingRequirement(SHIPMENT, 200), "We come in peace");
-    new BuildingUpgradeWithAchievement("The final frontier", new BuildingRequirement(SHIPMENT, 250), "Parsec-masher");
-    new BuildingUpgradeWithAchievement("Autopilot", new BuildingRequirement(SHIPMENT, 300), "It's not delivery");
-    new BuildingUpgradeWithAchievement("Restaurants at the end of the universe", new BuildingRequirement(SHIPMENT, 350), "Make it so");
-    new BuildingUpgradeWithAchievement("Universal alphabet", new BuildingRequirement(SHIPMENT, 400), "That's just peanuts to space");
-    new BuildingUpgradeWithAchievement("Toroid universe", new BuildingRequirement(SHIPMENT, 450), "Space space space space space");
-    new BuildingUpgradeWithAchievement("Prime directive", new BuildingRequirement(SHIPMENT, 500), "Only shooting stars");
+    new BuildingUpgradeWithAchievement("Vanilla nebulae", new BuildingRequirement(Game.Objects.Shipment, 1), "Expedition");
+    new BuildingUpgrade("Wormholes", new BuildingRequirement(Game.Objects.Shipment, 5));
+    new BuildingUpgrade("Frequent flyer", new BuildingRequirement(Game.Objects.Shipment, 25));
+    new BuildingUpgradeWithAchievement("Warp drive", new BuildingRequirement(Game.Objects.Shipment, 50), "Galactic highway");
+    new BuildingUpgradeWithAchievement("Chocolate monoliths", new BuildingRequirement(Game.Objects.Shipment, 100), "Far far away");
+    new BuildingUpgradeWithAchievement("Generation ship", new BuildingRequirement(Game.Objects.Shipment, 150), "Type II civilization");
+    new BuildingUpgradeWithAchievement("Dyson sphere", new BuildingRequirement(Game.Objects.Shipment, 200), "We come in peace");
+    new BuildingUpgradeWithAchievement("The final frontier", new BuildingRequirement(Game.Objects.Shipment, 250), "Parsec-masher");
+    new BuildingUpgradeWithAchievement("Autopilot", new BuildingRequirement(Game.Objects.Shipment, 300), "It's not delivery");
+    new BuildingUpgradeWithAchievement("Restaurants at the end of the universe", new BuildingRequirement(Game.Objects.Shipment, 350), "Make it so");
+    new BuildingUpgradeWithAchievement("Universal alphabet", new BuildingRequirement(Game.Objects.Shipment, 400), "That's just peanuts to space");
+    new BuildingUpgradeWithAchievement("Toroid universe", new BuildingRequirement(Game.Objects.Shipment, 450), "Space space space space space");
+    new BuildingUpgradeWithAchievement("Prime directive", new BuildingRequirement(Game.Objects.Shipment, 500), "Only shooting stars");
     //endregion
     //region Alchemy lab
-    new BuildingUpgradeWithAchievement("Antimony", new BuildingRequirement(ALCHEMY_LAB, 1), "Transmutation");
-    new BuildingUpgrade("Essence of dough", new BuildingRequirement(ALCHEMY_LAB, 5));
-    new BuildingUpgrade("True chocolate", new BuildingRequirement(ALCHEMY_LAB, 25));
-    new BuildingUpgradeWithAchievement("Ambrosia", new BuildingRequirement(ALCHEMY_LAB, 50), "Transmogrification");
-    new BuildingUpgradeWithAchievement("Aqua crustulae", new BuildingRequirement(ALCHEMY_LAB, 100), "Gold member");
-    new BuildingUpgradeWithAchievement("Origin crucible", new BuildingRequirement(ALCHEMY_LAB, 150), "Gild wars");
-    new BuildingUpgradeWithAchievement("Theory of atomic fluidity", new BuildingRequirement(ALCHEMY_LAB, 200), "The secrets of the universe");
-    new BuildingUpgradeWithAchievement("Beige goo", new BuildingRequirement(ALCHEMY_LAB, 250), "The work of a lifetime");
-    new BuildingUpgradeWithAchievement("The advent of chemistry", new BuildingRequirement(ALCHEMY_LAB, 300), "Gold, Jerry! Gold!");
-    new BuildingUpgradeWithAchievement("On second thought", new BuildingRequirement(ALCHEMY_LAB, 350), "All that glitters is gold");
-    new BuildingUpgradeWithAchievement("Public betterment", new BuildingRequirement(ALCHEMY_LAB, 400), "Worth its weight in lead");
-    new BuildingUpgradeWithAchievement("Hermetic reconciliation", new BuildingRequirement(ALCHEMY_LAB, 450), "Don't get used to yourself, you're gonna have to change");
-    new BuildingUpgradeWithAchievement("Chromatic cycling", new BuildingRequirement(ALCHEMY_LAB, 500), "We could all use a little change");
+    new BuildingUpgradeWithAchievement("Antimony", new BuildingRequirement(Game.Objects["Alchemy lab"], 1), "Transmutation");
+    new BuildingUpgrade("Essence of dough", new BuildingRequirement(Game.Objects["Alchemy lab"], 5));
+    new BuildingUpgrade("True chocolate", new BuildingRequirement(Game.Objects["Alchemy lab"], 25));
+    new BuildingUpgradeWithAchievement("Ambrosia", new BuildingRequirement(Game.Objects["Alchemy lab"], 50), "Transmogrification");
+    new BuildingUpgradeWithAchievement("Aqua crustulae", new BuildingRequirement(Game.Objects["Alchemy lab"], 100), "Gold member");
+    new BuildingUpgradeWithAchievement("Origin crucible", new BuildingRequirement(Game.Objects["Alchemy lab"], 150), "Gild wars");
+    new BuildingUpgradeWithAchievement("Theory of atomic fluidity", new BuildingRequirement(Game.Objects["Alchemy lab"], 200), "The secrets of the universe");
+    new BuildingUpgradeWithAchievement("Beige goo", new BuildingRequirement(Game.Objects["Alchemy lab"], 250), "The work of a lifetime");
+    new BuildingUpgradeWithAchievement("The advent of chemistry", new BuildingRequirement(Game.Objects["Alchemy lab"], 300), "Gold, Jerry! Gold!");
+    new BuildingUpgradeWithAchievement("On second thought", new BuildingRequirement(Game.Objects["Alchemy lab"], 350), "All that glitters is gold");
+    new BuildingUpgradeWithAchievement("Public betterment", new BuildingRequirement(Game.Objects["Alchemy lab"], 400), "Worth its weight in lead");
+    new BuildingUpgradeWithAchievement("Hermetic reconciliation", new BuildingRequirement(Game.Objects["Alchemy lab"], 450), "Don't get used to yourself, you're gonna have to change");
+    new BuildingUpgradeWithAchievement("Chromatic cycling", new BuildingRequirement(Game.Objects["Alchemy lab"], 500), "We could all use a little change");
     //endregion
     //region Portal
-    new BuildingUpgradeWithAchievement("Ancient tablet", new BuildingRequirement(PORTAL, 1), "A whole new world");
-    new BuildingUpgrade("Insane oatling workers", new BuildingRequirement(PORTAL, 5));
-    new BuildingUpgrade("Soul bond", new BuildingRequirement(PORTAL, 25));
-    new BuildingUpgradeWithAchievement("Sanity dance", new BuildingRequirement(PORTAL, 50), "Now you\'re thinking");
-    new BuildingUpgradeWithAchievement("Brane transplant", new BuildingRequirement(PORTAL, 100), "Dimensional shift");
-    new BuildingUpgradeWithAchievement("Deity-sized portals", new BuildingRequirement(PORTAL, 150), "Brain-split");
-    new BuildingUpgradeWithAchievement("End of times back-up plan", new BuildingRequirement(PORTAL, 200), "Realm of the Mad God");
-    new BuildingUpgradeWithAchievement("Maddening chants", new BuildingRequirement(PORTAL, 250), "A place lost in time");
-    new BuildingUpgradeWithAchievement("The real world", new BuildingRequirement(PORTAL, 300), "Forbidden zone");
-    new BuildingUpgradeWithAchievement("Dimensional garbage gulper", new BuildingRequirement(PORTAL, 350), "H̸̷͓̳̳̯̟͕̟͍͍̣͡ḛ̢̦̰̺̮̝͖͖̘̪͉͘͡" +
+    new BuildingUpgradeWithAchievement("Ancient tablet", new BuildingRequirement(Game.Objects.Portal, 1), "A whole new world");
+    new BuildingUpgrade("Insane oatling workers", new BuildingRequirement(Game.Objects.Portal, 5));
+    new BuildingUpgrade("Soul bond", new BuildingRequirement(Game.Objects.Portal, 25));
+    new BuildingUpgradeWithAchievement("Sanity dance", new BuildingRequirement(Game.Objects.Portal, 50), "Now you\'re thinking");
+    new BuildingUpgradeWithAchievement("Brane transplant", new BuildingRequirement(Game.Objects.Portal, 100), "Dimensional shift");
+    new BuildingUpgradeWithAchievement("Deity-sized portals", new BuildingRequirement(Game.Objects.Portal, 150), "Brain-split");
+    new BuildingUpgradeWithAchievement("End of times back-up plan", new BuildingRequirement(Game.Objects.Portal, 200), "Realm of the Mad God");
+    new BuildingUpgradeWithAchievement("Maddening chants", new BuildingRequirement(Game.Objects.Portal, 250), "A place lost in time");
+    new BuildingUpgradeWithAchievement("The real world", new BuildingRequirement(Game.Objects.Portal, 300), "Forbidden zone");
+    new BuildingUpgradeWithAchievement("Dimensional garbage gulper", new BuildingRequirement(Game.Objects.Portal, 350), "H̸̷͓̳̳̯̟͕̟͍͍̣͡ḛ̢̦̰̺̮̝͖͖̘̪͉͘͡" +
       " ̠̦͕̤̪̝̥̰̠̫̖̣͙̬͘ͅC̨̦̺̩̲̥͉̭͚̜̻̝̣̼͙̮̯̪o̴̡͇̘͎̞̲͇̦̲͞͡m̸̩̺̝̣̹̱͚̬̥̫̳̼̞̘̯͘ͅẹ͇̺̜́̕͢s̶̙̟̱̥̮̯̰̦͓͇͖͖̝͘͘͞");
-    new BuildingUpgradeWithAchievement("Embedded microportals", new BuildingRequirement(PORTAL, 400), "What happens in the vortex stays in the vortex");
-    new BuildingUpgradeWithAchievement("His advent", new BuildingRequirement(PORTAL, 450), "Objects in the mirror dimension are closer than they appear");
-    new BuildingUpgradeWithAchievement("Domestic rifts", new BuildingRequirement(PORTAL, 500), "Your brain gets smart but your head gets dumb");
+    new BuildingUpgradeWithAchievement("Embedded microportals", new BuildingRequirement(Game.Objects.Portal, 400), "What happens in the vortex stays in the vortex");
+    new BuildingUpgradeWithAchievement("His advent", new BuildingRequirement(Game.Objects.Portal, 450), "Objects in the mirror dimension are closer than they appear");
+    new BuildingUpgradeWithAchievement("Domestic rifts", new BuildingRequirement(Game.Objects.Portal, 500), "Your brain gets smart but your head gets dumb");
     //endregion
     //region Time machine
-    new BuildingUpgradeWithAchievement("Flux capacitors", new BuildingRequirement(TIME_MACHINE, 1), "Time warp");
-    new BuildingUpgrade("Time paradox resolver", new BuildingRequirement(TIME_MACHINE, 5));
-    new BuildingUpgrade("Quantum conundrum", new BuildingRequirement(TIME_MACHINE, 25));
-    new BuildingUpgradeWithAchievement("Causality enforcer", new BuildingRequirement(TIME_MACHINE, 50), "Alternate timeline");
-    new BuildingUpgradeWithAchievement("Yestermorrow comparators", new BuildingRequirement(TIME_MACHINE, 100), "Rewriting history");
-    new BuildingUpgradeWithAchievement("Far future enactment", new BuildingRequirement(TIME_MACHINE, 150), "Time duke");
-    new BuildingUpgradeWithAchievement("Great loop hypothesis", new BuildingRequirement(TIME_MACHINE, 200), "Forever and ever");
-    new BuildingUpgradeWithAchievement("Cookietopian moments of maybe", new BuildingRequirement(TIME_MACHINE, 250), "Heat death");
-    new BuildingUpgradeWithAchievement("Second seconds", new BuildingRequirement(TIME_MACHINE, 300), "cookie clicker forever and forever a hundred years cookie clicker," +
+    new BuildingUpgradeWithAchievement("Flux capacitors", new BuildingRequirement(Game.Objects["Time machine"], 1), "Time warp");
+    new BuildingUpgrade("Time paradox resolver", new BuildingRequirement(Game.Objects["Time machine"], 5));
+    new BuildingUpgrade("Quantum conundrum", new BuildingRequirement(Game.Objects["Time machine"], 25));
+    new BuildingUpgradeWithAchievement("Causality enforcer", new BuildingRequirement(Game.Objects["Time machine"], 50), "Alternate timeline");
+    new BuildingUpgradeWithAchievement("Yestermorrow comparators", new BuildingRequirement(Game.Objects["Time machine"], 100), "Rewriting history");
+    new BuildingUpgradeWithAchievement("Far future enactment", new BuildingRequirement(Game.Objects["Time machine"], 150), "Time duke");
+    new BuildingUpgradeWithAchievement("Great loop hypothesis", new BuildingRequirement(Game.Objects["Time machine"], 200), "Forever and ever");
+    new BuildingUpgradeWithAchievement("Cookietopian moments of maybe", new BuildingRequirement(Game.Objects["Time machine"], 250), "Heat death");
+    new BuildingUpgradeWithAchievement("Second seconds", new BuildingRequirement(Game.Objects["Time machine"], 300), "cookie clicker forever and forever a hundred years cookie clicker," +
       " all day long forever, forever a hundred times, over and over cookie clicker adventures dot com");
-    new BuildingUpgradeWithAchievement("Additional clock hands", new BuildingRequirement(TIME_MACHINE, 350), "Way back then");
-    new BuildingUpgradeWithAchievement("Nostalgia", new BuildingRequirement(TIME_MACHINE, 400), "Invited to yesterday's party");
-    new BuildingUpgradeWithAchievement("Split seconds", new BuildingRequirement(TIME_MACHINE, 450), "Groundhog day");
-    new BuildingUpgradeWithAchievement("Patience abolished", new BuildingRequirement(TIME_MACHINE, 500), "The years start coming");
+    new BuildingUpgradeWithAchievement("Additional clock hands", new BuildingRequirement(Game.Objects["Time machine"], 350), "Way back then");
+    new BuildingUpgradeWithAchievement("Nostalgia", new BuildingRequirement(Game.Objects["Time machine"], 400), "Invited to yesterday's party");
+    new BuildingUpgradeWithAchievement("Split seconds", new BuildingRequirement(Game.Objects["Time machine"], 450), "Groundhog day");
+    new BuildingUpgradeWithAchievement("Patience abolished", new BuildingRequirement(Game.Objects["Time machine"], 500), "The years start coming");
     //endregion
     //region Antimatter condensers
-    new BuildingUpgradeWithAchievement("Sugar bosons", new BuildingRequirement(ANTIMATTER_CONDENSER, 1), "Antibatter");
-    new BuildingUpgrade("String theory", new BuildingRequirement(ANTIMATTER_CONDENSER, 5));
-    new BuildingUpgrade("Large macaron collider", new BuildingRequirement(ANTIMATTER_CONDENSER, 25));
-    new BuildingUpgradeWithAchievement("Big bang bake", new BuildingRequirement(ANTIMATTER_CONDENSER, 50), "Quirky quarks");
-    new BuildingUpgradeWithAchievement("Reverse cyclotrons", new BuildingRequirement(ANTIMATTER_CONDENSER, 100), "It does matter!");
-    new BuildingUpgradeWithAchievement("Nanocosmics", new BuildingRequirement(ANTIMATTER_CONDENSER, 150), "Molecular maestro");
-    new BuildingUpgradeWithAchievement("The Pulse", new BuildingRequirement(ANTIMATTER_CONDENSER, 200), "Walk the planck");
-    new BuildingUpgradeWithAchievement("Some other super-tiny fundamental particle? Probably?", new BuildingRequirement(ANTIMATTER_CONDENSER, 250), "Microcosm");
-    new BuildingUpgradeWithAchievement("Quantum comb", new BuildingRequirement(ANTIMATTER_CONDENSER, 300), "Scientists baffled everywhere");
-    new BuildingUpgradeWithAchievement("Baking Nobel prize", new BuildingRequirement(ANTIMATTER_CONDENSER, 350), "Exotic matter");
-    new BuildingUpgradeWithAchievement("The definite molecule", new BuildingRequirement(ANTIMATTER_CONDENSER, 400), "Downsizing");
-    new BuildingUpgradeWithAchievement("Flavor itself", new BuildingRequirement(ANTIMATTER_CONDENSER, 450), "A matter of perspective");
-    new BuildingUpgradeWithAchievement("Delicious pull", new BuildingRequirement(ANTIMATTER_CONDENSER, 500), "What a concept");
+    new BuildingUpgradeWithAchievement("Sugar bosons", new BuildingRequirement(Game.Objects["Antimatter condenser"], 1), "Antibatter");
+    new BuildingUpgrade("String theory", new BuildingRequirement(Game.Objects["Antimatter condenser"], 5));
+    new BuildingUpgrade("Large macaron collider", new BuildingRequirement(Game.Objects["Antimatter condenser"], 25));
+    new BuildingUpgradeWithAchievement("Big bang bake", new BuildingRequirement(Game.Objects["Antimatter condenser"], 50), "Quirky quarks");
+    new BuildingUpgradeWithAchievement("Reverse cyclotrons", new BuildingRequirement(Game.Objects["Antimatter condenser"], 100), "It does matter!");
+    new BuildingUpgradeWithAchievement("Nanocosmics", new BuildingRequirement(Game.Objects["Antimatter condenser"], 150), "Molecular maestro");
+    new BuildingUpgradeWithAchievement("The Pulse", new BuildingRequirement(Game.Objects["Antimatter condenser"], 200), "Walk the planck");
+    new BuildingUpgradeWithAchievement("Some other super-tiny fundamental particle? Probably?", new BuildingRequirement(Game.Objects["Antimatter condenser"], 250), "Microcosm");
+    new BuildingUpgradeWithAchievement("Quantum comb", new BuildingRequirement(Game.Objects["Antimatter condenser"], 300), "Scientists baffled everywhere");
+    new BuildingUpgradeWithAchievement("Baking Nobel prize", new BuildingRequirement(Game.Objects["Antimatter condenser"], 350), "Exotic matter");
+    new BuildingUpgradeWithAchievement("The definite molecule", new BuildingRequirement(Game.Objects["Antimatter condenser"], 400), "Downsizing");
+    new BuildingUpgradeWithAchievement("Flavor itself", new BuildingRequirement(Game.Objects["Antimatter condenser"], 450), "A matter of perspective");
+    new BuildingUpgradeWithAchievement("Delicious pull", new BuildingRequirement(Game.Objects["Antimatter condenser"], 500), "What a concept");
     //endregion
     //region Prisms
-    new BuildingUpgradeWithAchievement("Gem polish", new BuildingRequirement(PRISM, 1), "Lone photon");
-    new BuildingUpgrade("9th color", new BuildingRequirement(PRISM, 5));
-    new BuildingUpgrade("Chocolate light", new BuildingRequirement(PRISM, 25));
-    new BuildingUpgradeWithAchievement("Grainbow", new BuildingRequirement(PRISM, 50), "Dazzling glimmer");
-    new BuildingUpgradeWithAchievement("Pure cosmic light", new BuildingRequirement(PRISM, 100), "Blinding flash");
-    new BuildingUpgradeWithAchievement("Glow-in-the-dark", new BuildingRequirement(PRISM, 150), "Unending glow");
-    new BuildingUpgradeWithAchievement("Lux sanctorum", new BuildingRequirement(PRISM, 200), "Rise and shine");
-    new BuildingUpgradeWithAchievement("Reverse shadows", new BuildingRequirement(PRISM, 250), "Bright future");
-    new BuildingUpgradeWithAchievement("Crystal mirrors", new BuildingRequirement(PRISM, 300), "Harmony of the spheres");
-    new BuildingUpgradeWithAchievement("Reverse theory of light", new BuildingRequirement(PRISM, 350), "At the end of the tunnel");
-    new BuildingUpgradeWithAchievement("Light capture measures", new BuildingRequirement(PRISM, 400), "My eyes");
-    new BuildingUpgradeWithAchievement("Light speed limit", new BuildingRequirement(PRISM, 450), "Optical illusion");
-    new BuildingUpgradeWithAchievement("Occam's laser", new BuildingRequirement(PRISM, 500), "You'll never shine if you don't glow");
+    new BuildingUpgradeWithAchievement("Gem polish", new BuildingRequirement(Game.Objects.Prism, 1), "Lone photon");
+    new BuildingUpgrade("9th color", new BuildingRequirement(Game.Objects.Prism, 5));
+    new BuildingUpgrade("Chocolate light", new BuildingRequirement(Game.Objects.Prism, 25));
+    new BuildingUpgradeWithAchievement("Grainbow", new BuildingRequirement(Game.Objects.Prism, 50), "Dazzling glimmer");
+    new BuildingUpgradeWithAchievement("Pure cosmic light", new BuildingRequirement(Game.Objects.Prism, 100), "Blinding flash");
+    new BuildingUpgradeWithAchievement("Glow-in-the-dark", new BuildingRequirement(Game.Objects.Prism, 150), "Unending glow");
+    new BuildingUpgradeWithAchievement("Lux sanctorum", new BuildingRequirement(Game.Objects.Prism, 200), "Rise and shine");
+    new BuildingUpgradeWithAchievement("Reverse shadows", new BuildingRequirement(Game.Objects.Prism, 250), "Bright future");
+    new BuildingUpgradeWithAchievement("Crystal mirrors", new BuildingRequirement(Game.Objects.Prism, 300), "Harmony of the spheres");
+    new BuildingUpgradeWithAchievement("Reverse theory of light", new BuildingRequirement(Game.Objects.Prism, 350), "At the end of the tunnel");
+    new BuildingUpgradeWithAchievement("Light capture measures", new BuildingRequirement(Game.Objects.Prism, 400), "My eyes");
+    new BuildingUpgradeWithAchievement("Light speed limit", new BuildingRequirement(Game.Objects.Prism, 450), "Optical illusion");
+    new BuildingUpgradeWithAchievement("Occam's laser", new BuildingRequirement(Game.Objects.Prism, 500), "You'll never shine if you don't glow");
     //endregion
     //region Chancemaker
-    new BuildingUpgradeWithAchievement("Your lucky cookie", new BuildingRequirement(CHANCEMAKER, 1), "Lucked out");
-    new BuildingUpgrade("\"All Bets Are Off\" magic coin", new BuildingRequirement(CHANCEMAKER, 5));
-    new BuildingUpgrade("Winning lottery ticket", new BuildingRequirement(CHANCEMAKER, 25));
-    new BuildingUpgradeWithAchievement("Four-leaf clover field", new BuildingRequirement(CHANCEMAKER, 50), "What are the odds");
-    new BuildingUpgradeWithAchievement("A recipe book about books", new BuildingRequirement(CHANCEMAKER, 100), "Grandma needs a new pair of shoes");
-    new BuildingUpgradeWithAchievement("Leprechaun village", new BuildingRequirement(CHANCEMAKER, 150), "Million to one shot, doc");
-    new BuildingUpgradeWithAchievement("Improbability drive", new BuildingRequirement(CHANCEMAKER, 200), "As luck would have it");
-    new BuildingUpgradeWithAchievement("Antisuperstistronics", new BuildingRequirement(CHANCEMAKER, 250), "Ever in your favor");
-    new BuildingUpgradeWithAchievement("Bunnypedes", new BuildingRequirement(CHANCEMAKER, 300), "Be a lady");
-    new BuildingUpgradeWithAchievement("Revised probabilistics", new BuildingRequirement(CHANCEMAKER, 350), "Dicey business");
-    new BuildingUpgradeWithAchievement("0-sided dice", new BuildingRequirement(CHANCEMAKER, 400), "Maybe a chance in hell, actually");
-    new BuildingUpgradeWithAchievement("A touch of determinism", new BuildingRequirement(CHANCEMAKER, 450), "Jackpot");
-    new BuildingUpgradeWithAchievement("On a streak", new BuildingRequirement(CHANCEMAKER, 500), "You'll never know if you don't go");
+    new BuildingUpgradeWithAchievement("Your lucky cookie", new BuildingRequirement(Game.Objects.Chancemaker, 1), "Lucked out");
+    new BuildingUpgrade("\"All Bets Are Off\" magic coin", new BuildingRequirement(Game.Objects.Chancemaker, 5));
+    new BuildingUpgrade("Winning lottery ticket", new BuildingRequirement(Game.Objects.Chancemaker, 25));
+    new BuildingUpgradeWithAchievement("Four-leaf clover field", new BuildingRequirement(Game.Objects.Chancemaker, 50), "What are the odds");
+    new BuildingUpgradeWithAchievement("A recipe book about books", new BuildingRequirement(Game.Objects.Chancemaker, 100), "Grandma needs a new pair of shoes");
+    new BuildingUpgradeWithAchievement("Leprechaun village", new BuildingRequirement(Game.Objects.Chancemaker, 150), "Million to one shot, doc");
+    new BuildingUpgradeWithAchievement("Improbability drive", new BuildingRequirement(Game.Objects.Chancemaker, 200), "As luck would have it");
+    new BuildingUpgradeWithAchievement("Antisuperstistronics", new BuildingRequirement(Game.Objects.Chancemaker, 250), "Ever in your favor");
+    new BuildingUpgradeWithAchievement("Bunnypedes", new BuildingRequirement(Game.Objects.Chancemaker, 300), "Be a lady");
+    new BuildingUpgradeWithAchievement("Revised probabilistics", new BuildingRequirement(Game.Objects.Chancemaker, 350), "Dicey business");
+    new BuildingUpgradeWithAchievement("0-sided dice", new BuildingRequirement(Game.Objects.Chancemaker, 400), "Maybe a chance in hell, actually");
+    new BuildingUpgradeWithAchievement("A touch of determinism", new BuildingRequirement(Game.Objects.Chancemaker, 450), "Jackpot");
+    new BuildingUpgradeWithAchievement("On a streak", new BuildingRequirement(Game.Objects.Chancemaker, 500), "You'll never know if you don't go");
     //endregion
     //region Fractal Engine
-    new BuildingUpgradeWithAchievement("Metabakeries", new BuildingRequirement(FRACTAL_ENGINE, 1), "Self-contained");
-    new BuildingUpgrade("Mandelbrown sugar", new BuildingRequirement(FRACTAL_ENGINE, 5));
-    new BuildingUpgrade("Fractoids", new BuildingRequirement(FRACTAL_ENGINE, 25));
-    new BuildingUpgradeWithAchievement("Nested universe theory", new BuildingRequirement(FRACTAL_ENGINE, 50), "Threw you for a loop");
-    new BuildingUpgradeWithAchievement("Menger sponge cake", new BuildingRequirement(FRACTAL_ENGINE, 100), "The sum of its parts");
-    new BuildingUpgradeWithAchievement("One particularly good-humored cow", new BuildingRequirement(FRACTAL_ENGINE, 150), "Bears repeating");
-    new BuildingUpgradeWithAchievement("Chocolate ouroboros", new BuildingRequirement(FRACTAL_ENGINE, 200), "More of the same");
-    new BuildingUpgradeWithAchievement("Nested", new BuildingRequirement(FRACTAL_ENGINE, 250), "Last recurse");
-    new BuildingUpgradeWithAchievement("Space-filling fibers", new BuildingRequirement(FRACTAL_ENGINE, 300), "Out of one, many");
-    new BuildingUpgradeWithAchievement("Endless book of prose", new BuildingRequirement(FRACTAL_ENGINE, 350), "An example of recursion");
-    new BuildingUpgradeWithAchievement("The set of all sets", new BuildingRequirement(FRACTAL_ENGINE, 400), "For more information on this achievement, please refer to its title");
-    new BuildingUpgradeWithAchievement("This upgrade", new BuildingRequirement(FRACTAL_ENGINE, 450), "I'm so meta, even this achievement");
-    new BuildingUpgradeWithAchievement("A box", new BuildingRequirement(FRACTAL_ENGINE, 500), "Never get bored");
+    new BuildingUpgradeWithAchievement("Metabakeries", new BuildingRequirement(Game.Objects["Fractal engine"], 1), "Self-contained");
+    new BuildingUpgrade("Mandelbrown sugar", new BuildingRequirement(Game.Objects["Fractal engine"], 5));
+    new BuildingUpgrade("Fractoids", new BuildingRequirement(Game.Objects["Fractal engine"], 25));
+    new BuildingUpgradeWithAchievement("Nested universe theory", new BuildingRequirement(Game.Objects["Fractal engine"], 50), "Threw you for a loop");
+    new BuildingUpgradeWithAchievement("Menger sponge cake", new BuildingRequirement(Game.Objects["Fractal engine"], 100), "The sum of its parts");
+    new BuildingUpgradeWithAchievement("One particularly good-humored cow", new BuildingRequirement(Game.Objects["Fractal engine"], 150), "Bears repeating");
+    new BuildingUpgradeWithAchievement("Chocolate ouroboros", new BuildingRequirement(Game.Objects["Fractal engine"], 200), "More of the same");
+    new BuildingUpgradeWithAchievement("Nested", new BuildingRequirement(Game.Objects["Fractal engine"], 250), "Last recurse");
+    new BuildingUpgradeWithAchievement("Space-filling fibers", new BuildingRequirement(Game.Objects["Fractal engine"], 300), "Out of one, many");
+    new BuildingUpgradeWithAchievement("Endless book of prose", new BuildingRequirement(Game.Objects["Fractal engine"], 350), "An example of recursion");
+    new BuildingUpgradeWithAchievement("The set of all sets", new BuildingRequirement(Game.Objects["Fractal engine"], 400), "For more information on this achievement, please refer to its title");
+    new BuildingUpgradeWithAchievement("This upgrade", new BuildingRequirement(Game.Objects["Fractal engine"], 450), "I'm so meta, even this achievement");
+    new BuildingUpgradeWithAchievement("A box", new BuildingRequirement(Game.Objects["Fractal engine"], 500), "Never get bored");
     //endregion
     //TODO: Heralds Upgrade
     //region Heavenly Chips Power
@@ -2978,7 +2961,7 @@ class AutoCookie {
     new HeavenlyChipUpgradeWithUpgradeRequirement("Heavenly key", 25, "Heavenly confectionery");
     //endregion
     //region Bingo Center
-    new ResearchUpgrade("Bingo center/Research facility", [new BuildingRequirement(GRANDMA, 7)]);
+    new ResearchUpgrade("Bingo center/Research facility", [new BuildingRequirement(Game.Objects.Grandma, 7)]);
     new ResearchCookieUpgrade("Specialized chocolate chips", "Bingo center/Research facility", 1);
     new ResearchCookieUpgrade("Designer cocoa beans","Specialized chocolate chips", 2);
     new ResearchUpgrade("Ritual rolling pins", [], "Designer cocoa beans");
@@ -3230,278 +3213,278 @@ class AutoCookie {
     new CookieUpgrade("Butter biscuit (with butter)", BuildingRequirement.generateRequirementsForAllBuildings(600));
     //endregion
     //region Synergies
-    new BuildingUpgradeWithUpgradeRequirement("Extra physics funding", "Synergies Vol. I", new BuildingRequirement(BANK, 15), new BuildingRequirement(ANTIMATTER_CONDENSER, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Contracts from beyond", "Synergies Vol. I", new BuildingRequirement(BANK, 15), new BuildingRequirement(PRISM, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Quantum electronics", "Synergies Vol. I", new BuildingRequirement(FACTORY, 15), new BuildingRequirement(ANTIMATTER_CONDENSER, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Infernal crops", "Synergies Vol. I", new BuildingRequirement(FARM, 15), new BuildingRequirement(PORTAL, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Future almanacs", "Synergies Vol. I", new BuildingRequirement(FARM, 15), new BuildingRequirement(TIME_MACHINE, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Primordial ores", "Synergies Vol. I", new BuildingRequirement(MINE, 15), new BuildingRequirement(ALCHEMY_LAB, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Gemmed talismans", "Synergies Vol. I", new BuildingRequirement(MINE, 15), new BuildingRequirement(CHANCEMAKER, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Fossil fuels", "Synergies Vol. I", new BuildingRequirement(MINE, 15), new BuildingRequirement(SHIPMENT, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Seismic magic", "Synergies Vol. I", new BuildingRequirement(MINE, 15), new BuildingRequirement(WIZARD_TOWER, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Recursive mirrors", "Synergies Vol. I", new BuildingRequirement(PRISM, 15), new BuildingRequirement(FRACTAL_ENGINE, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Relativistic parsec-skipping", "Synergies Vol. I", new BuildingRequirement(SHIPMENT, 15), new BuildingRequirement(TIME_MACHINE, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Paganism", "Synergies Vol. I", new BuildingRequirement(TEMPLE, 15), new BuildingRequirement(PORTAL, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Arcane knowledge", "Synergies Vol. I", new BuildingRequirement(WIZARD_TOWER, 15), new BuildingRequirement(ALCHEMY_LAB, 15));
-    new BuildingUpgradeWithUpgradeRequirement("Light magic", "Synergies Vol. I", new BuildingRequirement(WIZARD_TOWER, 15), new BuildingRequirement(PRISM, 15));
+    new BuildingUpgradeWithUpgradeRequirement("Extra physics funding", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Bank, 15), new BuildingRequirement(Game.Objects["Antimatter condenser"], 15));
+    new BuildingUpgradeWithUpgradeRequirement("Contracts from beyond", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Bank, 15), new BuildingRequirement(Game.Objects.Prism, 15));
+    new BuildingUpgradeWithUpgradeRequirement("Quantum electronics", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Factory, 15), new BuildingRequirement(Game.Objects["Antimatter condenser"], 15));
+    new BuildingUpgradeWithUpgradeRequirement("Infernal crops", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Farm, 15), new BuildingRequirement(Game.Objects.Portal, 15));
+    new BuildingUpgradeWithUpgradeRequirement("Future almanacs", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Farm, 15), new BuildingRequirement(Game.Objects["Time machine"], 15));
+    new BuildingUpgradeWithUpgradeRequirement("Primordial ores", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects["Alchemy lab"], 15));
+    new BuildingUpgradeWithUpgradeRequirement("Gemmed talismans", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects.Chancemaker, 15));
+    new BuildingUpgradeWithUpgradeRequirement("Fossil fuels", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects.Shipment, 15));
+    new BuildingUpgradeWithUpgradeRequirement("Seismic magic", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects["Wizard tower"], 15));
+    new BuildingUpgradeWithUpgradeRequirement("Recursive mirrors", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Prism, 15), new BuildingRequirement(Game.Objects["Fractal engine"], 15));
+    new BuildingUpgradeWithUpgradeRequirement("Relativistic parsec-skipping", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Shipment, 15), new BuildingRequirement(Game.Objects["Time machine"], 15));
+    new BuildingUpgradeWithUpgradeRequirement("Paganism", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Temple, 15), new BuildingRequirement(Game.Objects.Portal, 15));
+    new BuildingUpgradeWithUpgradeRequirement("Arcane knowledge", "Synergies Vol. I", new BuildingRequirement(Game.Objects["Wizard tower"], 15), new BuildingRequirement(Game.Objects["Alchemy lab"], 15));
+    new BuildingUpgradeWithUpgradeRequirement("Light magic", "Synergies Vol. I", new BuildingRequirement(Game.Objects["Wizard tower"], 15), new BuildingRequirement(Game.Objects.Prism, 15));
 
 
-    new BuildingUpgradeWithUpgradeRequirement("Chemical proficiency", "Synergies Vol. II", new BuildingRequirement(ALCHEMY_LAB, 75), new BuildingRequirement(ANTIMATTER_CONDENSER, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Charm quarks", "Synergies Vol. II", new BuildingRequirement(ANTIMATTER_CONDENSER, 75), new BuildingRequirement(CHANCEMAKER, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Gold fund", "Synergies Vol. II", new BuildingRequirement(BANK, 75), new BuildingRequirement(ALCHEMY_LAB, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Printing presses", "Synergies Vol. II", new BuildingRequirement(BANK, 75), new BuildingRequirement(FACTORY, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Mice clicking mice", "Synergies Vol. II", new BuildingRequirement(CURSOR, 75), new BuildingRequirement(FRACTAL_ENGINE, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Shipyards", "Synergies Vol. II", new BuildingRequirement(FACTORY, 75), new BuildingRequirement(SHIPMENT, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Temporal overclocking", "Synergies Vol. II", new BuildingRequirement(FACTORY, 75), new BuildingRequirement(TIME_MACHINE, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Rain prayer", "Synergies Vol. II", new BuildingRequirement(FARM, 75), new BuildingRequirement(TEMPLE, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Asteroid mining", "Synergies Vol. II", new BuildingRequirement(MINE, 75), new BuildingRequirement(SHIPMENT, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Abysmal glimmer", "Synergies Vol. II", new BuildingRequirement(PRISM, 75), new BuildingRequirement(PORTAL, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Primeval glow", "Synergies Vol. II", new BuildingRequirement(PRISM, 75), new BuildingRequirement(TIME_MACHINE, 75));
-    new BuildingUpgradeWithUpgradeRequirement("God particle", "Synergies Vol. II", new BuildingRequirement(TEMPLE, 75), new BuildingRequirement(ANTIMATTER_CONDENSER, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Mystical energies", "Synergies Vol. II", new BuildingRequirement(TEMPLE, 75), new BuildingRequirement(PRISM, 75));
-    new BuildingUpgradeWithUpgradeRequirement("Magical botany", "Synergies Vol. II", new BuildingRequirement(WIZARD_TOWER, 75), new BuildingRequirement(FARM, 75));
+    new BuildingUpgradeWithUpgradeRequirement("Chemical proficiency", "Synergies Vol. II", new BuildingRequirement(Game.Objects["Alchemy lab"], 75), new BuildingRequirement(Game.Objects["Antimatter condenser"], 75));
+    new BuildingUpgradeWithUpgradeRequirement("Charm quarks", "Synergies Vol. II", new BuildingRequirement(Game.Objects["Antimatter condenser"], 75), new BuildingRequirement(Game.Objects.Chancemaker, 75));
+    new BuildingUpgradeWithUpgradeRequirement("Gold fund", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Bank, 75), new BuildingRequirement(Game.Objects["Alchemy lab"], 75));
+    new BuildingUpgradeWithUpgradeRequirement("Printing presses", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Bank, 75), new BuildingRequirement(Game.Objects.Factory, 75));
+    new BuildingUpgradeWithUpgradeRequirement("Mice clicking mice", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Cursor, 75), new BuildingRequirement(Game.Objects["Fractal engine"], 75));
+    new BuildingUpgradeWithUpgradeRequirement("Shipyards", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Factory, 75), new BuildingRequirement(Game.Objects.Shipment, 75));
+    new BuildingUpgradeWithUpgradeRequirement("Temporal overclocking", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Factory, 75), new BuildingRequirement(Game.Objects["Time machine"], 75));
+    new BuildingUpgradeWithUpgradeRequirement("Rain prayer", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Farm, 75), new BuildingRequirement(Game.Objects.Temple, 75));
+    new BuildingUpgradeWithUpgradeRequirement("Asteroid mining", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Mine, 75), new BuildingRequirement(Game.Objects.Shipment, 75));
+    new BuildingUpgradeWithUpgradeRequirement("Abysmal glimmer", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Prism, 75), new BuildingRequirement(Game.Objects.Portal, 75));
+    new BuildingUpgradeWithUpgradeRequirement("Primeval glow", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Prism, 75), new BuildingRequirement(Game.Objects["Time machine"], 75));
+    new BuildingUpgradeWithUpgradeRequirement("God particle", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Temple, 75), new BuildingRequirement(Game.Objects["Antimatter condenser"], 75));
+    new BuildingUpgradeWithUpgradeRequirement("Mystical energies", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Temple, 75), new BuildingRequirement(Game.Objects.Prism, 75));
+    new BuildingUpgradeWithUpgradeRequirement("Magical botany", "Synergies Vol. II", new BuildingRequirement(Game.Objects["Wizard tower"], 75), new BuildingRequirement(Game.Objects.Farm, 75));
     //endregion
   }
 
   addAchievements() {
     //region Cursor
-    new Achievement("Click", new BuildingRequirement(CURSOR, 1));
-    new Achievement("Double-click", new BuildingRequirement(CURSOR, 2));
-    new Achievement("Mouse wheel", new BuildingRequirement(CURSOR, 50));
-    new Achievement("Of Mice and Men", new BuildingRequirement(CURSOR, 100));
-    new Achievement("The Digital", new BuildingRequirement(CURSOR, 200));
-    new Achievement("Extreme polydactyly", new BuildingRequirement(CURSOR, 300));
-    new Achievement("Dr. T", new BuildingRequirement(CURSOR, 400));
-    new Achievement("Thumbs, phalanges, metacarpals", new BuildingRequirement(CURSOR, 500));
-    new Achievement("With her finger and her thumb", new BuildingRequirement(CURSOR, 600));
-    new Achievement("Gotta hand it to you", new BuildingRequirement(CURSOR, 700));
-    new Achievement("The devil's workshop", new BuildingRequirement(CURSOR, 800));
+    new Achievement("Click", new BuildingRequirement(Game.Objects.Cursor, 1));
+    new Achievement("Double-click", new BuildingRequirement(Game.Objects.Cursor, 2));
+    new Achievement("Mouse wheel", new BuildingRequirement(Game.Objects.Cursor, 50));
+    new Achievement("Of Mice and Men", new BuildingRequirement(Game.Objects.Cursor, 100));
+    new Achievement("The Digital", new BuildingRequirement(Game.Objects.Cursor, 200));
+    new Achievement("Extreme polydactyly", new BuildingRequirement(Game.Objects.Cursor, 300));
+    new Achievement("Dr. T", new BuildingRequirement(Game.Objects.Cursor, 400));
+    new Achievement("Thumbs, phalanges, metacarpals", new BuildingRequirement(Game.Objects.Cursor, 500));
+    new Achievement("With her finger and her thumb", new BuildingRequirement(Game.Objects.Cursor, 600));
+    new Achievement("Gotta hand it to you", new BuildingRequirement(Game.Objects.Cursor, 700));
+    new Achievement("The devil's workshop", new BuildingRequirement(Game.Objects.Cursor, 800));
     //endregion
     //region Grandma
-    new Achievement("Grandma\'s cookies", new BuildingRequirement(GRANDMA, 1));
-    new Achievement("Sloppy kisses", new BuildingRequirement(GRANDMA, 50));
-    new Achievement("Retirement home", new BuildingRequirement(GRANDMA, 100));
-    new Achievement("Friend of the ancients", new BuildingRequirement(GRANDMA, 150));
-    new Achievement("Ruler of the ancients", new BuildingRequirement(GRANDMA, 200));
-    new Achievement("The old never bothered me anyway", new BuildingRequirement(GRANDMA, 250));
-    new Achievement("The agemaster", new BuildingRequirement(GRANDMA, 300));
-    new Achievement("To oldly go", new BuildingRequirement(GRANDMA, 350));
-    new Achievement("Aged well", new BuildingRequirement(GRANDMA, 400));
-    new Achievement("101st birthday", new BuildingRequirement(GRANDMA, 450));
-    new Achievement("Defense of the ancients", new BuildingRequirement(GRANDMA, 500));
-    new Achievement("But wait 'til you get older", new BuildingRequirement(GRANDMA, 550));
-    new Achievement("Okay boomer", new BuildingRequirement(GRANDMA, 600));
+    new Achievement("Grandma\'s cookies", new BuildingRequirement(Game.Objects.Grandma, 1));
+    new Achievement("Sloppy kisses", new BuildingRequirement(Game.Objects.Grandma, 50));
+    new Achievement("Retirement home", new BuildingRequirement(Game.Objects.Grandma, 100));
+    new Achievement("Friend of the ancients", new BuildingRequirement(Game.Objects.Grandma, 150));
+    new Achievement("Ruler of the ancients", new BuildingRequirement(Game.Objects.Grandma, 200));
+    new Achievement("The old never bothered me anyway", new BuildingRequirement(Game.Objects.Grandma, 250));
+    new Achievement("The agemaster", new BuildingRequirement(Game.Objects.Grandma, 300));
+    new Achievement("To oldly go", new BuildingRequirement(Game.Objects.Grandma, 350));
+    new Achievement("Aged well", new BuildingRequirement(Game.Objects.Grandma, 400));
+    new Achievement("101st birthday", new BuildingRequirement(Game.Objects.Grandma, 450));
+    new Achievement("Defense of the ancients", new BuildingRequirement(Game.Objects.Grandma, 500));
+    new Achievement("But wait 'til you get older", new BuildingRequirement(Game.Objects.Grandma, 550));
+    new Achievement("Okay boomer", new BuildingRequirement(Game.Objects.Grandma, 600));
     new Achievement("Elder");
     //endregion
     //region Farm
-    new Achievement("Bought the farm", new BuildingRequirement(FARM, 1));
-    new Achievement("Reap what you sow", new BuildingRequirement(FARM, 50));
-    new Achievement("Farm ill", new BuildingRequirement(FARM, 100));
-    new Achievement("Perfected agriculture", new BuildingRequirement(FARM, 150));
-    new Achievement("Homegrown", new BuildingRequirement(FARM, 200));
-    new Achievement("Gardener extraordinaire", new BuildingRequirement(FARM, 250));
-    new Achievement("Seedy business", new BuildingRequirement(FARM, 300));
-    new Achievement("You and the beanstalk", new BuildingRequirement(FARM, 350));
-    new Achievement("Harvest moon", new BuildingRequirement(FARM, 400));
-    new Achievement("Make like a tree", new BuildingRequirement(FARM, 450));
-    new Achievement("Sharpest tool in the shed", new BuildingRequirement(FARM, 500));
-    new Achievement("Overripe", new BuildingRequirement(FARM, 550));
-    new Achievement("In the green", new BuildingRequirement(FARM, 600));
+    new Achievement("Bought the farm", new BuildingRequirement(Game.Objects.Farm, 1));
+    new Achievement("Reap what you sow", new BuildingRequirement(Game.Objects.Farm, 50));
+    new Achievement("Farm ill", new BuildingRequirement(Game.Objects.Farm, 100));
+    new Achievement("Perfected agriculture", new BuildingRequirement(Game.Objects.Farm, 150));
+    new Achievement("Homegrown", new BuildingRequirement(Game.Objects.Farm, 200));
+    new Achievement("Gardener extraordinaire", new BuildingRequirement(Game.Objects.Farm, 250));
+    new Achievement("Seedy business", new BuildingRequirement(Game.Objects.Farm, 300));
+    new Achievement("You and the beanstalk", new BuildingRequirement(Game.Objects.Farm, 350));
+    new Achievement("Harvest moon", new BuildingRequirement(Game.Objects.Farm, 400));
+    new Achievement("Make like a tree", new BuildingRequirement(Game.Objects.Farm, 450));
+    new Achievement("Sharpest tool in the shed", new BuildingRequirement(Game.Objects.Farm, 500));
+    new Achievement("Overripe", new BuildingRequirement(Game.Objects.Farm, 550));
+    new Achievement("In the green", new BuildingRequirement(Game.Objects.Farm, 600));
     //endregion
     //region Mine
-    new Achievement("You know the drill", new BuildingRequirement(MINE, 1));
-    new Achievement("Excavation site", new BuildingRequirement(MINE, 50));
-    new Achievement("Hollow the planet", new BuildingRequirement(MINE, 100));
-    new Achievement("Can you dig it", new BuildingRequirement(MINE, 150));
-    new Achievement("The center of the Earth", new BuildingRequirement(MINE, 200));
-    new Achievement("Tectonic ambassador", new BuildingRequirement(MINE, 250));
-    new Achievement("Freak fracking", new BuildingRequirement(MINE, 300));
-    new Achievement("Romancing the stone", new BuildingRequirement(MINE, 350));
-    new Achievement("Mine?", new BuildingRequirement(MINE, 400));
-    new Achievement("Cave story", new BuildingRequirement(MINE, 450));
-    new Achievement("Hey now, you're a rock", new BuildingRequirement(MINE, 500));
-    new Achievement("Rock on", new BuildingRequirement(MINE, 550));
-    new Achievement("Mountain out of a molehill, but like in a good way", new BuildingRequirement(MINE, 600));
+    new Achievement("You know the drill", new BuildingRequirement(Game.Objects.Mine, 1));
+    new Achievement("Excavation site", new BuildingRequirement(Game.Objects.Mine, 50));
+    new Achievement("Hollow the planet", new BuildingRequirement(Game.Objects.Mine, 100));
+    new Achievement("Can you dig it", new BuildingRequirement(Game.Objects.Mine, 150));
+    new Achievement("The center of the Earth", new BuildingRequirement(Game.Objects.Mine, 200));
+    new Achievement("Tectonic ambassador", new BuildingRequirement(Game.Objects.Mine, 250));
+    new Achievement("Freak fracking", new BuildingRequirement(Game.Objects.Mine, 300));
+    new Achievement("Romancing the stone", new BuildingRequirement(Game.Objects.Mine, 350));
+    new Achievement("Mine?", new BuildingRequirement(Game.Objects.Mine, 400));
+    new Achievement("Cave story", new BuildingRequirement(Game.Objects.Mine, 450));
+    new Achievement("Hey now, you're a rock", new BuildingRequirement(Game.Objects.Mine, 500));
+    new Achievement("Rock on", new BuildingRequirement(Game.Objects.Mine, 550));
+    new Achievement("Mountain out of a molehill, but like in a good way", new BuildingRequirement(Game.Objects.Mine, 600));
     //endregion
     //region Factory
-    new Achievement("Production chain", new BuildingRequirement(FACTORY, 1));
-    new Achievement("Industrial revolution", new BuildingRequirement(FACTORY, 50));
-    new Achievement("Global warming", new BuildingRequirement(FACTORY, 100));
-    new Achievement("Ultimate automation", new BuildingRequirement(FACTORY, 150));
-    new Achievement("Technocracy", new BuildingRequirement(FACTORY, 200));
-    new Achievement("Rise of the machines", new BuildingRequirement(FACTORY, 250));
-    new Achievement("Modern times", new BuildingRequirement(FACTORY, 300));
-    new Achievement("Ex machina", new BuildingRequirement(FACTORY, 350));
-    new Achievement("In full gear", new BuildingRequirement(FACTORY, 400));
-    new Achievement("In-cog-neato", new BuildingRequirement(FACTORY, 450));
-    new Achievement("Break the mold", new BuildingRequirement(FACTORY, 500));
-    new Achievement("Self-manmade man", new BuildingRequirement(FACTORY, 550));
-    new Achievement("The wheels of progress", new BuildingRequirement(FACTORY, 600));
+    new Achievement("Production chain", new BuildingRequirement(Game.Objects.Factory, 1));
+    new Achievement("Industrial revolution", new BuildingRequirement(Game.Objects.Factory, 50));
+    new Achievement("Global warming", new BuildingRequirement(Game.Objects.Factory, 100));
+    new Achievement("Ultimate automation", new BuildingRequirement(Game.Objects.Factory, 150));
+    new Achievement("Technocracy", new BuildingRequirement(Game.Objects.Factory, 200));
+    new Achievement("Rise of the machines", new BuildingRequirement(Game.Objects.Factory, 250));
+    new Achievement("Modern times", new BuildingRequirement(Game.Objects.Factory, 300));
+    new Achievement("Ex machina", new BuildingRequirement(Game.Objects.Factory, 350));
+    new Achievement("In full gear", new BuildingRequirement(Game.Objects.Factory, 400));
+    new Achievement("In-cog-neato", new BuildingRequirement(Game.Objects.Factory, 450));
+    new Achievement("Break the mold", new BuildingRequirement(Game.Objects.Factory, 500));
+    new Achievement("Self-manmade man", new BuildingRequirement(Game.Objects.Factory, 550));
+    new Achievement("The wheels of progress", new BuildingRequirement(Game.Objects.Factory, 600));
     //endregion
     //region Bank
-    new Achievement("Pretty penny", new BuildingRequirement(BANK, 1));
-    new Achievement("Fit the bill", new BuildingRequirement(BANK, 50));
-    new Achievement("A loan in the dark", new BuildingRequirement(BANK, 100));
-    new Achievement("Need for greed", new BuildingRequirement(BANK, 150));
-    new Achievement("It's the economy, stupid", new BuildingRequirement(BANK, 200));
-    new Achievement("Acquire currency", new BuildingRequirement(BANK, 250));
-    new Achievement("The nerve of war", new BuildingRequirement(BANK, 300));
-    new Achievement("And I need it now", new BuildingRequirement(BANK, 350));
-    new Achievement("Treacle tart economics", new BuildingRequirement(BANK, 400));
-    new Achievement("Save your breath because that's all you've got left", new BuildingRequirement(BANK, 450));
-    new Achievement("Get the show on, get paid", new BuildingRequirement(BANK, 500));
-    new Achievement("Checks out", new BuildingRequirement(BANK, 550));
-    new Achievement("That's rich", new BuildingRequirement(BANK, 600));
+    new Achievement("Pretty penny", new BuildingRequirement(Game.Objects.Bank, 1));
+    new Achievement("Fit the bill", new BuildingRequirement(Game.Objects.Bank, 50));
+    new Achievement("A loan in the dark", new BuildingRequirement(Game.Objects.Bank, 100));
+    new Achievement("Need for greed", new BuildingRequirement(Game.Objects.Bank, 150));
+    new Achievement("It's the economy, stupid", new BuildingRequirement(Game.Objects.Bank, 200));
+    new Achievement("Acquire currency", new BuildingRequirement(Game.Objects.Bank, 250));
+    new Achievement("The nerve of war", new BuildingRequirement(Game.Objects.Bank, 300));
+    new Achievement("And I need it now", new BuildingRequirement(Game.Objects.Bank, 350));
+    new Achievement("Treacle tart economics", new BuildingRequirement(Game.Objects.Bank, 400));
+    new Achievement("Save your breath because that's all you've got left", new BuildingRequirement(Game.Objects.Bank, 450));
+    new Achievement("Get the show on, get paid", new BuildingRequirement(Game.Objects.Bank, 500));
+    new Achievement("Checks out", new BuildingRequirement(Game.Objects.Bank, 550));
+    new Achievement("That's rich", new BuildingRequirement(Game.Objects.Bank, 600));
     //endregion
     //region Temple
-    new Achievement("Your time to shrine", new BuildingRequirement(TEMPLE, 1));
-    new Achievement("Shady sect", new BuildingRequirement(TEMPLE, 50));
-    new Achievement("New-age cult", new BuildingRequirement(TEMPLE, 100));
-    new Achievement("Organized religion", new BuildingRequirement(TEMPLE, 150));
-    new Achievement("Fanaticism", new BuildingRequirement(TEMPLE, 200));
-    new Achievement("Zealotry", new BuildingRequirement(TEMPLE, 250));
-    new Achievement("Wololo", new BuildingRequirement(TEMPLE, 300));
-    new Achievement("Pray on the weak", new BuildingRequirement(TEMPLE, 350));
-    new Achievement("Holy cookies, grandma!", new BuildingRequirement(TEMPLE, 400));
-    new Achievement("Vengeful and almighty", new BuildingRequirement(TEMPLE, 450));
-    new Achievement("My world's on fire, how about yours", new BuildingRequirement(TEMPLE, 500));
-    new Achievement("Living on a prayer", new BuildingRequirement(TEMPLE, 550));
-    new Achievement("Preaches and cream", new BuildingRequirement(TEMPLE, 600));
+    new Achievement("Your time to shrine", new BuildingRequirement(Game.Objects.Temple, 1));
+    new Achievement("Shady sect", new BuildingRequirement(Game.Objects.Temple, 50));
+    new Achievement("New-age cult", new BuildingRequirement(Game.Objects.Temple, 100));
+    new Achievement("Organized religion", new BuildingRequirement(Game.Objects.Temple, 150));
+    new Achievement("Fanaticism", new BuildingRequirement(Game.Objects.Temple, 200));
+    new Achievement("Zealotry", new BuildingRequirement(Game.Objects.Temple, 250));
+    new Achievement("Wololo", new BuildingRequirement(Game.Objects.Temple, 300));
+    new Achievement("Pray on the weak", new BuildingRequirement(Game.Objects.Temple, 350));
+    new Achievement("Holy cookies, grandma!", new BuildingRequirement(Game.Objects.Temple, 400));
+    new Achievement("Vengeful and almighty", new BuildingRequirement(Game.Objects.Temple, 450));
+    new Achievement("My world's on fire, how about yours", new BuildingRequirement(Game.Objects.Temple, 500));
+    new Achievement("Living on a prayer", new BuildingRequirement(Game.Objects.Temple, 550));
+    new Achievement("Preaches and cream", new BuildingRequirement(Game.Objects.Temple, 600));
     //endregion
     //region Wizard Tower
-    new Achievement("Bewitched", new BuildingRequirement(WIZARD_TOWER, 1));
-    new Achievement("The sorcerer's apprentice", new BuildingRequirement(WIZARD_TOWER, 50));
-    new Achievement("Charms and enchantments", new BuildingRequirement(WIZARD_TOWER, 100));
-    new Achievement("Curses and maledictions", new BuildingRequirement(WIZARD_TOWER, 150));
-    new Achievement("Magic kingdom", new BuildingRequirement(WIZARD_TOWER, 200));
-    new Achievement("The wizarding world", new BuildingRequirement(WIZARD_TOWER, 250));
-    new Achievement("And now for my next trick, I'll need a volunteer from the audience", new BuildingRequirement(WIZARD_TOWER, 300));
-    new Achievement("It's a kind of magic", new BuildingRequirement(WIZARD_TOWER, 350));
-    new Achievement("The Prestige", new BuildingRequirement(WIZARD_TOWER, 400));
-    new Achievement("Spell it out for you", new BuildingRequirement(WIZARD_TOWER, 450));
-    new Achievement("The meteor men beg to differ", new BuildingRequirement(WIZARD_TOWER, 500));
-    new Achievement("Higitus figitus migitus mum", new BuildingRequirement(WIZARD_TOWER, 550));
-    new Achievement("Magic thinking", new BuildingRequirement(WIZARD_TOWER, 600));
+    new Achievement("Bewitched", new BuildingRequirement(Game.Objects["Wizard tower"], 1));
+    new Achievement("The sorcerer's apprentice", new BuildingRequirement(Game.Objects["Wizard tower"], 50));
+    new Achievement("Charms and enchantments", new BuildingRequirement(Game.Objects["Wizard tower"], 100));
+    new Achievement("Curses and maledictions", new BuildingRequirement(Game.Objects["Wizard tower"], 150));
+    new Achievement("Magic kingdom", new BuildingRequirement(Game.Objects["Wizard tower"], 200));
+    new Achievement("The wizarding world", new BuildingRequirement(Game.Objects["Wizard tower"], 250));
+    new Achievement("And now for my next trick, I'll need a volunteer from the audience", new BuildingRequirement(Game.Objects["Wizard tower"], 300));
+    new Achievement("It's a kind of magic", new BuildingRequirement(Game.Objects["Wizard tower"], 350));
+    new Achievement("The Prestige", new BuildingRequirement(Game.Objects["Wizard tower"], 400));
+    new Achievement("Spell it out for you", new BuildingRequirement(Game.Objects["Wizard tower"], 450));
+    new Achievement("The meteor men beg to differ", new BuildingRequirement(Game.Objects["Wizard tower"], 500));
+    new Achievement("Higitus figitus migitus mum", new BuildingRequirement(Game.Objects["Wizard tower"], 550));
+    new Achievement("Magic thinking", new BuildingRequirement(Game.Objects["Wizard tower"], 600));
     //endregion
     //region Shipment
-    new Achievement("Expedition", new BuildingRequirement(SHIPMENT, 1));
-    new Achievement("Galactic highway", new BuildingRequirement(SHIPMENT, 50));
-    new Achievement("Far far away", new BuildingRequirement(SHIPMENT, 100));
-    new Achievement("Type II civilization", new BuildingRequirement(SHIPMENT, 150));
-    new Achievement("We come in peace", new BuildingRequirement(SHIPMENT, 200));
-    new Achievement("Parsec-masher", new BuildingRequirement(SHIPMENT, 250));
-    new Achievement("It's not delivery", new BuildingRequirement(SHIPMENT, 300));
-    new Achievement("Make it so", new BuildingRequirement(SHIPMENT, 350));
-    new Achievement("That's just peanuts to space", new BuildingRequirement(SHIPMENT, 400));
-    new Achievement("Space space space space space", new BuildingRequirement(SHIPMENT, 450));
-    new Achievement("Only shooting stars", new BuildingRequirement(SHIPMENT, 500));
-    new Achievement("The incredible journey", new BuildingRequirement(SHIPMENT, 550));
-    new Achievement("Is there life on Mars?", new BuildingRequirement(SHIPMENT, 600));
+    new Achievement("Expedition", new BuildingRequirement(Game.Objects.Shipment, 1));
+    new Achievement("Galactic highway", new BuildingRequirement(Game.Objects.Shipment, 50));
+    new Achievement("Far far away", new BuildingRequirement(Game.Objects.Shipment, 100));
+    new Achievement("Type II civilization", new BuildingRequirement(Game.Objects.Shipment, 150));
+    new Achievement("We come in peace", new BuildingRequirement(Game.Objects.Shipment, 200));
+    new Achievement("Parsec-masher", new BuildingRequirement(Game.Objects.Shipment, 250));
+    new Achievement("It's not delivery", new BuildingRequirement(Game.Objects.Shipment, 300));
+    new Achievement("Make it so", new BuildingRequirement(Game.Objects.Shipment, 350));
+    new Achievement("That's just peanuts to space", new BuildingRequirement(Game.Objects.Shipment, 400));
+    new Achievement("Space space space space space", new BuildingRequirement(Game.Objects.Shipment, 450));
+    new Achievement("Only shooting stars", new BuildingRequirement(Game.Objects.Shipment, 500));
+    new Achievement("The incredible journey", new BuildingRequirement(Game.Objects.Shipment, 550));
+    new Achievement("Is there life on Mars?", new BuildingRequirement(Game.Objects.Shipment, 600));
     //endregion
     //region Alchemy
-    new Achievement("Transmutation", new BuildingRequirement(ALCHEMY_LAB, 1));
-    new Achievement("Transmogrification", new BuildingRequirement(ALCHEMY_LAB, 50));
-    new Achievement("Gold member", new BuildingRequirement(ALCHEMY_LAB, 100));
-    new Achievement("Gild wars", new BuildingRequirement(ALCHEMY_LAB, 150));
-    new Achievement("The secrets of the universe", new BuildingRequirement(ALCHEMY_LAB, 200));
-    new Achievement("The work of a lifetime", new BuildingRequirement(ALCHEMY_LAB, 250));
-    new Achievement("Gold, Jerry! Gold!", new BuildingRequirement(ALCHEMY_LAB, 300));
-    new Achievement("All that glitters is gold", new BuildingRequirement(ALCHEMY_LAB, 350));
-    new Achievement("Worth its weight in lead", new BuildingRequirement(ALCHEMY_LAB, 400));
-    new Achievement("Don't get used to yourself, you're gonna have to change", new BuildingRequirement(ALCHEMY_LAB, 450));
-    new Achievement("We could all use a little change", new BuildingRequirement(ALCHEMY_LAB, 500));
-    new Achievement("Just a phase", new BuildingRequirement(ALCHEMY_LAB, 550));
-    new Achievement("Bad chemistry", new BuildingRequirement(ALCHEMY_LAB, 600));
+    new Achievement("Transmutation", new BuildingRequirement(Game.Objects["Alchemy lab"], 1));
+    new Achievement("Transmogrification", new BuildingRequirement(Game.Objects["Alchemy lab"], 50));
+    new Achievement("Gold member", new BuildingRequirement(Game.Objects["Alchemy lab"], 100));
+    new Achievement("Gild wars", new BuildingRequirement(Game.Objects["Alchemy lab"], 150));
+    new Achievement("The secrets of the universe", new BuildingRequirement(Game.Objects["Alchemy lab"], 200));
+    new Achievement("The work of a lifetime", new BuildingRequirement(Game.Objects["Alchemy lab"], 250));
+    new Achievement("Gold, Jerry! Gold!", new BuildingRequirement(Game.Objects["Alchemy lab"], 300));
+    new Achievement("All that glitters is gold", new BuildingRequirement(Game.Objects["Alchemy lab"], 350));
+    new Achievement("Worth its weight in lead", new BuildingRequirement(Game.Objects["Alchemy lab"], 400));
+    new Achievement("Don't get used to yourself, you're gonna have to change", new BuildingRequirement(Game.Objects["Alchemy lab"], 450));
+    new Achievement("We could all use a little change", new BuildingRequirement(Game.Objects["Alchemy lab"], 500));
+    new Achievement("Just a phase", new BuildingRequirement(Game.Objects["Alchemy lab"], 550));
+    new Achievement("Bad chemistry", new BuildingRequirement(Game.Objects["Alchemy lab"], 600));
     //endregion
     //region Portals
-    new Achievement("A whole new world", new BuildingRequirement(PORTAL, 1));
-    new Achievement("Now you\'re thinking", new BuildingRequirement(PORTAL, 50));
-    new Achievement("Dimensional shift", new BuildingRequirement(PORTAL, 100));
-    new Achievement("Brain-split", new BuildingRequirement(PORTAL, 150));
-    new Achievement("Realm of the Mad God", new BuildingRequirement(PORTAL, 200));
-    new Achievement("A place lost in time", new BuildingRequirement(PORTAL, 250));
-    new Achievement("Forbidden zone", new BuildingRequirement(PORTAL, 300));
-    new Achievement("H̸̷͓̳̳̯̟͕̟͍͍̣͡ḛ̢̦̰̺̮̝͖͖̘̪͉͘͡ ̠̦͕̤̪̝̥̰̠̫̖̣͙̬͘ͅC̨̦̺̩̲̥͉̭͚̜̻̝̣̼͙̮̯̪o̴̡͇̘͎̞̲͇̦̲͞͡m̸̩̺̝̣̹̱͚̬̥̫̳̼̞̘̯͘ͅẹ͇̺̜́̕͢s̶̙̟̱̥̮̯̰̦͓͇͖͖̝͘͘͞", new BuildingRequirement(PORTAL, 350));
-    new Achievement("What happens in the vortex stays in the vortex", new BuildingRequirement(PORTAL, 400));
-    new Achievement("Objects in the mirror dimension are closer than they appear", new BuildingRequirement(PORTAL, 450));
-    new Achievement("Your brain gets smart but your head gets dumb", new BuildingRequirement(PORTAL, 500));
-    new Achievement("Don't let me leave, Murph", new BuildingRequirement(PORTAL, 550));
-    new Achievement("Reduced to gibbering heaps", new BuildingRequirement(PORTAL, 600));
+    new Achievement("A whole new world", new BuildingRequirement(Game.Objects.Portal, 1));
+    new Achievement("Now you\'re thinking", new BuildingRequirement(Game.Objects.Portal, 50));
+    new Achievement("Dimensional shift", new BuildingRequirement(Game.Objects.Portal, 100));
+    new Achievement("Brain-split", new BuildingRequirement(Game.Objects.Portal, 150));
+    new Achievement("Realm of the Mad God", new BuildingRequirement(Game.Objects.Portal, 200));
+    new Achievement("A place lost in time", new BuildingRequirement(Game.Objects.Portal, 250));
+    new Achievement("Forbidden zone", new BuildingRequirement(Game.Objects.Portal, 300));
+    new Achievement("H̸̷͓̳̳̯̟͕̟͍͍̣͡ḛ̢̦̰̺̮̝͖͖̘̪͉͘͡ ̠̦͕̤̪̝̥̰̠̫̖̣͙̬͘ͅC̨̦̺̩̲̥͉̭͚̜̻̝̣̼͙̮̯̪o̴̡͇̘͎̞̲͇̦̲͞͡m̸̩̺̝̣̹̱͚̬̥̫̳̼̞̘̯͘ͅẹ͇̺̜́̕͢s̶̙̟̱̥̮̯̰̦͓͇͖͖̝͘͘͞", new BuildingRequirement(Game.Objects.Portal, 350));
+    new Achievement("What happens in the vortex stays in the vortex", new BuildingRequirement(Game.Objects.Portal, 400));
+    new Achievement("Objects in the mirror dimension are closer than they appear", new BuildingRequirement(Game.Objects.Portal, 450));
+    new Achievement("Your brain gets smart but your head gets dumb", new BuildingRequirement(Game.Objects.Portal, 500));
+    new Achievement("Don't let me leave, Murph", new BuildingRequirement(Game.Objects.Portal, 550));
+    new Achievement("Reduced to gibbering heaps", new BuildingRequirement(Game.Objects.Portal, 600));
     //endregion
     //region Time Machines
-    new Achievement("Time warp", new BuildingRequirement(TIME_MACHINE, 1));
-    new Achievement("Alternate timeline", new BuildingRequirement(TIME_MACHINE, 50));
-    new Achievement("Rewriting history", new BuildingRequirement(TIME_MACHINE, 100));
-    new Achievement("Time duke", new BuildingRequirement(TIME_MACHINE, 150));
-    new Achievement("Forever and ever", new BuildingRequirement(TIME_MACHINE, 200));
-    new Achievement("Heat death", new BuildingRequirement(TIME_MACHINE, 250));
-    new Achievement("cookie clicker forever and forever a hundred years cookie clicker, all day long forever, forever a hundred times, over and over cookie clicker adventures dot com", new BuildingRequirement(TIME_MACHINE, 300));//Y u do dis? No capital letter at start and huge ass achiev name!
-    new Achievement("Way back then", new BuildingRequirement(TIME_MACHINE, 350));
-    new Achievement("Invited to yesterday's party", new BuildingRequirement(TIME_MACHINE, 400));
-    new Achievement("Groundhog day", new BuildingRequirement(TIME_MACHINE, 450));
-    new Achievement("The years start coming", new BuildingRequirement(TIME_MACHINE, 500));
-    new Achievement("Caveman to cosmos", new BuildingRequirement(TIME_MACHINE, 550));
-    new Achievement("Back already?", new BuildingRequirement(TIME_MACHINE, 600));
+    new Achievement("Time warp", new BuildingRequirement(Game.Objects["Time machine"], 1));
+    new Achievement("Alternate timeline", new BuildingRequirement(Game.Objects["Time machine"], 50));
+    new Achievement("Rewriting history", new BuildingRequirement(Game.Objects["Time machine"], 100));
+    new Achievement("Time duke", new BuildingRequirement(Game.Objects["Time machine"], 150));
+    new Achievement("Forever and ever", new BuildingRequirement(Game.Objects["Time machine"], 200));
+    new Achievement("Heat death", new BuildingRequirement(Game.Objects["Time machine"], 250));
+    new Achievement("cookie clicker forever and forever a hundred years cookie clicker, all day long forever, forever a hundred times, over and over cookie clicker adventures dot com", new BuildingRequirement(Game.Objects["Time machine"], 300));//Y u do dis? No capital letter at start and huge ass achiev name!
+    new Achievement("Way back then", new BuildingRequirement(Game.Objects["Time machine"], 350));
+    new Achievement("Invited to yesterday's party", new BuildingRequirement(Game.Objects["Time machine"], 400));
+    new Achievement("Groundhog day", new BuildingRequirement(Game.Objects["Time machine"], 450));
+    new Achievement("The years start coming", new BuildingRequirement(Game.Objects["Time machine"], 500));
+    new Achievement("Caveman to cosmos", new BuildingRequirement(Game.Objects["Time machine"], 550));
+    new Achievement("Back already?", new BuildingRequirement(Game.Objects["Time machine"], 600));
     //endregion
     //region Antimatter Condensers
-    new Achievement("Antibatter", new BuildingRequirement(ANTIMATTER_CONDENSER, 1));
-    new Achievement("Quirky quarks", new BuildingRequirement(ANTIMATTER_CONDENSER, 50));
-    new Achievement("It does matter!", new BuildingRequirement(ANTIMATTER_CONDENSER, 100));
-    new Achievement("Molecular maestro", new BuildingRequirement(ANTIMATTER_CONDENSER, 150));
-    new Achievement("Walk the planck", new BuildingRequirement(ANTIMATTER_CONDENSER, 200));
-    new Achievement("Microcosm", new BuildingRequirement(ANTIMATTER_CONDENSER, 250));
-    new Achievement("Scientists baffled everywhere", new BuildingRequirement(ANTIMATTER_CONDENSER, 300));
-    new Achievement("Exotic matter", new BuildingRequirement(ANTIMATTER_CONDENSER, 350));
-    new Achievement("Downsizing", new BuildingRequirement(ANTIMATTER_CONDENSER, 400));
-    new Achievement("A matter of perspective", new BuildingRequirement(ANTIMATTER_CONDENSER, 450));
-    new Achievement("What a concept", new BuildingRequirement(ANTIMATTER_CONDENSER, 500));
-    new Achievement("Particular tastes", new BuildingRequirement(ANTIMATTER_CONDENSER, 550));
-    new Achievement("Nuclear throne", new BuildingRequirement(ANTIMATTER_CONDENSER, 600));
+    new Achievement("Antibatter", new BuildingRequirement(Game.Objects["Antimatter condenser"], 1));
+    new Achievement("Quirky quarks", new BuildingRequirement(Game.Objects["Antimatter condenser"], 50));
+    new Achievement("It does matter!", new BuildingRequirement(Game.Objects["Antimatter condenser"], 100));
+    new Achievement("Molecular maestro", new BuildingRequirement(Game.Objects["Antimatter condenser"], 150));
+    new Achievement("Walk the planck", new BuildingRequirement(Game.Objects["Antimatter condenser"], 200));
+    new Achievement("Microcosm", new BuildingRequirement(Game.Objects["Antimatter condenser"], 250));
+    new Achievement("Scientists baffled everywhere", new BuildingRequirement(Game.Objects["Antimatter condenser"], 300));
+    new Achievement("Exotic matter", new BuildingRequirement(Game.Objects["Antimatter condenser"], 350));
+    new Achievement("Downsizing", new BuildingRequirement(Game.Objects["Antimatter condenser"], 400));
+    new Achievement("A matter of perspective", new BuildingRequirement(Game.Objects["Antimatter condenser"], 450));
+    new Achievement("What a concept", new BuildingRequirement(Game.Objects["Antimatter condenser"], 500));
+    new Achievement("Particular tastes", new BuildingRequirement(Game.Objects["Antimatter condenser"], 550));
+    new Achievement("Nuclear throne", new BuildingRequirement(Game.Objects["Antimatter condenser"], 600));
     //endregion
     //region Prims
-    new Achievement("Lone photon", new BuildingRequirement(PRISM, 1));
-    new Achievement("Dazzling glimmer", new BuildingRequirement(PRISM, 50));
-    new Achievement("Blinding flash", new BuildingRequirement(PRISM, 100));
-    new Achievement("Unending glow", new BuildingRequirement(PRISM, 150));
-    new Achievement("Rise and shine", new BuildingRequirement(PRISM, 200));
-    new Achievement("Bright future", new BuildingRequirement(PRISM, 250));
-    new Achievement("Harmony of the spheres", new BuildingRequirement(PRISM, 300));
-    new Achievement("At the end of the tunnel", new BuildingRequirement(PRISM, 350));
-    new Achievement("My eyes", new BuildingRequirement(PRISM, 400));
-    new Achievement("Optical illusion", new BuildingRequirement(PRISM, 450));
-    new Achievement("You'll never shine if you don't glow", new BuildingRequirement(PRISM, 500));
-    new Achievement("A light snack", new BuildingRequirement(PRISM, 550));
-    new Achievement("Making light of the situation", new BuildingRequirement(PRISM, 600));
+    new Achievement("Lone photon", new BuildingRequirement(Game.Objects.Prism, 1));
+    new Achievement("Dazzling glimmer", new BuildingRequirement(Game.Objects.Prism, 50));
+    new Achievement("Blinding flash", new BuildingRequirement(Game.Objects.Prism, 100));
+    new Achievement("Unending glow", new BuildingRequirement(Game.Objects.Prism, 150));
+    new Achievement("Rise and shine", new BuildingRequirement(Game.Objects.Prism, 200));
+    new Achievement("Bright future", new BuildingRequirement(Game.Objects.Prism, 250));
+    new Achievement("Harmony of the spheres", new BuildingRequirement(Game.Objects.Prism, 300));
+    new Achievement("At the end of the tunnel", new BuildingRequirement(Game.Objects.Prism, 350));
+    new Achievement("My eyes", new BuildingRequirement(Game.Objects.Prism, 400));
+    new Achievement("Optical illusion", new BuildingRequirement(Game.Objects.Prism, 450));
+    new Achievement("You'll never shine if you don't glow", new BuildingRequirement(Game.Objects.Prism, 500));
+    new Achievement("A light snack", new BuildingRequirement(Game.Objects.Prism, 550));
+    new Achievement("Making light of the situation", new BuildingRequirement(Game.Objects.Prism, 600));
     //endregion
     //region Chancemakers
-    new Achievement("Lucked out", new BuildingRequirement(CHANCEMAKER, 1));
-    new Achievement("What are the odds", new BuildingRequirement(CHANCEMAKER, 50));
-    new Achievement("Grandma needs a new pair of shoes", new BuildingRequirement(CHANCEMAKER, 100));
-    new Achievement("Million to one shot, doc", new BuildingRequirement(CHANCEMAKER, 150));
-    new Achievement("As luck would have it", new BuildingRequirement(CHANCEMAKER, 200));
-    new Achievement("Ever in your favor", new BuildingRequirement(CHANCEMAKER, 250));
-    new Achievement("Be a lady", new BuildingRequirement(CHANCEMAKER, 300));
-    new Achievement("Dicey business", new BuildingRequirement(CHANCEMAKER, 350));
-    new Achievement("Maybe a chance in hell, actually", new BuildingRequirement(CHANCEMAKER, 400));
-    new Achievement("Jackpot", new BuildingRequirement(CHANCEMAKER, 450));
-    new Achievement("You'll never know if you don't go", new BuildingRequirement(CHANCEMAKER, 500));
-    new Achievement("Tempting fate", new BuildingRequirement(CHANCEMAKER, 550));
-    new Achievement("Flip a cookie. Chips, I win. Crust, you lose.", new BuildingRequirement(CHANCEMAKER, 600));
+    new Achievement("Lucked out", new BuildingRequirement(Game.Objects.Chancemaker, 1));
+    new Achievement("What are the odds", new BuildingRequirement(Game.Objects.Chancemaker, 50));
+    new Achievement("Grandma needs a new pair of shoes", new BuildingRequirement(Game.Objects.Chancemaker, 100));
+    new Achievement("Million to one shot, doc", new BuildingRequirement(Game.Objects.Chancemaker, 150));
+    new Achievement("As luck would have it", new BuildingRequirement(Game.Objects.Chancemaker, 200));
+    new Achievement("Ever in your favor", new BuildingRequirement(Game.Objects.Chancemaker, 250));
+    new Achievement("Be a lady", new BuildingRequirement(Game.Objects.Chancemaker, 300));
+    new Achievement("Dicey business", new BuildingRequirement(Game.Objects.Chancemaker, 350));
+    new Achievement("Maybe a chance in hell, actually", new BuildingRequirement(Game.Objects.Chancemaker, 400));
+    new Achievement("Jackpot", new BuildingRequirement(Game.Objects.Chancemaker, 450));
+    new Achievement("You'll never know if you don't go", new BuildingRequirement(Game.Objects.Chancemaker, 500));
+    new Achievement("Tempting fate", new BuildingRequirement(Game.Objects.Chancemaker, 550));
+    new Achievement("Flip a cookie. Chips, I win. Crust, you lose.", new BuildingRequirement(Game.Objects.Chancemaker, 600));
     //endregion
     //region Fractal Engines
-    new Achievement("Self-contained", new BuildingRequirement(FRACTAL_ENGINE, 1));
-    new Achievement("Threw you for a loop", new BuildingRequirement(FRACTAL_ENGINE, 50));
-    new Achievement("The sum of its parts", new BuildingRequirement(FRACTAL_ENGINE, 100));
-    new Achievement("Bears repeating", new BuildingRequirement(FRACTAL_ENGINE, 150));
-    new Achievement("More of the same", new BuildingRequirement(FRACTAL_ENGINE, 200));
-    new Achievement("Last recurse", new BuildingRequirement(FRACTAL_ENGINE, 250));
-    new Achievement("Out of one, many", new BuildingRequirement(FRACTAL_ENGINE, 300));
-    new Achievement("An example of recursion", new BuildingRequirement(FRACTAL_ENGINE, 350));
-    new Achievement("For more information on this achievement, please refer to its title", new BuildingRequirement(FRACTAL_ENGINE, 400));
-    new Achievement("I'm so meta, even this achievement", new BuildingRequirement(FRACTAL_ENGINE, 450));
-    new Achievement("Never get bored", new BuildingRequirement(FRACTAL_ENGINE, 500));
-    new Achievement("Tautological", new BuildingRequirement(FRACTAL_ENGINE, 550));
-    new Achievement("In and of itself", new BuildingRequirement(FRACTAL_ENGINE, 600));
+    new Achievement("Self-contained", new BuildingRequirement(Game.Objects["Fractal engine"], 1));
+    new Achievement("Threw you for a loop", new BuildingRequirement(Game.Objects["Fractal engine"], 50));
+    new Achievement("The sum of its parts", new BuildingRequirement(Game.Objects["Fractal engine"], 100));
+    new Achievement("Bears repeating", new BuildingRequirement(Game.Objects["Fractal engine"], 150));
+    new Achievement("More of the same", new BuildingRequirement(Game.Objects["Fractal engine"], 200));
+    new Achievement("Last recurse", new BuildingRequirement(Game.Objects["Fractal engine"], 250));
+    new Achievement("Out of one, many", new BuildingRequirement(Game.Objects["Fractal engine"], 300));
+    new Achievement("An example of recursion", new BuildingRequirement(Game.Objects["Fractal engine"], 350));
+    new Achievement("For more information on this achievement, please refer to its title", new BuildingRequirement(Game.Objects["Fractal engine"], 400));
+    new Achievement("I'm so meta, even this achievement", new BuildingRequirement(Game.Objects["Fractal engine"], 450));
+    new Achievement("Never get bored", new BuildingRequirement(Game.Objects["Fractal engine"], 500));
+    new Achievement("Tautological", new BuildingRequirement(Game.Objects["Fractal engine"], 550));
+    new Achievement("In and of itself", new BuildingRequirement(Game.Objects["Fractal engine"], 600));
     //endregion
     //region All buildings
     new Achievement("One with everything", ...BuildingRequirement.generateRequirementsForAllBuildings(1));
