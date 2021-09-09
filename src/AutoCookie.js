@@ -3750,6 +3750,14 @@ class AutoCookie {
     this.STOPPED = true
   }
 
+  startWhenReady() {
+    if (Game.T < 1) { //Wait for the game to actually load...
+      setTimeout(() => this.startWhenReady(), 50)
+      return
+    }
+    this.start()
+  }
+
   init() {
     this.reserve = new Reserve();
     this.createNotes();
@@ -3759,6 +3767,7 @@ class AutoCookie {
     this.addUpgrades();
     this.testEverything();
     Game.Notify(`Auto Cookie started!`,'',[16,5]);
+    this.startWhenReady()
   }
 
   save() {
@@ -3774,10 +3783,6 @@ class AutoCookie {
   }
 
   load(string) {
-    if (Game.T < 1) { //Wait for the game to actually load...
-      setTimeout(() => this.load(string), 50)
-      return
-    }
     const split = string.split("|")
     const version = parseFloat(split[0]) || 0
     if (version > AUTO_COOKIE_VERSION) {
