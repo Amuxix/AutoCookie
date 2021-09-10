@@ -1076,7 +1076,6 @@ class Buyable {
         this.needsUpdate = false;
       }
     }
-    return !this.needsUpdate
   }
 
   /**
@@ -1115,7 +1114,7 @@ class Buyable {
 
   buy() {
     if (this.gameObject === undefined) {
-      log("Buyable has no gameObject");
+      error("Buyable has no gameObject");
       AUTO_COOKIE.STOPPED = true;
       return;
     }
@@ -1124,7 +1123,7 @@ class Buyable {
       unlockRequirements();
     }
     if (this instanceof Achievement) {
-      log(`Trying to buy an Achievement (${this.name}, cps: ${this.calculateCpsIncrease()})!`);
+      error(`Trying to buy an Achievement (${this.name}, cpsIncrease: ${this.calculateCpsIncrease()})!`);
       AUTO_COOKIE.STOPPED = true;
       return;
     }
@@ -1176,20 +1175,6 @@ class BuyableWithBuildingRequirements extends Buyable {
   constructor(gameObject, buildingRequirements) {
     super(gameObject);
     this.buildingRequirements = buildingRequirements;
-  }
-
-  update() {
-    if (this.needsUpdate) {
-      const price = this.calculatePrice();
-      const cpsIncrease = this.calculateCpsIncrease();
-      if (price !== undefined && !isNaN(price) && cpsIncrease !== undefined && !isNaN(cpsIncrease)) {
-        this.price = price;
-        this.cpsIncrease = cpsIncrease;
-        this.payback = this.calculatePayback();
-        this.needsUpdate = false;
-      }
-    }
-    return !this.needsUpdate
   }
 
   /**
@@ -1353,20 +1338,6 @@ class Upgrade extends BuyableWithBuildingRequirements {
     AUTO_COOKIE.UPGRADES[this.name] = this;
   }
 
-  update() {
-    if (this.needsUpdate) {
-      const price = this.calculatePrice();
-      const cpsIncrease = this.calculateCpsIncrease();
-      if (price !== undefined && !isNaN(price) && cpsIncrease !== undefined && !isNaN(cpsIncrease)) {
-        this.price = price;
-        this.cpsIncrease = cpsIncrease;
-        this.payback = this.calculatePayback();
-        this.needsUpdate = false;
-      }
-    }
-    return !this.needsUpdate
-  }
-
   get canEventuallyGet() {
     return !this.owned && this.filteredUpgradeRequirements.reduce((acc, upgrade) => acc && upgrade.canEventuallyGet, true);
   }
@@ -1461,7 +1432,7 @@ class Upgrade extends BuyableWithBuildingRequirements {
   }
 
   get owned () {
-    return this.gameObject.bought >= 1;
+    return this.gameObject.bought === 1;
   }
 
   /**
@@ -1639,7 +1610,8 @@ class MouseUpgrade extends Upgrade {
     if (Game.Has("Carpal tunnel prevention cream")) cookiesPerClick *= 2;
     if (Game.Has("Ambidextrous")) cookiesPerClick *= 2;
     if (MouseUpgrade.gameHasClickBuff()) {
-      return (cookiesPerClick + add - Game.mouseCps()) * CLICKS_PER_SEC;
+      const clickMultiplier = getBuffs().reduce((multiplier, buff) => multiplier * (typeof buff.multClick !== "undefined" && buff.multClick !== 0 ? buff.multClick : 1), 1)
+      return ((cookiesPerClick + add) * clickMultiplier - Game.mouseCps()) * CLICKS_PER_SEC;
     } else {
       return 0;
     }
@@ -1862,12 +1834,12 @@ class Achievement extends BuyableWithBuildingRequirements {
 //region Reserve
 class ReserveLevel {
   effects;
-  reserveAmount;
+  amountF;
   icon;
 
-  constructor(effects, reserveAmount, icon) {
+  constructor(effects, amountF, icon) {
     this.effects = effects;
-    this.reserveAmount = reserveAmount;
+    this.amountF = amountF;
     this.icon = icon;
   }
 
@@ -1929,7 +1901,7 @@ class ReserveLevel {
   }
 
   get amount() {
-    return this.reserveAmount();
+    return this.amountF();
   }
 }
 
@@ -1970,13 +1942,14 @@ class Reserve {
    * @public
    */
   reserveLevel;
+  amount;
 
   constructor() {
     this.updateReserveLevel()
   }
 
   get reserveAmount() {
-    return this.reserveLevel.amount
+    return this.amount
   }
 
   static get reservePossibilities() {
@@ -1987,15 +1960,22 @@ class Reserve {
   }
 
   updateReserveLevel() {
-    this.reserveLevel = Reserve.reservePossibilities.reduce((max, reserveLevel) => {
+    //This avoids recalculating reserve amount a bunch of times
+    const possibilities = Reserve.reservePossibilities.map(reserveLevel => {return {level: reserveLevel, amount: reserveLevel.amount}})
+    const reserveLevel = possibilities.reduce((max, reserveLevel) => {
       if (reserveLevel.amount > max.amount) {
         return reserveLevel
       } else {
         return max
       }
-    }, DISABLED)
-    AUTO_COOKIE.reserveNote?.update(AUTO_COOKIE)
-    AUTO_COOKIE.loop("Changed reserve level");
+    }, {level: DISABLED, amount: DISABLED.amount})
+
+    if (reserveLevel.level !== this.reserveLevel || reserveLevel.amount !== this.amount) {
+      this.reserveLevel = reserveLevel.level
+      this.amount = reserveLevel.amount
+      AUTO_COOKIE.reserveNote?.update(AUTO_COOKIE)
+      AUTO_COOKIE.loop("Reserve changed");
+    }
   }
 
   static get all() {
@@ -2493,7 +2473,11 @@ class TimeUpdate {
     const millisSinceLastUpdate = window.performance.now() - AUTO_COOKIE.TIME_UPDATE.lastTimeUpdateMillis;
     const millisChange = AUTO_COOKIE.TIME_UPDATE.nextBuyMillis - nextBuyMillis - millisSinceLastUpdate;
     const millisSinceLastSave = window.performance.now() - AUTO_COOKIE.TIME_UPDATE.lastTimeSaveUpdate
-    if (AUTO_COOKIE.TIME_UPDATE.reserveLevel === AUTO_COOKIE.reserve.reserveLevel && AUTO_COOKIE.TIME_UPDATE.isSameTarget(nextBuy) && millisSinceLastSave < TIME_SAVED_DURATION && (Math.abs(millisChange) >= 50 || AUTO_COOKIE.TIME_UPDATE.millisChange !== 0)) {
+    if (AUTO_COOKIE.TIME_UPDATE.reserveLevel === AUTO_COOKIE.reserve.reserveLevel && //Reserve level didn't change
+      AUTO_COOKIE.TIME_UPDATE.isSameTarget(nextBuy) && //What we're buying didnt change
+      //millisSinceLastSave < TIME_SAVED_DURATION && //We've saved time in the last TIME_SAVED_DURATION
+      (Math.abs(millisChange) >= 50 || AUTO_COOKIE.TIME_UPDATE.millisChange !== 0)) {
+
       if (Math.abs(millisChange) >= 50) {
         AUTO_COOKIE.TIME_UPDATE = new TimeUpdate(AUTO_COOKIE.TIME_UPDATE.millisChange + millisChange, nextBuy, nextBuyMillis)
       } else {
@@ -3591,7 +3575,7 @@ class AutoCookie {
       }
     }
 
-    const cpsBuffs = getBuffs().filter(buff => buff.multCpS !== 0);
+    const cpsBuffs = getBuffs().filter(buff => typeof buff.multCpS !== "undefined" && buff.multCpS !== 0);
     if (cpsBuffs.length > 0) {
       let buffedNextBuyTime = cookiesRemaining / cps;
       const shortBuffs = cpsBuffs.filter(buff => buff.time / Game.fps < buffedNextBuyTime);
@@ -3606,7 +3590,7 @@ class AutoCookie {
     return buyTime;
   }
 
-  updateAllNotes() {
+  updateNotes() {
     this.notes.forEach(note => note.update(this))
     document.getElementById("specialPopup").style.bottom = `${25 + 37 * this.NOTES_SHOWN}px`
     const cps = getCps();
@@ -3675,6 +3659,7 @@ class AutoCookie {
     if (this.STOPPED) return;
     if (this.MAIN_INTERVAL) clearTimeout(this.MAIN_INTERVAL); //Prevent two or more timers from running this.
     this.NEXT_BUY = this.getBestBuy();
+    this.reserve.updateReserveLevel()
     const nextBuyTime = this.calculateBuyTime(this.NEXT_BUY.nextBuy.price);
     TimeUpdate.update(this.NEXT_BUY.nextBuy, nextBuyTime);
     if (!this.BUY_LOCKED) {
@@ -3705,11 +3690,11 @@ class AutoCookie {
       if (nextBuyTime < Infinity)
         this.MAIN_INTERVAL = setTimeout(() => this.loop(message), Math.ceil(Math.min(nextBuyTime, buffExpirationTime + .05) * 1000));
     }
-    this.updateAllNotes();
+    this.updateNotes();
   }
 
   engageHooks() {
-    Game.registerHook('click', () => this.loop("bigCookie"))
+    Game.registerHook("click", () => this.loop("bigCookie"))
     document.getElementById("store").addEventListener("click", () => this.loop("Store")); //Hook store items and buildings
     document.getElementById("shimmers").addEventListener("click", () => setTimeout(() => this.loop("Golden Cookie"), 50)); //Hook golden cookie clicks
     /*Game.Win = function() {
@@ -3763,7 +3748,7 @@ class AutoCookie {
       }
       this.reserveNote.update(this)
       this.loop("Start"); //Run the first calculation.
-      this.NOTE_UPDATE_INTERVAL = setInterval(() => this.updateAllNotes(), NOTE_UPDATE_FREQUENCY);
+      this.NOTE_UPDATE_INTERVAL = setInterval(() => this.updateNotes(), NOTE_UPDATE_FREQUENCY);
       this.engageHooks();
       this.noteArea.show()
     }
@@ -3806,10 +3791,11 @@ class AutoCookie {
       if (version > AUTO_COOKIE_VERSION) {
         error("Trying to load code from future version")
       } else if (version > 0) {
-        debug(`Loading ${string}`)
+        debug(`Load string ${string}`)
         this.reserveNote.setActiveButtons(split[1].split(", ").filter(s => s !== ""))
         this.BUY_LOCKED = split[2] === "true"
       }
+      this.BUYABLES = this.BUYABLES.filter(buyable => buyable.canEventuallyGet)
       this.reserveNote.update(this)
       log("Load Finished")
     }
