@@ -1,3 +1,5 @@
+const MOD_ID = "Auto Cookie"
+
 const AUTO_COOKIE_VERSION = 6
 
 const CLICKS_PER_SEC = 3;
@@ -1881,20 +1883,37 @@ class ReserveLevel {
 
   static goldenCookieMultiplier() {
     let mult = 1;
-    if (Game.elderWrath > 0 && Game.hasAura('Unholy Dominion')) mult *= 1.1;
-    else if (Game.elderWrath === 0 && Game.hasAura('Ancestral Metamorphosis')) mult *= 1.1;
+    if (Game.elderWrath > 0) mult *= 1 + Game.auraMult('Unholy Dominion') * 0.1
+    else if (Game.elderWrath === 0) mult *= 1 + Game.auraMult('Ancestral Metamorphosis') * 0.1
+    if (Game.Has('Green yeast digestives')) mult *= 1.01;
+    if (Game.Has('Dragon fang')) mult *= 1.03;
+    if (Game.elderWrath === 0) mult *= Game.eff('goldenCookieGain');
+    else if (Game.elderWrath === 3) mult *= Game.eff('wrathCookieGain');
+    //If elderwrath is between 1 and 3 we don't apply bonus because it depends on the cookie we get.
     return mult;
   }
 
   static calculateCookieChainReserve(cps) {
-    let digit = 7;
-    if (Game.elderWrath === 3) digit = 6; //With last level of elder wrath cookie chainDigits digits must be 6
-    const goldenCookieMult = this.goldenCookieMultiplier();
-    const chainDigits = Math.floor(Math.log((cps * 6 * 60 * 60 * goldenCookieMult * 9) / digit) / Math.LN10);
+    const digit = Game.elderWrath === 3 ? 6 : 7; //With last level of elder wrath cookie the digit will always be 6
+    const goldenCookieMultiplier = this.goldenCookieMultiplier();
+    const chainDigits = Math.floor(Math.log((cps * 6 * 60 * 60 * goldenCookieMultiplier * 9) / digit) / Math.LN10);
+
+    function repeatingDigitNumber(digit, repetitions) {
+      return 1 / 9 * Math.pow(10, repetitions) * digit
+    }
+
+    function payout(digit, digits) {
+      let payout = 0
+      for (let i = 1; i <= digits; i++) {
+        payout += repeatingDigitNumber(digit, i)
+      }
+      return payout
+    }
+
     let res = 0;
     //If max chain is lesser or equal to 5 we dont need to reserve as chain will not break before the 5 digits and 6 digits is more than 6h production.
     if (chainDigits > 5) {
-      res = Math.floor(1 / 9 * Math.pow(10, chainDigits) * digit) * goldenCookieMult * 2;
+      res = (Math.floor(repeatingDigitNumber(digit, chainDigits)) * goldenCookieMultiplier * 2  - payout(digit, chainDigits - 1)) * goldenCookieMultiplier;
     }
     return res;
   }
@@ -1902,11 +1921,11 @@ class ReserveLevel {
   static lucky() {
     //This adds 15% of current cookies in bank or 15 mins of production
     //Reserve for this must make 15% of cookies in bank equal to 15 mins of production
-    return (Game.unbuffedCps * 15 * 60) / .15; //Multiplier doesn't matter here as it would cancel out.
+    return (cookiesPs() * 15 * 60) / .15; //Multiplier doesn't matter here as it would cancel out.
   }
 
   static conjuredBakedGoods() {
-    return (Game.unbuffedCps * 30 * 60) / .15;
+    return (cookiesPs() * 30 * 60) / .15;
   }
 
   get amount() {
@@ -1933,12 +1952,12 @@ const DRAGON_HARVEST = new CookieEffect("Dragon Harvest", "DH")
 const DISABLED = new ReserveLevel([], () => 0);
 const LUCKY_RESERVE = new ReserveLevel([LUCKY], ReserveLevel.lucky);
 const BAKED_GOODS_RESERVE = new ReserveLevel([BAKED_GOODS], ReserveLevel.conjuredBakedGoods);
-const CHAIN_RESERVE = new ReserveLevel([CHAIN], () => ReserveLevel.calculateCookieChainReserve(Game.unbuffedCps));
+const CHAIN_RESERVE = new ReserveLevel([CHAIN], () => ReserveLevel.calculateCookieChainReserve(cookiesPs()));
 const FRENZY_LUCKY_RESERVE = new ReserveLevel([LUCKY, FRENZY], () => ReserveLevel.lucky() * 7);
-const FRENZY_CHAIN_RESERVE = new ReserveLevel([CHAIN, FRENZY], () => ReserveLevel.calculateCookieChainReserve(Game.unbuffedCps * 7));
+const FRENZY_CHAIN_RESERVE = new ReserveLevel([CHAIN, FRENZY], () => ReserveLevel.calculateCookieChainReserve(cookiesPs() * 7));
 const FRENZY_BAKED_GOODS_RESERVE = new ReserveLevel([BAKED_GOODS, FRENZY], () => ReserveLevel.conjuredBakedGoods() * 7);
 const DRAGON_HARVEST_LUCKY_RESERVE = new ReserveLevel([LUCKY, DRAGON_HARVEST], () => ReserveLevel.lucky() * 15);
-const DRAGON_HARVEST_CHAIN_RESERVE = new ReserveLevel([CHAIN, DRAGON_HARVEST], () => ReserveLevel.calculateCookieChainReserve(Game.unbuffedCps * 15));
+const DRAGON_HARVEST_CHAIN_RESERVE = new ReserveLevel([CHAIN, DRAGON_HARVEST], () => ReserveLevel.calculateCookieChainReserve(cookiesPs() * 15));
 const DRAGON_HARVEST_BAKED_GOODS_RESERVE = new ReserveLevel([BAKED_GOODS, DRAGON_HARVEST], () => ReserveLevel.conjuredBakedGoods() * 15);
 
 /**
@@ -2183,7 +2202,7 @@ class NextBuyNote extends GoalNote {
     this.button.style.float = "right"
     this.button.style.textDecoration = "none"
     //this.updateLockedIcon() //TODO: Check
-    this.button.onclick = AUTO_COOKIE.toggleBuyLock
+    this.button.onclick = () => AUTO_COOKIE.toggleBuyLock()
     this.topRow.appendChild(this.button)
   }
 
@@ -2317,7 +2336,7 @@ class ReserveNote extends Note {
   setActiveButtons(buttonNames) {
     if (buttonNames.length > 0) {
       this.buttons.forEach(button => {
-        if (buttonNames.includes(button.cookieEffect.name)) {
+        if (button.unlocked && buttonNames.includes(button.cookieEffect.name)) {
           button.setActive()
         } else {
           button.setInactive()
@@ -2556,6 +2575,11 @@ function calculateWrinklersWorthPopping() {
 
 function getCps() {
   return Game.cookiesPs * (1 - Game.cpsSucked);
+}
+
+function cookiesPs() {
+  //This deals with the case where the unbuffed cps is not yet calculated during the first moments after loading
+  return Game.unbuffedCps || Game.cookiesPs;
 }
 
 /**
@@ -3678,7 +3702,8 @@ class AutoCookie {
 
       const buffExpirationTime = getBuffs().reduce((acc, buff) => Math.min(acc, (buff.time / Game.fps)), Infinity);
 
-      this.MAIN_INTERVAL = setTimeout(() => this.loop(message), Math.ceil(Math.min(nextBuyTime, buffExpirationTime + .05) * 1000));
+      if (nextBuyTime < Infinity)
+        this.MAIN_INTERVAL = setTimeout(() => this.loop(message), Math.ceil(Math.min(nextBuyTime, buffExpirationTime + .05) * 1000));
     }
     this.updateAllNotes();
   }
@@ -3750,14 +3775,6 @@ class AutoCookie {
     this.STOPPED = true
   }
 
-  startWhenReady() {
-    if (Game.T < 1) { //Wait for the game to actually load...
-      setTimeout(() => this.startWhenReady(), 50)
-      return
-    }
-    this.start()
-  }
-
   init() {
     this.reserve = new Reserve();
     this.createNotes();
@@ -3767,7 +3784,7 @@ class AutoCookie {
     this.addUpgrades();
     this.testEverything();
     Game.Notify(`Auto Cookie started!`,'',[16,5]);
-    this.startWhenReady()
+    this.start()
   }
 
   save() {
@@ -3783,19 +3800,38 @@ class AutoCookie {
   }
 
   load(string) {
-    const split = string.split("|")
-    const version = parseFloat(split[0]) || 0
-    if (version > AUTO_COOKIE_VERSION) {
-      error("Trying to load code from future version")
-    } else if (version > 0) {
-      debug(`Loading ${string}`)
-      this.reserveNote.setActiveButtons(split[1].split(", ").filter(s => s !== ""))
-      this.BUY_LOCKED = split[2] === "true"
+    const load = () => { //This is an arrow function to avoid dereferencing this
+      const split = string.split("|")
+      const version = parseFloat(split[0]) || 0
+      if (version > AUTO_COOKIE_VERSION) {
+        error("Trying to load code from future version")
+      } else if (version > 0) {
+        debug(`Loading ${string}`)
+        this.reserveNote.setActiveButtons(split[1].split(", ").filter(s => s !== ""))
+        this.BUY_LOCKED = split[2] === "true"
+      }
+      this.reserveNote.update(this)
+      log("Load Finished")
     }
-    this.start();
+
+    //At this points buildings have already loaded but cookies per second has not
+    if (Game.BuildingsOwned === 0) { //We have no buildings, we are ready to go
+      debug("Loading with no buildings")
+      load()
+    } else {
+      const cpsHook = (cps) => {
+        if (cps > 0) {
+          Game.removeHook('cps', cpsHook)
+          debug("Loading normally")
+          load()
+        }
+        return cps
+      }
+      Game.registerHook('cps', cpsHook)
+    }
   }
 }
 
 const AUTO_COOKIE = new AutoCookie()
 
-Game.registerMod("Auto Cookie", AUTO_COOKIE);
+Game.registerMod(MOD_ID, AUTO_COOKIE);
