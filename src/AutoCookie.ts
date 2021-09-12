@@ -9,12 +9,7 @@ const STOCK_MARKET_STABILITY_THRESHOLD = 0.05
 const STOCK_MARKET_STABILITY_MIN_PRICES = 5
 const STOCK_MARKET_STABILITY_MAX_PRICES = 10
 
-/*const GAME_WIN_FUNCTION = Game.Win;
-const GAME_ASCEND_FUNCTION = Game.Ascend;
-const GAME_REINCARNATE_FUNCTION = Game.Reincarnate;
-const GAME_UNLOCK_FUNCTION = Game.Unlock;*/
-
-function unlockRequirements() {
+function unlockRequirements(): void {
   for (let i in Game.UnlockAt) {
     let unlock = Game.UnlockAt[i];
     if (Game.cookiesEarned >= unlock.cookies) {
@@ -28,10 +23,8 @@ function unlockRequirements() {
     }
   }
 }
-//endregion
 
-/*******************************************************************************GENERAL******************************************************************************/
-function formatNumber(number, digits = 2) {
+function formatNumber(number: number, digits: number = 2): string {
   const string = number.toString();
   return "0".repeat(digits - string.length) + string;
 }
@@ -40,7 +33,7 @@ function formatNumber(number, digits = 2) {
  * Creates a string with the local time
  * @return {string} Text with local time
  */
-function getTime() {
+function getTime(): string {
   const currentTime = new Date();
   const hours = formatNumber(currentTime.getHours());
   const minutes = formatNumber(currentTime.getMinutes());
@@ -49,7 +42,7 @@ function getTime() {
   return `${hours}:${minutes}:${seconds}:${millis}`;
 }
 
-function consoleMessage(string) {
+function consoleMessage(string: string): string {
   const time = getTime();
   return "[AutoCookie " + time + "] " + string;
 }
@@ -58,19 +51,19 @@ function consoleMessage(string) {
  * Logs text to console with the local time
  * @param {string} string Text to log
  **/
-function log(string) {
+function log(string: string): void {
   console.log(consoleMessage(string))
 }
 
-function debug(string) {
+function debug(string: string): void {
   console.debug(consoleMessage(string))
 }
 
-function error(string) {
+function error(string: string): void {
   console.error(consoleMessage(string))
 }
 
-function timeString(seconds) {
+function timeString(seconds: number): string {
   //Writes a string saying time
   let remainingSeconds, showString = "";
   function add(string) {
@@ -126,7 +119,7 @@ function timeString(seconds) {
   return showString;
 }
 
-function convertNumeral(number) {
+function convertNumeral(number: number): string {
   const last_digit = number.toString()[number.toString().length - 1];
   if (number === 0) return "";
   let string = "th";
@@ -134,29 +127,29 @@ function convertNumeral(number) {
   if (last_digit === "2") string = "nd";
   if (last_digit === "3") string = "rd";
   if (number > 10) {
-    const last_two_digits = number.toString()[number.toString().length - 2] + last_digit;
+    const last_two_digits = parseInt(number.toString()[number.toString().length - 2] + last_digit, 10);
     if (last_two_digits > 10 && last_two_digits < 14) string = "th";
   }
   return number + string;
 }
 
-function round(number, digits) {
+function round(number: number, digits: number): number {
   return Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits);
 }
 
 /**
  * @returns {number} Amount of non cursor buildings.
  */
-function getAmountOfNonCursors() {
+function getAmountOfNonCursors(): number {
   return Game.ObjectsById.reduce((acc, b) => acc + b.amount, 0) - Game.Objects.Cursor.amount;
 }
 
-function hasOrIsChoice(upgradeName, choice) {
+function hasOrIsChoice(upgradeName, choice): boolean {
   const upgrade = Upgrade.getByName(upgradeName);
   return upgrade.owned || upgrade.name === choice;
 }
 
-function getGodLevel(godName) {
+function getGodLevel(godName: string): number {
   if (Game.hasGod === undefined) {
     return 0;
   } else {
@@ -164,12 +157,7 @@ function getGodLevel(godName) {
   }
 }
 
-/**
- * @param {number} milk
- * @param {String} choice
- * @return {number}
- */
-function getKittenMultiplier(milk, choice = "") {
+function getKittenMultiplier(milk: number, choice: string = ""): number {
   let multiplier = 1;
   if (hasOrIsChoice("Kitten helpers", choice)) multiplier *= 1 + milk * 0.1;
   if (hasOrIsChoice("Kitten workers", choice)) multiplier *= 1 + milk * 0.125;
@@ -193,25 +181,25 @@ function getKittenMultiplier(milk, choice = "") {
 
 /**
  * Calculates the CPS increase from getting all building requirements and all given upgrades
- * @param {BuildingRequirement[]} buildingRequirements
- * @param {Upgrade[]} upgrades
+ * @param {Array<BuildingRequirement>} buildingRequirements
+ * @param {Array<Upgrade>} upgrades
  * @param {boolean} debug
  */
-function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = false) {
+function calculateCpsIncrease(buildingRequirements: Array<BuildingRequirement> = [], upgrades: Array<Upgrade> = [], debug: boolean = false): number {
   const buildMult = (1 - Math.floor(getGodLevel('decadence') * 25) / 100) * (1 + Math.floor(getGodLevel('industry') * (10 / 3)) / 100) * (1 - getGodLevel('labor') * .01);
 
   /**
    * Checks if the game has the given upgrade of if this is one of the choices
-   * @param {String} upgradeName
-   * @param {Upgrade[]} upgrades
+   * @param {string} upgradeName
+   * @param {Array<Upgrade>} upgrades
    * @return {boolean}
    */
-  function hasOrIsInChoices(upgradeName, upgrades) {
+  function hasOrIsInChoices(upgradeName: string, upgrades: Array<Upgrade>): boolean {
     const upgrade = Upgrade.getByName(upgradeName);
     return upgrade.owned || upgrades.includes(upgrade);
   }
 
-  function calculateCursorsCps(upgrades, cursors, nonCursors, fractalEngines) {
+  function calculateCursorsCps(upgrades: Array<Upgrade>, cursors: number, nonCursors: number, fractalEngines: number): number {
     let add = 0;
     if (hasOrIsInChoices("Thousand fingers", upgrades)) add += 0.1;
     if (hasOrIsInChoices("Million fingers", upgrades)) add *= 5;
@@ -235,7 +223,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(0.1, exponent, add) * cursors * multiplier * buildMult;
   }
 
-  function calculateGrandmasCps(upgrades, grandmas, portals) {
+  function calculateGrandmasCps(upgrades: Array<Upgrade>, grandmas: number, portals: number): number {
     let exponent = 0;
     if (hasOrIsInChoices("Forwards from grandma", upgrades)) exponent++;
     if (hasOrIsInChoices("Steel-plated rolling pins", upgrades)) exponent++;
@@ -275,7 +263,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(baseCps, exponent) * grandmas * multiplier * buildMult;
   }
 
-  function calculateFarmsCps(upgrades, farms, grandmas, timeMachines, temples, wizardTowers, portals) {
+  function calculateFarmsCps(upgrades: Array<Upgrade>, farms: number, grandmas: number, timeMachines: number, temples: number, wizardTowers: number, portals: number): number {
     let multiplier = 1 + Game.Objects.Farm.level * 0.01;
     if (hasOrIsInChoices("Farmer grandmas", upgrades)) {
       multiplier *= 1 + grandmas * .01;
@@ -309,7 +297,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects.Farm.baseCps, exponent) * farms * multiplier * buildMult;
   }
 
-  function calculateMinesCps(upgrades, mines, grandmas, wizardTowers, shipments, alchemyLabs, chancemakers) {
+  function calculateMinesCps(upgrades: Array<Upgrade>, mines: number, grandmas: number, wizardTowers: number, shipments: number, alchemyLabs: number, chancemakers: number): number {
     let multiplier = 1 + Game.Objects.Mine.level * 0.01;
     if (hasOrIsInChoices("Miner grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 2 * .01;
@@ -346,7 +334,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects.Mine.baseCps, exponent) * mines * multiplier * buildMult;
   }
 
-  function calculateFactoriesCps(upgrades, factories, grandmas, antimatterCondensers, timeMachines, banks, shipments) {
+  function calculateFactoriesCps(upgrades: Array<Upgrade>, factories: number, grandmas: number, antimatterCondensers: number, timeMachines: number, banks: number, shipments: number): number {
     let multiplier = 1 + Game.Objects.Factory.level * 0.01;
     if (hasOrIsInChoices("Worker grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 3 * .01;
@@ -380,7 +368,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects.Factory.baseCps, exponent) * factories * multiplier * buildMult;
   }
 
-  function calculateBanksCps(upgrades, banks, grandmas, portals, factories, alchemyLabs, antimatterCondensers) {
+  function calculateBanksCps(upgrades: Array<Upgrade>, banks: number, grandmas: number, portals: number, factories: number, alchemyLabs: number, antimatterCondensers: number): number {
     let multiplier = 1 + Game.Objects.Bank.level * 0.01;
     if (hasOrIsInChoices("Banker grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 4 * .01;
@@ -414,7 +402,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects.Bank.baseCps, exponent) * banks * multiplier * buildMult;
   }
 
-  function calculateTemplesCps(upgrades, temples, grandmas, farms, portals, antimatterCondensers, prisms) {
+  function calculateTemplesCps(upgrades: Array<Upgrade>, temples: number, grandmas: number, farms: number, portals: number, antimatterCondensers: number, prisms: number): number {
     let multiplier = 1 + Game.Objects.Temple.level * 0.01;
     if (hasOrIsInChoices("Priestess grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 5 * .01;
@@ -448,7 +436,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects.Temple.baseCps, exponent) * temples * multiplier * buildMult;
   }
 
-  function calculateWizardTowersCps(upgrades, wizardTowers, grandmas, mines, alchemyLabs, farms, prisms) {
+  function calculateWizardTowersCps(upgrades: Array<Upgrade>, wizardTowers: number, grandmas: number, mines: number, alchemyLabs: number, farms: number, prisms: number): number {
     let multiplier = 1 + Game.Objects["Wizard tower"].level * 0.01;
     if (hasOrIsInChoices("Witch grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 6 * .01;
@@ -482,7 +470,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects["Wizard tower"].baseCps, exponent) * wizardTowers * multiplier * buildMult;
   }
 
-  function calculateShipmentsCps(upgrades, shipments, grandmas, mines, alchemyLabs, farms, prisms) {
+  function calculateShipmentsCps(upgrades: Array<Upgrade>, shipments: number, grandmas: number, mines: number, alchemyLabs: number, farms: number, prisms: number): number {
     let multiplier = 1 + Game.Objects.Shipment.level * 0.01;
     if (hasOrIsInChoices("Cosmic grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 7 * .01;
@@ -516,7 +504,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects.Shipment.baseCps, exponent) * shipments * multiplier * buildMult;
   }
 
-  function calculateAlchemyLabsCps(upgrades, alchemyLabs, grandmas, wizardTowers, mines, banks, antimatterCondensers) {
+  function calculateAlchemyLabsCps(upgrades: Array<Upgrade>, alchemyLabs: number, grandmas: number, wizardTowers: number, mines: number, banks: number, antimatterCondensers: number): number {
     let multiplier = 1 + Game.Objects["Alchemy lab"].level * 0.01;
     if (hasOrIsInChoices("Transmuted grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 8 * .01;
@@ -550,7 +538,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects["Alchemy lab"].baseCps, exponent) * alchemyLabs * multiplier * buildMult;
   }
 
-  function calculatePortalsCps(upgrades, portals, grandmas, banks, temples, farms, prisms) {
+  function calculatePortalsCps(upgrades: Array<Upgrade>, portals: number, grandmas: number, banks: number, temples: number, farms: number, prisms: number): number {
     let multiplier = 1 + Game.Objects.Portal.level * 0.01;
     if (hasOrIsInChoices("Altered grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 9 * .01;
@@ -584,7 +572,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects.Portal.baseCps, exponent) * portals * multiplier * buildMult;
   }
 
-  function calculateTimeMachinesCps(upgrades, timeMachines, grandmas, farms, factories, shipments, prisms) {
+  function calculateTimeMachinesCps(upgrades: Array<Upgrade>, timeMachines: number, grandmas: number, farms: number, factories: number, shipments: number, prisms: number): number {
     let multiplier = 1 + Game.Objects["Time machine"].level * 0.01;
     if (hasOrIsInChoices("Grandmas\' grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 10 * .01;
@@ -618,7 +606,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects["Time machine"].baseCps, exponent) * timeMachines * multiplier * buildMult;
   }
 
-  function calculateAntimatterCondensersCps(upgrades, antimatterCondensers, grandmas, factories, temples, banks, alchemyLabs, chancemakers) {
+  function calculateAntimatterCondensersCps(upgrades: Array<Upgrade>, antimatterCondensers: number, grandmas: number, factories: number, temples: number, banks: number, alchemyLabs: number, chancemakers: number): number {
     let multiplier = 1 + Game.Objects["Antimatter condenser"].level * 0.01;
     if (hasOrIsInChoices("Antigrandmas", upgrades)) {
       multiplier *= 1 + grandmas / 11 * .01;
@@ -655,7 +643,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects["Antimatter condenser"].baseCps, exponent) * antimatterCondensers * multiplier * buildMult;
   }
 
-  function calculatePrismsCps(upgrades, prisms, grandmas, portals, timeMachines, wizardTowers, temples, antimatterCondensers) {
+  function calculatePrismsCps(upgrades: Array<Upgrade>, prisms: number, grandmas: number, portals: number, timeMachines: number, wizardTowers: number, temples: number, antimatterCondensers: number): number {
     let multiplier =  1 + Game.Objects.Prism.level * 0.01;
     if (hasOrIsInChoices("Rainbow grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 12 * .01;
@@ -692,7 +680,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects.Prism.baseCps, exponent) * prisms * multiplier * buildMult;
   }
 
-  function calculateChancemakersCps(upgrades, chancemakers, grandmas, mines, antimatterCondensers) {
+  function calculateChancemakersCps(upgrades: Array<Upgrade>, chancemakers: number, grandmas: number, mines: number, antimatterCondensers: number): number {
     let multiplier =  1 + Game.Objects.Chancemaker.level * 0.01;
     if (hasOrIsInChoices("Lucky grandmas", upgrades)) {
       multiplier *= 1 + grandmas / 13 * .01;
@@ -720,7 +708,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     return Game.ComputeCps(Game.Objects.Chancemaker.baseCps, exponent) * chancemakers * multiplier * buildMult;
   }
 
-  function calculateFractalEnginesCps(upgrades, fractalEngines, grandmas, prisms, cursors) {
+  function calculateFractalEnginesCps(upgrades: Array<Upgrade>, fractalEngines: number, grandmas: number, prisms: number, cursors: number): number {
     let multiplier =  1 + Game.Objects["Fractal engine"].level * 0.01;
     if (hasOrIsInChoices("Metagrandmas", upgrades)) {
       multiplier *= 1 + grandmas / 14 * .01;
@@ -751,7 +739,7 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
   const requirements = buildingRequirements.reduce((acc, requirement) => {
     acc[requirement.name] = requirement.amount;
     return acc;
-  }, []);
+  }, {});
 
   const cursors = requirements[Game.Objects.Cursor.name] || Game.Objects.Cursor.amount;
   const grandmas = requirements[Game.Objects.Grandma.name] || Game.Objects.Grandma.amount;
@@ -811,11 +799,8 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
     console.log(round(fractalEnginesCps - Game.Objects["Fractal engine"].storedTotalCps, 3));
   }
 
-  /**
-   * @type {(CookieUpgrade|ResearchCookieUpgrade)[]}
-   */
   const cookieUpgrades = upgrades.filter(upgrade => upgrade instanceof CookieUpgrade || upgrade instanceof ResearchCookieUpgrade);
-  const cookieUpgradesMultiplier = cookieUpgrades.reduce((acc, cookie) => acc * cookie.powerMultiplier, 1);
+  const cookieUpgradesMultiplier = cookieUpgrades.reduce((acc, cookie) => acc * (<CookieUpgrade | ResearchCookieUpgrade>cookie).powerMultiplier, 1);
 
   const buildingsCps = cursorsCps + grandmasCps + farmsCps + minesCps + factoriesCps + banksCps + templesCps
     + wizardTowersCps + shipmentsCps + alchemyLabsCps + portalsCps + timeMachinesCps
@@ -828,36 +813,30 @@ function calculateCpsIncrease(buildingRequirements = [], upgrades = [], debug = 
 
 /**
  * Returns the best thing to buy
- * @param {Buyable[]} buyableList List of buyable objects
+ * @param {Array<Buyable>} buyableList List of buyable objects
  * @return {Buyable} The best thing to buy
  */
-function minByPayback(buyableList) {
+function minByPayback<T extends GameObject>(buyableList: Array<Buyable<T>>): Buyable<T> {
   return buyableList.reduce((min, current) => (current.payback < min.payback ) ? current : min);
 }
 
-/**
- * @abstract
- */
-class Buyable {
-  gameObject;
-  name;
-  price;
-  cpsIncrease;
-  payback;
-  investment;
-  buyMillis;
-  originalBuyMillis = 0;
-  needsUpdate = true;
+abstract class Buyable<T extends GameObject> {
+  gameObject: T;
+  name: string;
+  price: number;
+  cpsIncrease: number;
+  payback: number;
+  investment: Investment;
+  buyMillis: number;
+  originalBuyMillis: number = 0;
+  needsUpdate: boolean = true;
 
-  /**
-   * @param gameObject This is the object we are wrapping, it can be the game version of a Building, an Upgrade or an Achievement.
-   */
-  constructor(gameObject) {
+  protected constructor(gameObject: T) {
     this.gameObject = gameObject;
     this.name = gameObject.name;
   }
 
-  update() {
+  update(): void {
     if (this.needsUpdate) {
       const price = this.calculatePrice();
       const cpsIncrease = this.calculateCpsIncrease();
@@ -870,7 +849,7 @@ class Buyable {
     }
   }
 
-  updateInvestmentAndBuyMillis() {
+  updateInvestmentAndBuyMillis(): void {
     this.investment = AUTO_COOKIE.stockMarket.createInvestment(Game.cookies - this.price)
     this.buyMillis = this.calculateBuyMillis()
     if (this.originalBuyMillis === 0) {
@@ -881,18 +860,18 @@ class Buyable {
     }
   }
 
-  resetOriginalBuyMillis() {
+  resetOriginalBuyMillis(): void {
     this.originalBuyMillis = 0
     if (this.nextMilestone !== this) {
       this.nextMilestone.resetOriginalBuyMillis()
     }
   }
 
-  get cookiesNeeded() {
+  get cookiesNeeded(): number {
     return AUTO_COOKIE.reserve.reserveAmount + this.price - Game.cookies - this.investment.estimateReturns(this)
   }
 
-  calculateBuyMillis() {
+  calculateBuyMillis(): number {
     const cookiesNeeded = this.cookiesNeeded
     if (cookiesNeeded <= 0) return Date.now()
 
@@ -952,45 +931,30 @@ class Buyable {
     return Date.now() + buySeconds * 1000
   }
 
-  get millisToBuy() {
+  get millisToBuy(): number {
     return Math.max(0, this.buyMillis - Date.now())
   }
 
   /**
    * Can this be bought in this ascension? ie if this depends on a legacy upgrade we don't have this ascension this can't be bought.
-   * @abstract
-   * @return {boolean}
    */
-  get canEventuallyGet() {
-    throw new Error("Unimplemented canEventuallyGet method")
-  }
+  abstract get canEventuallyGet(): boolean
 
   /**
    * Calculates the cps increase of getting this considering all requirements are already met.
-   * @abstract
-   * @return {number}
    */
-  calculateCpsIncrease() {
-    throw new Error("Unimplemented cpsIncrease method")
-  }
+  abstract calculateCpsIncrease(): number
 
   /**
    * Calculates the price to buy this and all its requirements if any.
-   * @abstract
-   * @return {number}
    */
-  calculatePrice() {
-    throw new Error("Unimplemented price method")
-  }
+  abstract calculatePrice(): number
 
-  /**
-   * @return {Buyable}
-   */
-  get nextMilestone() {
+  get nextMilestone(): Buyable<GameObject> {
     return this;
   }
 
-  buy() {
+  buy(): void {
     if (this.gameObject === undefined) {
       error("Buyable has no gameObject");
       AUTO_COOKIE.stopped = true;
@@ -1009,7 +973,9 @@ class Buyable {
     const oldBuyMode = Game.buyMode;
     Game.buyMode = 1; //Make sure we are not selling
     if (this.gameObject instanceof Game.Object) {
-      const text = `Bought the ${convertNumeral(this.gameObject.amount + 1)} ${this.name}`
+      // @ts-ignore
+      const amount: string = convertNumeral((<GameBuilding>this.gameObject).amount + 1)
+      const text = `Bought the ${amount} ${this.name}`
       log(text)
       Game.Notify(text, "")
     } else {
@@ -1028,47 +994,46 @@ class Buyable {
     AUTO_COOKIE.buying = false;
   }
 
-  calculatePayback() {
+  calculatePayback(): number {
     const cps = getCps();
     if (this.cpsIncrease === 0 || cps === 0) return Infinity;
     const payback = this.price / this.cpsIncrease + Math.max(0, this.price + AUTO_COOKIE.reserve.reserveAmount - Game.cookies) / cps;
     return round(payback, 6);
   }
 
-  get percentCpsIncrease() {
+  get percentCpsIncrease(): number {
     return this.cpsIncrease / Game.cookiesPs
   }
 
-  get cpsIncreasePercentText() {
+  get cpsIncreasePercentText(): string {
     return this.percentCpsIncrease > 0 && this.percentCpsIncrease !== Infinity ? ` (+${round(this.percentCpsIncrease * 100, 2)}%)` : ""
   }
 
-  estimatedReturnPercent(additionalBrokers) {
+  estimatedReturnPercent(additionalBrokers: number): number {
     const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
     return 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (this.percentCpsIncrease - overhead)
   }
 
-  get millisChange() {
+  get millisChange(): number {
     return this.originalBuyMillis - this.buyMillis
   }
 
-  get timeSavedText() {
+  get timeSavedText(): string {
     const millisChange = this.millisChange
     const absMillisChange = Math.abs(millisChange);
     if (absMillisChange < 1000) {
       return "";
     } else {
-      const sign = Math.sign(millisChange);
       const timeText = timeString(Math.ceil(absMillisChange / 1000));
-      if (sign === 1) {
+      if (millisChange >= 1) {
         return ` (${timeText})`
-      } else if (sign === -1) {
+      } else {
         return ` (-${timeText})`
       }
     }
   }
 
-  get timeSavedTextColour() {
+  get timeSavedTextColour(): string {
     if (Math.sign(this.millisChange) === 1)  {
       return "#6F6"
     } else {
@@ -1077,45 +1042,31 @@ class Buyable {
   }
 }
 
-/**
- * @abstract
- */
-class BuyableWithBuildingRequirements extends Buyable {
-  /**
-   * Buildings required to unlock this buyable
-   * @type {BuildingRequirement[]}
-   * @public
-   */
-  buildingRequirements;
+abstract class BuyableWithBuildingRequirements<T extends GameObject> extends Buyable<T> {
+  buildingRequirements: Array<BuildingRequirement>;
 
   /**
    * @param gameObject This is the object we are wrapping, it can be the game version of a Building, an Upgrade or an Achievement.
-   * @param {BuildingRequirement[]} buildingRequirements
+   * @param {Array<BuildingRequirement>} buildingRequirements
    */
-  constructor(gameObject, buildingRequirements) {
+  constructor(gameObject: T, buildingRequirements: Array<BuildingRequirement>) {
     super(gameObject);
     this.buildingRequirements = buildingRequirements;
   }
 
-  /**
-   * @return {BuildingRequirement[]}
-   */
-  get filteredBuildingRequirements() {
+  get filteredBuildingRequirements(): Array<BuildingRequirement> {
     return this.buildingRequirements.filter(req => req.amount > req.gameObject.amount);
   }
 
-  get hasRequirements() {
+  get hasRequirements(): boolean {
     return this.filteredBuildingRequirements.length > 0;
   }
 
-  get bestRequirement() {
+  get bestRequirement(): Buyable<GameBuilding | GameUpgrade> {
     return minByPayback(this.filteredBuildingRequirements);
   }
 
-  /**
-   * @return {Buyable}
-   */
-  get nextMilestone() {
+  get nextMilestone(): Buyable<GameObject> {
     if (this.hasRequirements) {
       return this.bestRequirement.nextMilestone;
     } else {
@@ -1124,46 +1075,33 @@ class BuyableWithBuildingRequirements extends Buyable {
   }
 }
 
-class Building extends Buyable {
-  /**
-   * @param {String} name
-   */
-  constructor(name) {
+class Building extends Buyable<GameBuilding> {
+  constructor(name: string) {
     super(Building.getGameObjectByName(name));
   }
 
-  get canEventuallyGet() {
+  get canEventuallyGet(): boolean {
     return true;
   }
 
-  calculateCpsIncrease() {
+  calculateCpsIncrease(): number {
     return calculateCpsIncrease([new BuildingRequirement(this.gameObject, this.gameObject.amount + 1)]);
   }
 
-  calculatePrice() {
+  calculatePrice(): number {
     return this.gameObject.getPrice();
   }
 
-  /**
-   * Looks for an gameObject with the given name
-   * @param {String} name
-   * @return {Building}
-   */
-  static getByName(name) {
-    const upgrade = AUTO_COOKIE.buildings[name];
-    if (upgrade === undefined) {
+  static getByName(name): Building {
+    const building = AUTO_COOKIE.buildings[name];
+    if (building === undefined) {
       throw new Error(`Unable to find Building with name ${name}`)
     } else {
-      return upgrade
+      return building
     }
   }
 
-  /**
-   * Looks for an gameObject with the given name
-   * @param {String} name
-   * @return {Game.Object}
-   */
-  static getGameObjectByName(name) {
+  static getGameObjectByName(name: string): GameBuilding {
     const building = Game.Objects[name];
     if (building === undefined) {
       throw new Error(`Unable to find Building with name ${name}`)
@@ -1174,45 +1112,38 @@ class Building extends Buyable {
 }
 
 class BuildingRequirement extends Building {
-  amount;
+  amount: number;
 
   /**
    * @param {Game.Object} gameObject Building required
    * @param {number} amount Number of buildings required
    */
-  constructor(gameObject, amount) {
+  constructor(gameObject: GameBuilding, amount: number) {
     super(gameObject.name);
     this.amount = amount;
   }
 
-  update() {
+  update(): void {
     throw new Error("Trying to update BuildingRequirement");
   }
 
-  get missingAmount () {
+  get missingAmount(): number {
     return Math.max(0, this.amount - this.gameObject.amount);
   }
 
-  calculateCpsIncrease() {
+  calculateCpsIncrease(): number {
     return calculateCpsIncrease([this]);
   }
 
-  calculatePrice() {
+  calculatePrice(): number {
     return this.gameObject.getSumPrice(this.missingAmount);
   }
 
-  /**
-   * @return {Buyable}
-   */
-  get nextMilestone() {
+  get nextMilestone(): Buyable<GameBuilding> {
     return Building.getByName(this.name);
   }
 
-  /**
-   * @param {number} amount
-   * @returns {BuildingRequirement[]}
-   */
-  static generateRequirementsForAllBuildings(amount) {
+  static generateRequirementsForAllBuildings(amount: number): Array<BuildingRequirement> {
     return Game.ObjectsById.map(building => new BuildingRequirement(building, amount))
   }
 }
@@ -1220,36 +1151,13 @@ class BuildingRequirement extends Building {
 /**
  * @abstract
  */
-class Upgrade extends BuyableWithBuildingRequirements {
-  /**
-   * @type {Achievement[]}
-   * @public
-   */
-  achievementsUnlocked;
-  /**
-   * Upgrades required to unlock this buyable
-   * @type {Upgrade[]}
-   * @public
-   */
-  upgradeRequirements;
-  /**
-   * @type {Upgrade[]}
-   * @public
-   */
-  flattenedUpgradeRequirements;
-  /**
-   * @type {BuildingRequirement[]}
-   * @public
-   */
-  flattenedBuildingRequirements;
+abstract class Upgrade extends BuyableWithBuildingRequirements<GameUpgrade> {
+  achievementsUnlocked: Array<Achievement>;
+  upgradeRequirements: Array<Upgrade>;
+  flattenedUpgradeRequirements: Array<Upgrade>;
+  flattenedBuildingRequirements: Array<BuildingRequirement>;
 
-  /**
-   * @param {Game.Upgrade} gameUpgrade
-   * @param {BuildingRequirement[]} buildingRequirements
-   * @param {Upgrade[]} upgradeRequirements
-   * @param {Achievement[]} achievementsUnlocked
-   */
-  constructor(gameUpgrade, buildingRequirements = [], upgradeRequirements = [], achievementsUnlocked = []) {
+  constructor(gameUpgrade: GameUpgrade, buildingRequirements: Array<BuildingRequirement> = [], upgradeRequirements: Array<Upgrade> = [], achievementsUnlocked: Array<Achievement> = []) {
     super(gameUpgrade, buildingRequirements);
     this.achievementsUnlocked = achievementsUnlocked;
     this.upgradeRequirements = upgradeRequirements;
@@ -1258,48 +1166,38 @@ class Upgrade extends BuyableWithBuildingRequirements {
     AUTO_COOKIE.upgrades[this.name] = this;
   }
 
-  get canEventuallyGet() {
+  get canEventuallyGet(): boolean {
     return !this.owned && this.filteredUpgradeRequirements.reduce((acc, upgrade) => acc && upgrade.canEventuallyGet, true);
   }
 
-  /**
-   * @return {BuildingRequirement[]}
-   */
-  get filteredBuildingRequirements() {
+  get filteredBuildingRequirements(): Array<BuildingRequirement> {
     return this.flattenedBuildingRequirements.filter(req => req.amount > req.gameObject.amount);
   }
 
-  /**
-   * @return {Upgrade[]}
-   */
-  get filteredUpgradeRequirements() {
+  get filteredUpgradeRequirements(): Array<Upgrade> {
     return this.flattenedUpgradeRequirements.filter(upgrade => !upgrade.owned);
   }
 
-  /**
-   * @return {Achievement[]}
-   */
-  get filteredAchievementRequirements() {
+  get filteredAchievementRequirements(): Array<Achievement> {
     return this.achievementsUnlocked.filter(achievement => !achievement.won);
   }
 
   /**
    * All upgrade requirements of this upgrade.
-   * @return {Upgrade[]}
    */
-  getFlattenedUpgradeRequirements() {
+  getFlattenedUpgradeRequirements(): Array<Upgrade> {
     const upgradeRequirements = this.upgradeRequirements.filter(upgrade => !upgrade.owned);
     return upgradeRequirements.concat(upgradeRequirements.flatMap(upgrade => upgrade.getFlattenedUpgradeRequirements()));
   }
 
   /**
    * Calculates the building requirements to unlock all required upgrades
-   * @return {BuildingRequirement[]}
+   * @return {Array<BuildingRequirement>}
    */
-  getFattenBuildingRequirements() {
+  getFattenBuildingRequirements(): Array<BuildingRequirement> {
     const upgradeRequirements = this.upgradeRequirements.filter(upgrade => !upgrade.owned).flatMap(upgrade => upgrade.getFattenBuildingRequirements());
-    return Game.ObjectsById.reduce((totalBuildingRequirements, building) => {
-      const buildingRequirementsOfUpgrades = upgradeRequirements.filter(req => req === building);
+    return Game.ObjectsById.reduce<Array<BuildingRequirement>>((totalBuildingRequirements, building) => {
+      const buildingRequirementsOfUpgrades = upgradeRequirements.filter(req => req.gameObject === building);
       const buildingRequirementsOfThis = this.buildingRequirements.filter(req => req.amount > req.gameObject.amount && req.gameObject === building);
       const amounts = buildingRequirementsOfUpgrades.concat(buildingRequirementsOfThis).map(req => req.amount);
       if (amounts.length > 0) {
@@ -1309,49 +1207,40 @@ class Upgrade extends BuyableWithBuildingRequirements {
     }, []);
   }
 
-  /**
-   * @return {number}
-   */
-  get upgradeRequirementsTotalCostWithoutBuildings() {
+  get upgradeRequirementsTotalCostWithoutBuildings(): number {
     return this.filteredUpgradeRequirements.reduce((acc, upgrade) => acc + upgrade.gameObject.getPrice(), 0);
   }
 
-  /**
-   * @return {boolean}
-   */
-  get hasRequirements() {
+  get hasRequirements(): boolean {
     const needsBuilding = this.filteredBuildingRequirements.length > 0;
     const needsUpgrade = this.filteredUpgradeRequirements.length > 0;
     return needsBuilding || needsUpgrade
   }
 
-  /**
-   * @return {Buyable}
-   */
-  get bestRequirement() {
-    return minByPayback(this.filteredBuildingRequirements.concat(this.filteredUpgradeRequirements))
+  get bestRequirement(): Buyable<GameBuilding | GameUpgrade> {
+    // @ts-ignore
+    const requirements: Array<Buyable<GameBuilding | GameUpgrade>> = this.filteredBuildingRequirements.concat(this.filteredUpgradeRequirements)
+    return minByPayback(requirements)
   }
 
   /**
    * Calculates the cps increase of getting this considering all requirements are already met.
-   * @return {number}
    */
-  calculateCpsIncrease() {
+  calculateCpsIncrease(): number {
     const achievementsCpsIncrease = this.filteredAchievementRequirements.reduce((acc, achievement) => acc + achievement.cpsIncreaseWithoutRequirements, 0);
     return calculateCpsIncrease(this.filteredBuildingRequirements, this.filteredUpgradeRequirements.concat(this)) + achievementsCpsIncrease;
   }
 
   /**
    * Calculates the price to buy this and all its requirements if any.
-   * @return {number}
    */
-  calculatePrice() {
+  calculatePrice(): number {
     const buildingRequirementsPrice = this.filteredBuildingRequirements.reduce((acc, b) => acc + b.calculatePrice(), 0);
     const upgradeRequirementsPrice = this.upgradeRequirementsTotalCostWithoutBuildings;
     return this.gameObject.getPrice() + buildingRequirementsPrice + upgradeRequirementsPrice;
   }
 
-  get owned () {
+  get owned (): boolean {
     return this.gameObject.bought === 1;
   }
 
@@ -1360,7 +1249,7 @@ class Upgrade extends BuyableWithBuildingRequirements {
    * @param {String} name
    * @return {Upgrade}
    */
-  static findByName(name) {
+  static findByName(name: string): Upgrade {
     return AUTO_COOKIE.upgrades[name];
   }
 
@@ -1369,7 +1258,7 @@ class Upgrade extends BuyableWithBuildingRequirements {
    * @param {String} name
    * @return {Upgrade}
    */
-  static getByName(name) {
+  static getByName(name: string): Upgrade {
     const upgrade = Upgrade.findByName(name);
     if (upgrade === undefined) {
       throw new Error(`Unable to find Upgrade with name ${name}`)
@@ -1380,10 +1269,8 @@ class Upgrade extends BuyableWithBuildingRequirements {
 
   /**
    * Looks for an Upgrade with the given name
-   * @param {String} name
-   * @return {Game.Upgrade}
    */
-  static getGameUpgradeByName(name) {
+  static getGameUpgradeByName(name: string): GameUpgrade {
     const achievement = Game.Upgrades[name];
     if (achievement === undefined) throw new Error(`Failed to find upgrade named ${name}`);
     return achievement;
@@ -1391,27 +1278,19 @@ class Upgrade extends BuyableWithBuildingRequirements {
 }
 
 class LegacyUpgrade extends Upgrade {
-  /**
-   * @param {String} name
-   * @param {String} upgradeRequirementNames
-   */
-  constructor(name, ...upgradeRequirementNames) {
+  constructor(name: string, ...upgradeRequirementNames: Array<string>) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     const upgradesRequirements = upgradeRequirementNames.map(name => Upgrade.getByName(name));
     super(gameUpgrade, [], upgradesRequirements);
   }
 
-  get canEventuallyGet() {
+  get canEventuallyGet(): boolean {
     return !this.owned && this.gameObject.unlocked === 1; //If this is not unlocked it won't be unlocked for this whole ascension
   }
 }
 
 class BuildingUpgrade extends Upgrade {
-  /**
-   * @param {String} name
-   * @param {BuildingRequirement} requiredBuildings
-   */
-  constructor(name, ...requiredBuildings) {
+  constructor(name: string, ...requiredBuildings: Array<BuildingRequirement>) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     super(
       gameUpgrade,
@@ -1421,12 +1300,7 @@ class BuildingUpgrade extends Upgrade {
 }
 
 class BuildingUpgradeWithAchievement extends Upgrade {
-  /**
-   * @param {String} name
-   * @param {BuildingRequirement} requiredBuilding
-   * @param {String} achievementName
-   */
-  constructor(name, requiredBuilding, achievementName) {
+  constructor(name: string, requiredBuilding: BuildingRequirement, achievementName: string) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     const achievement = Achievement.getByName(achievementName);
     super(
@@ -1439,12 +1313,7 @@ class BuildingUpgradeWithAchievement extends Upgrade {
 }
 
 class BuildingUpgradeWithUpgradeRequirement extends Upgrade {
-  /**
-   * @param {String} name
-   * @param {String} upgradeRequirementName
-   * @param {BuildingRequirement} requiredBuildings
-   */
-  constructor(name, upgradeRequirementName, ...requiredBuildings) {
+  constructor(name: string, upgradeRequirementName: string, ...requiredBuildings: Array<BuildingRequirement>) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     const upgradeRequirement = Upgrade.getByName(upgradeRequirementName);
     super(
@@ -1456,12 +1325,7 @@ class BuildingUpgradeWithUpgradeRequirement extends Upgrade {
 }
 
 class CookieUpgrade extends Upgrade {
-  /**
-   * @param {String} name
-   * @param {BuildingRequirement[]} buildingRequirements
-   * @param {String[]} upgradeRequirementNames
-   */
-  constructor(name, buildingRequirements = [], upgradeRequirementNames = []) {
+  constructor(name: string, buildingRequirements: Array<BuildingRequirement> = [], upgradeRequirementNames: Array<string> = []) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     const upgradesRequirements = upgradeRequirementNames.map(name => Upgrade.getByName(name));
     super(
@@ -1471,17 +1335,13 @@ class CookieUpgrade extends Upgrade {
     );
   }
 
-  get powerMultiplier() {
+  get powerMultiplier(): number {
     return 1 + this.gameObject.power / 100;
   }
 }
 
 class CookieUpgradeWithUpgradeRequirement extends CookieUpgrade {
-  /**
-   * @param {String} name
-   * @param {String} requiredUpgradeName
-   */
-  constructor(name, requiredUpgradeName) {
+  constructor(name: string, requiredUpgradeName: string) {
     super(
       name,
       [],
@@ -1494,12 +1354,12 @@ class MouseUpgrade extends Upgrade {
   /**
    * @param {String} name Name of the upgrade
    */
-  constructor(name) {
+  constructor(name: string) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     super(gameUpgrade);
   }
 
-  calculateCpsIncrease() {
+  calculateCpsIncrease(): number {
     let add = 0; //Increase to base cursor cps and mouse clicks per non cursor gameObject
     if (Game.Has("Thousand fingers")) add += 0.1;
     if (Game.Has("Million fingers")) add *= 5;
@@ -1529,16 +1389,17 @@ class MouseUpgrade extends Upgrade {
     if (Game.Has("Reinforced index finger")) cookiesPerClick *= 2;
     if (Game.Has("Carpal tunnel prevention cream")) cookiesPerClick *= 2;
     if (Game.Has("Ambidextrous")) cookiesPerClick *= 2;
-    if (MouseUpgrade.gameHasClickBuff()) {
-      const clickMultiplier = getBuffs().reduce((multiplier, buff) => multiplier * (typeof buff.multClick !== "undefined" && buff.multClick !== 0 ? buff.multClick : 1), 1)
+    const clickBuffs = MouseUpgrade.clickBuffs
+    if (clickBuffs.length > 0) {
+      const clickMultiplier = clickBuffs.reduce<number>((multiplier, buff) => multiplier * buff.multClick, 1)
       return ((cookiesPerClick + add) * clickMultiplier - Game.mouseCps()) * CLICKS_PER_SEC;
     } else {
       return 0;
     }
   }
 
-  static gameHasClickBuff() {
-    return getBuffs().filter(buff => buff.multClick > 1).length > 0;
+  static get clickBuffs(): Array<Buff> {
+    return getBuffs().filter(buff => buff.multClick > 1)
   }
 }
 
@@ -1546,12 +1407,12 @@ class GoldenCookieUpgrade extends Upgrade {
   /**
    * @param {String} name Name of the upgrade
    */
-  constructor(name) {
+  constructor(name: string) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     super(gameUpgrade);
   }
 
-  calculateCpsIncrease() {
+  calculateCpsIncrease(): number {
     if (this.gameObject.unlocked === 1 && AUTO_COOKIE.reserve.reserveAmount + this.price <= Game.cookies) {
       return Infinity;
     } else {
@@ -1559,24 +1420,24 @@ class GoldenCookieUpgrade extends Upgrade {
     }
   }
 
-  estimatedReturnPercent() {
+  estimatedReturnPercent(): number {
     return 1
   }
 }
 
 class KittenUpgrade extends Upgrade {
-  milkRequired;
+  milkRequired: number;
   /**
    * @param {String} name Name of the upgrade
    * @param {number} milkRequired Milk progress that unlocks this kitten upgrade
    */
-  constructor(name, milkRequired) {
+  constructor(name: string, milkRequired: number) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     super(gameUpgrade);
     this.milkRequired = milkRequired;
   }
 
-  calculateCpsIncrease() {
+  calculateCpsIncrease(): number {
     if (Game.milkProgress >= this.milkRequired) {
       const cps = getCps();
       const base_cps = cps / Game.globalCpsMult;
@@ -1590,9 +1451,9 @@ class KittenUpgrade extends Upgrade {
 }
 
 class HeavenlyChipUpgrade extends Upgrade {
-  unlockPercentage;
+  unlockPercentage: number;
 
-  constructor(name, percentUnlock, ...requiredUpgradeNames) {
+  constructor(name: string, percentUnlock: number, ...requiredUpgradeNames: Array<string>) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     //const requirement = requirementNames.map(name => Upgrade.getGameUpgradeByName(name));
     const upgradeRequirements = requiredUpgradeNames.map(name => Upgrade.getByName(name));
@@ -1600,14 +1461,14 @@ class HeavenlyChipUpgrade extends Upgrade {
     this.unlockPercentage = percentUnlock;
   }
 
-  calculateCpsIncrease() {
+  calculateCpsIncrease(): number {
     const multiplier = Game.prestige * 0.01 * this.unlockPercentage / 100;
     return getCps() * multiplier
   }
 }
 
 class HeavenlyChipUpgradeWithUpgradeRequirement extends Upgrade {
-  constructor(name, percentUnlocked, requiredUpgradeName) {
+  constructor(name: string, percentUnlocked: number, requiredUpgradeName: string) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     const requiredUpgrade = Upgrade.getByName(requiredUpgradeName);
     super(
@@ -1620,18 +1481,13 @@ class HeavenlyChipUpgradeWithUpgradeRequirement extends Upgrade {
 
 class ResearchUpgrade extends Upgrade {
 
-  /**
-   * @param {String} name
-   * @param {BuildingRequirement[]} buildingRequirements
-   * @param {String} upgradeRequirementNames
-   */
-  constructor(name, buildingRequirements, ...upgradeRequirementNames) {
+  constructor(name: string, buildingRequirements: Array<BuildingRequirement>, ...upgradeRequirementNames: Array<string>) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name);
     const upgradesRequirements = upgradeRequirementNames.map(name => Upgrade.getByName(name));
     super(gameUpgrade, buildingRequirements, upgradesRequirements);
   }
 
-  calculateCpsIncrease() {
+  calculateCpsIncrease(): number {
     if (Achievement.getByName("Elder").won && ResearchUpgrade.nextResearch() !== this) {
       return super.calculateCpsIncrease();
     } else {
@@ -1639,7 +1495,7 @@ class ResearchUpgrade extends Upgrade {
     }
   }
 
-  calculatePayback() {
+  calculatePayback(): number {
     if (Game.researchT > 0) { //We must wait for the research to finish researching
       return Infinity;
     } else {
@@ -1647,7 +1503,7 @@ class ResearchUpgrade extends Upgrade {
     }
   }
 
-  static fullResearchTime() {
+  static fullResearchTime(): number {
     const researchTime = Game.baseResearchTime;
     if (Game.Has('Persistent memory')) {
       return Math.ceil(researchTime / 10);
@@ -1656,7 +1512,7 @@ class ResearchUpgrade extends Upgrade {
     }
   }
 
-  static nextResearch() {
+  static nextResearch(): ResearchUpgrade | undefined {
     const nextResearchId = Game.nextResearch;
     if (nextResearchId > 0) {
       return AUTO_COOKIE.upgrades[Game.UpgradesById[nextResearchId].name]
@@ -1665,43 +1521,33 @@ class ResearchUpgrade extends Upgrade {
 }
 
 class ResearchCookieUpgrade extends ResearchUpgrade {
-  power;
+  power: number;
 
-  /**
-   *
-   * @param {String} name
-   * @param {String} upgradeRequirementName
-   * @param {number} power
-   */
-  constructor(name, upgradeRequirementName, power) {
+  constructor(name: string, upgradeRequirementName: string, power: number) {
     super(name, [], upgradeRequirementName);
     this.power = power;
   }
 
-  get powerMultiplier() {
+  get powerMultiplier(): number {
     return 1 + this.power / 100;
   }
 }
 
-class Achievement extends BuyableWithBuildingRequirements {
+class Achievement extends BuyableWithBuildingRequirements<GameAchievement> {
 
-  /**
-   * @param {String} name
-   * @param {BuildingRequirement} requiredBuildings
-   */
-  constructor(name, ...requiredBuildings) {
+  constructor(name: string, ...requiredBuildings: Array<BuildingRequirement>) {
     const achievement = Achievement.getGameAchievementByName(name);
     super(achievement, requiredBuildings);
     AUTO_COOKIE.achievements[this.name] = this;
   }
 
-  get canEventuallyGet() {
-    //If an Achiev has no requirements it means we can't purchase our way to get it.
+  get canEventuallyGet(): boolean {
+    //If an Achievement has no requirements it means we can't purchase our way to get it.
     //It comes from baking a certain amount of cookies for example, or having a certain amount of different grandmas
     return this.gameObject.won === 0 && this.buildingRequirements.length > 0;
   }
 
-  get cpsIncreaseWithoutRequirements() {
+  get cpsIncreaseWithoutRequirements(): number {
     if (this.gameObject.won === 1) {
       return 0; //We already have this achievement
     } else {
@@ -1713,28 +1559,23 @@ class Achievement extends BuyableWithBuildingRequirements {
     }
   }
 
-  calculateCpsIncrease() {
+  calculateCpsIncrease(): number {
     return calculateCpsIncrease(this.filteredBuildingRequirements) + this.cpsIncreaseWithoutRequirements;
   }
 
-  calculatePrice() {
+  calculatePrice(): number {
     return this.filteredBuildingRequirements.reduce((acc, b) => acc + b.calculatePrice(), 0);
   }
 
-  get won() {
+  get won(): boolean {
     return this.gameObject.won === 1
   }
 
-  /**
-   * Looks for an Achievement with the given name
-   * @param {String} name
-   * @return {Achievement}
-   */
-  static findByName(name) {
+  static findByName(name): Achievement {
     return AUTO_COOKIE.achievements[name];
   }
 
-  static getByName(name) {
+  static getByName(name): Achievement {
     const achievement = Achievement.findByName(name);
     if (achievement === undefined) {
       throw new Error(`Unable to find Achievement with name ${name}`)
@@ -1743,12 +1584,7 @@ class Achievement extends BuyableWithBuildingRequirements {
     }
   }
 
-  /**
-   * Looks for an Achievement with the given name
-   * @param {String} name
-   * @return {Game.Achievement}
-   */
-  static getGameAchievementByName(name) {
+  static getGameAchievementByName(name): GameAchievement {
     const achievement = Game.Achievements[name];
     if (achievement === undefined) throw new Error(`Failed to find achievement named ${name}`);
     return achievement;
@@ -1756,16 +1592,26 @@ class Achievement extends BuyableWithBuildingRequirements {
 }
 
 //region Reserve
-class ReserveLevel {
-  effects;
-  amountF;
+class CookieEffect {
+  name: string
+  shortName: string
 
-  constructor(effects, amountF, icon) {
+  constructor(name: string, shortName: string = name) {
+    this.name = name
+    this.shortName = shortName
+  }
+}
+
+class ReserveLevel {
+  effects: Array<CookieEffect>;
+  amountF: () => number;
+
+  constructor(effects: Array<CookieEffect>, amountF: () => number) {
     this.effects = effects;
     this.amountF = amountF;
   }
 
-  get title() {
+  get title(): string {
     if (this.effects.length === 0) {
       return "Disabled"
     } else if (this.effects.length === 1) {
@@ -1775,7 +1621,7 @@ class ReserveLevel {
     }
   }
 
-  static goldenCookieMultiplier() {
+  static goldenCookieMultiplier(): number {
     let mult = 1;
     if (Game.elderWrath > 0) mult *= 1 + Game.auraMult('Unholy Dominion') * 0.1
     else if (Game.elderWrath === 0) mult *= 1 + Game.auraMult('Ancestral Metamorphosis') * 0.1
@@ -1787,16 +1633,16 @@ class ReserveLevel {
     return mult;
   }
 
-  static calculateCookieChainReserve(cps) {
+  static calculateCookieChainReserve(cps: number): number {
     const digit = Game.elderWrath === 3 ? 6 : 7; //With last level of elder wrath cookie the digit will always be 6
     const goldenCookieMultiplier = this.goldenCookieMultiplier();
     const chainDigits = Math.floor(Math.log((cps * 6 * 60 * 60 * goldenCookieMultiplier * 9) / digit) / Math.LN10);
 
-    function repeatingDigitNumber(digit, repetitions) {
+    function repeatingDigitNumber(digit: number, repetitions: number): number {
       return 1 / 9 * Math.pow(10, repetitions) * digit
     }
 
-    function payout(digit, digits) {
+    function payout(digit: number, digits: number): number {
       let payout = 0
       for (let i = 1; i <= digits; i++) {
         payout += repeatingDigitNumber(digit, i)
@@ -1812,28 +1658,32 @@ class ReserveLevel {
     return res;
   }
 
-  static lucky() {
+  static lucky(): number {
     //This adds 15% of current cookies in bank or 15 mins of production
     //Reserve for this must make 15% of cookies in bank equal to 15 mins of production
     return (Game.unbuffedCps * 15 * 60) / .15; //Multiplier doesn't matter here as it would cancel out.
   }
 
-  static conjuredBakedGoods() {
+  static conjuredBakedGoods(): number {
     return (Game.unbuffedCps * 30 * 60) / .15;
   }
 
-  get amount() {
+  get amount(): number {
     return this.amountF();
   }
-}
 
-class CookieEffect {
-  name
-  shortName
-
-  constructor(name, shortName = name) {
-    this.name = name
-    this.shortName = shortName
+  static get all(): Array<ReserveLevel> {
+    return [
+      LUCKY_RESERVE,
+      BAKED_GOODS_RESERVE,
+      CHAIN_RESERVE,
+      FRENZY_LUCKY_RESERVE,
+      FRENZY_CHAIN_RESERVE,
+      FRENZY_BAKED_GOODS_RESERVE,
+      DRAGON_HARVEST_LUCKY_RESERVE,
+      DRAGON_HARVEST_CHAIN_RESERVE,
+      DRAGON_HARVEST_BAKED_GOODS_RESERVE
+    ]
   }
 }
 
@@ -1854,34 +1704,26 @@ const DRAGON_HARVEST_LUCKY_RESERVE = new ReserveLevel([LUCKY, DRAGON_HARVEST], (
 const DRAGON_HARVEST_CHAIN_RESERVE = new ReserveLevel([CHAIN, DRAGON_HARVEST], () => ReserveLevel.calculateCookieChainReserve(Game.unbuffedCps * 15));
 const DRAGON_HARVEST_BAKED_GOODS_RESERVE = new ReserveLevel([BAKED_GOODS, DRAGON_HARVEST], () => ReserveLevel.conjuredBakedGoods() * 15);
 
-/**
- * Creates new instance of Reserve
- * @return {Reserve} The new instance
- */
 class Reserve {
-  /**
-   * @type {ReserveLevel}
-   * @public
-   */
-  reserveLevel;
-  amount;
+  reserveLevel: ReserveLevel;
+  amount: number;
 
   constructor() {
     this.updateReserveLevel()
   }
 
-  get reserveAmount() {
+  get reserveAmount(): number {
     return this.amount
   }
 
-  static get reservePossibilities() {
+  static get reservePossibilities(): Array<ReserveLevel> {
     const activeButtonEffects = AUTO_COOKIE.reserveNote ? AUTO_COOKIE.reserveNote.activeButtonEffects : []
     if (activeButtonEffects.length === 0) return []
 
-    return Reserve.all.filter(reserve => reserve.effects.reduce((acc, effect) => acc && activeButtonEffects.includes(effect), true))
+    return ReserveLevel.all.filter(reserve => reserve.effects.reduce((acc, effect) => acc && activeButtonEffects.includes(effect), true))
   }
 
-  updateReserveLevel() {
+  updateReserveLevel(): void {
     //This avoids recalculating reserve amount a bunch of times
     const possibilities = Reserve.reservePossibilities.map(reserveLevel => {return {level: reserveLevel, amount: reserveLevel.amount}})
     const reserveLevel = possibilities.reduce((max, reserveLevel) => {
@@ -1900,32 +1742,18 @@ class Reserve {
       AUTO_COOKIE.loop("Reserve changed");
     }
   }
-
-  static get all() {
-    return [
-      LUCKY_RESERVE,
-      BAKED_GOODS_RESERVE,
-      CHAIN_RESERVE,
-      FRENZY_LUCKY_RESERVE,
-      FRENZY_CHAIN_RESERVE,
-      FRENZY_BAKED_GOODS_RESERVE,
-      DRAGON_HARVEST_LUCKY_RESERVE,
-      DRAGON_HARVEST_CHAIN_RESERVE,
-      DRAGON_HARVEST_BAKED_GOODS_RESERVE
-    ]
-  }
 }
 //endregion
 
-class Element {
-  html
+class AutoElement {
+  html: HTMLElement
   shown = false
 
   constructor(tag) {
     this.html = document.createElement(tag)
   }
 
-  get style() {
+  get style(): CSSStyleDeclaration {
     return this.html.style
   }
 
@@ -1934,18 +1762,18 @@ class Element {
   }
 
   set onclick(f) {
-    return this.html.onclick = f
+    this.html.onclick = f
   }
 
   set onmouseout(f) {
-    return this.html.onmouseout = f
+    this.html.onmouseout = f
   }
 
-  set textContent(text) {
-    return this.html.textContent = text
+  set textContent(text: string) {
+    this.html.textContent = text
   }
 
-  hide() {
+  hide(): AutoElement {
     if (this.shown) {
       this.html.style.display = "none"
       this.shown = false
@@ -1953,7 +1781,7 @@ class Element {
     return this
   }
 
-  show() {
+  show(): AutoElement {
     if (!this.shown) {
       this.html.style.display = "block"
       this.shown = true
@@ -1961,16 +1789,13 @@ class Element {
     return this
   }
 
-  /**
-   * @param child {Element | Node}
-   */
-  appendChild(child) {
-    const html = child instanceof Element ? child.html : child
+  appendChild(child: AutoElement | Node): void {
+    const html = child instanceof AutoElement ? child.html : child
     this.html.appendChild(html)
   }
 }
 
-class NoteArea extends Element {
+class NoteArea extends AutoElement {
 
   constructor() {
     super("div")
@@ -1983,30 +1808,30 @@ class NoteArea extends Element {
   }
 }
 
-class Note extends Element {
-  topRow
-  bottomRow
+abstract class Note extends AutoElement {
+  topRow: AutoElement
+  bottomRow: AutoElement
 
-  title
-  description
+  title: AutoElement
+  description: AutoElement
 
-  constructor() {
+  protected constructor() {
     super("div")
     this.style.width = "350px";
     this.style.display = "none";
     this.classList.add("framed", "text")
 
-    this.topRow = new Element("div")
+    this.topRow = new AutoElement("div")
     this.appendChild(this.topRow)
 
-    this.bottomRow = new Element("div")
+    this.bottomRow = new AutoElement("div")
     this.appendChild(this.bottomRow)
 
-    this.title = new Element("h3")
+    this.title = new AutoElement("h3")
     this.title.style.display = "inline-block"
     this.topRow.appendChild(this.title)
 
-    this.description = new Element("h5")
+    this.description = new AutoElement("h5")
     this.description.classList.add("title")
     this.description.style.display = "inline-block"
     this.description.style.fontSize = "16px"
@@ -2014,52 +1839,50 @@ class Note extends Element {
 
   }
 
-  setTitle(title) {
+  setTitle(title: string): this {
     this.title.textContent = title
     return this
   }
 
-  setDescription(description) {
+  setDescription(description: string): this {
     this.description.textContent = description
     return this
   }
 
-  update(autoCookie) {
-    throw new Error("Unimplemented canEventuallyGet method")
-  }
+  abstract update(autoCookie: AutoCookie): void
 }
 
 class GoalNote extends Note {
-  extraDescription
-  extraTitle
+  extraDescription: AutoElement
+  extraTitle: AutoElement
 
   constructor() {
     super()
 
-    this.extraTitle = new Element("span")
+    this.extraTitle = new AutoElement("span")
     this.topRow.appendChild(this.extraTitle)
 
     this.onmouseout = () => Game.tooltip.shouldHide = 1;
 
-    this.extraDescription = new Element("span")
+    this.extraDescription = new AutoElement("span")
     this.extraDescription.style.color = "#6F6"
     this.bottomRow.appendChild(this.extraDescription)
 
     this.show()
   }
 
-  setExtraDescription(extra) {
+  setExtraDescription(extra: string): this {
     this.extraDescription.textContent = extra
     return this
   }
 
-  setExtraTitle(extra, color) {
+  setExtraTitle(extra: string, color: string): this {
     this.extraTitle.textContent = extra
     this.extraTitle.style.color = color
     return this
   }
 
-  update(autoCookie) {
+  update(autoCookie: AutoCookie): void {
     const bestBuyable = autoCookie.bestBuyable
     if (typeof bestBuyable === 'undefined') return;
 
@@ -2073,7 +1896,7 @@ class GoalNote extends Note {
       this.show()
     }
 
-    let title = "Goal: " + bestBuyable instanceof Achievement ? "Achieve" : "Unlock"
+    let title = "Goal: " + (bestBuyable instanceof Achievement ? "Achieve" : "Unlock")
     const secondsToBuy = bestBuyable.millisToBuy / 1000
     if (secondsToBuy > 0) {
       const buyTimeString = timeString(Math.ceil(secondsToBuy))
@@ -2089,7 +1912,7 @@ class GoalNote extends Note {
     } else if (bestBuyable instanceof Upgrade) {
       this.html.onmouseover = () => Game.tooltip.draw(this.html,() => Game.crateTooltip(Game.Upgrades[bestBuyable.name],'stats'),'this');
     } else {
-      this.html.onmouseover = undefined;
+      this.html.onmouseover = null;
     }
     this.setTitle(title).setExtraDescription(bestBuyable.cpsIncreasePercentText)
   }
@@ -2101,7 +1924,7 @@ class NextBuyNote extends GoalNote {
   constructor() {
     super()
 
-    this.button = new Element("a")
+    this.button = new AutoElement("a")
     this.button.style.fontSize = "15px"
     this.button.style.float = "right"
     this.button.style.textDecoration = "none"
@@ -2110,7 +1933,7 @@ class NextBuyNote extends GoalNote {
     this.topRow.appendChild(this.button)
   }
 
-  updateLockedIcon() {
+  updateLockedIcon(): this {
     if (AUTO_COOKIE.buyLocked) {
       this.button.textContent = "🔒";
     } else {
@@ -2119,7 +1942,7 @@ class NextBuyNote extends GoalNote {
     return this
   }
 
-  update(autoCookie) {
+  update(autoCookie: AutoCookie): void {
     //Maybe change remain cost
     if (!autoCookie.bestBuyable) return; //Next buy still not set
     const nextMilestone = autoCookie.bestBuyable.nextMilestone;
@@ -2148,9 +1971,9 @@ class NextBuyNote extends GoalNote {
     }
 
     if (nextMilestone instanceof Upgrade) {
-      this.html.onmouseover = () => Game.tooltip.draw(this.html,() => Game.crateTooltip(Game.Upgrades[nextMilestone.name],'stats', true),'this');
+      this.html.onmouseover = () => Game.tooltip.draw(this.html,() => Game.crateTooltip(Game.Upgrades[nextMilestone.name],'stats'),'this');
     } else {
-      this.html.onmouseover = undefined;
+      this.html.onmouseover = null;
     }
 
     this.setTitle(title)
@@ -2160,14 +1983,14 @@ class NextBuyNote extends GoalNote {
   }
 }
 
-class ReserveButton extends Element {
-  icon
-  cookieEffect
-  unlockedF
-  added = false
-  active = false
+class ReserveButton extends AutoElement {
+  icon: string
+  cookieEffect: CookieEffect
+  unlockedF: () => boolean
+  added: boolean = false
+  active: boolean = false
 
-  constructor(icon, cookieEffect, unlockedF) {
+  constructor(icon: string, cookieEffect: CookieEffect, unlockedF: () => boolean) {
     super("a")
     this.icon = icon
     this.cookieEffect = cookieEffect
@@ -2182,55 +2005,58 @@ class ReserveButton extends Element {
     this.style.textDecoration = "none"
   }
 
-  get unlocked() {
+  get unlocked(): boolean {
     return this.unlockedF()
   }
 
-  toggle() {
+  toggle(): ReserveButton {
     return this.active ? this.setInactive() : this.setActive()
   }
 
-  setActive() {
+  setActive(): ReserveButton {
     this.html.style.textShadow = "0px 0px 3px #fff"
     this.active = true
     return this
   }
 
-  setInactive() {
-    this.html.style.textShadow = null
+  setInactive(): ReserveButton {
+    this.html.style.textShadow = ""
     this.active = false
     return this
   }
-}
 
-class ReserveNote extends Note {
-  buttonDiv
-  buttons
-
-  constructor() {
-    super()
-
-    this.buttonDiv = new Element("div")
-    this.buttonDiv.style.float = "right"
-    this.buttonDiv.style.fontSize = "15px"
-    this.topRow.appendChild(this.buttonDiv)
-
-    this.buttons = [
+  static get all(): Array<ReserveButton> {
+    return [
       new ReserveButton("🍀 ", LUCKY, () => true),
       new ReserveButton("🔗 ", CHAIN, () => Game.cookiesEarned >= 100000),
       new ReserveButton("ɮ ", BAKED_GOODS, () => Game.Objects["Wizard tower"].level > 0),
       new ReserveButton("🍪 ", FRENZY, () => Game.elderWrath < 3 && Game.Has("Get lucky")),
       new ReserveButton("🐉 ", DRAGON_HARVEST, () => Game.hasAura("Reaper of Fields")),
     ]
+  }
+}
+
+class ReserveNote extends Note {
+  buttonDiv: AutoElement
+  buttons: Array<ReserveButton>
+
+  constructor() {
+    super()
+
+    this.buttonDiv = new AutoElement("div")
+    this.buttonDiv.style.float = "right"
+    this.buttonDiv.style.fontSize = "15px"
+    this.topRow.appendChild(this.buttonDiv)
+    this.buttons = ReserveButton.all
 
     this.addButtons().show()
   }
 
-  get activeButtonEffects() {
+  get activeButtonEffects(): Array<CookieEffect> {
     return this.buttons.flatMap(button => button.active ? [button.cookieEffect] : [])
   }
 
-  setActiveButtons(buttonNames) {
+  setActiveButtons(buttonNames: Array<string>): void {
     if (buttonNames.length > 0) {
       this.buttons.forEach(button => {
         if (button.unlocked && buttonNames.includes(button.cookieEffect.name)) {
@@ -2244,7 +2070,7 @@ class ReserveNote extends Note {
     }
   }
 
-  addButtons() {
+  addButtons(): ReserveNote {
     this.buttons.forEach(button => {
       if (button.unlocked && !button.added) {
         AUTO_COOKIE.buyLocked = true
@@ -2255,7 +2081,7 @@ class ReserveNote extends Note {
     return this
   }
 
-  update(autoCookie) {
+  update(autoCookie: AutoCookie): void {
     this.addButtons()
 
     this.setDescription(Beautify(autoCookie.reserve.reserveAmount))
@@ -2271,15 +2097,15 @@ class GoldenCookieSpawnNote extends Note {
     super()
   }
 
-  setGolden() {
+  setGolden(): void {
     this.html.style.filter = "invert(78%) sepia(94%) saturate(1828%) hue-rotate(330deg) brightness(95%) contrast(93%)"
   }
 
-  clearGolden() {
-    this.html.style.filter = null
+  clearGolden(): void {
+    this.html.style.filter = ""
   }
 
-  update(autoCookie) {
+  update(autoCookie: AutoCookie): void {
     if (autoCookie.reserve.reserveLevel === DISABLED) {
       this.hide()
       return
@@ -2309,19 +2135,19 @@ class GoldenCookieSpawnNote extends Note {
   }
 }
 
-function getBuffs() {
-  let buffs = [];
+function getBuffs(): Array<Buff> {
+  let buffs: Array<Buff> = [];
   for (const buffName in Game.buffs) {
     buffs.push(Game.buffs[buffName]);
   }
   return buffs;
 }
 
-function getBestWrinkler() {
+/*function getBestWrinkler(): Wrinkler {
   return Game.wrinklers.reduce((max, current) => (current.sucked > max.sucked ) ? current : max);
 }
 
-function calculateWrinklerSuckMultiplier() {
+function calculateWrinklerSuckMultiplier(): number {
   let suckMultiplier = 1.1;
   if (Game.Has('Sacrilegious corruption')) suckMultiplier *= 1.05;
   if (Game.Has('Wrinklerspawn')) suckMultiplier *= 1.05;
@@ -2375,7 +2201,7 @@ function calculateWrinklersWorthPopping() {
     }
   }
   return worthWrinklers;
-}
+}*/
 
 function getCps() {
   return Game.cookiesPs * (1 - Game.cpsSucked);
@@ -2384,7 +2210,7 @@ function getCps() {
 /**
  * Log achievements AutoCookie doesn't know about
  */
-function missingAchievements() {
+function logMissingAchievements(): void {
   for (let name in Game.Achievements) {
     const achievement = Achievement.findByName(name);
     if (achievement === undefined) {
@@ -2393,7 +2219,7 @@ function missingAchievements() {
   }
 }
 
-function missingUpgrades() {
+function logMissingUpgrades(): void {
   for (let name in Game.Upgrades) {
     const upgrade = Upgrade.findByName(name);
     if (upgrade === undefined) {
@@ -2402,41 +2228,61 @@ function missingUpgrades() {
   }
 }
 
-class EmptyInvestment {
-  constructor() {}
+abstract class Investment {
+  /**
+   * Estimates the profit we would make if we ran this investment around the given buyable
+   * @param buyable The buyable to invest around
+   * @returns {number} The estimated cookies we would gain should we run this investment
+   */
+  abstract estimateReturns<T extends GameObject>(buyable: Buyable<T>): number
+  /**
+   * @returns {number} The total cookies invested
+   */
+  abstract invest(): number
+  /**
+   * @returns {number} The total cookies gotten from selling this investment
+   */
+  abstract sellInvestment(): number
+}
+
+class EmptyInvestment extends Investment {
+  constructor() {
+    super()
+  }
 
   /**
    * Estimates the profit we would make if we ran this investment around the given buyable
    * @param buyable The buyable to invest around
    * @returns {number} The estimated cookies we would gain should we run this investment
    */
-  estimateReturns(buyable) {
+  estimateReturns<T extends GameObject>(buyable: Buyable<T>): number {
     return 0;
   }
 
   /**
    * @returns {number} The total cookies invested
    */
-  invest() {
+  invest(): number {
     return 0;
   }
 
   /**
    * @returns {number} The total cookies gotten from selling this investment
    */
-  sellInvestment() {
+  sellInvestment(): number {
     return 0;
   }
 }
 
-class Investment {
-  moneyInvestedInStocks
-  moneyInvestedInBrokers
-  newBrokers
-  buyFunctions
-  sellFunctions
+class RealInvestment extends Investment {
+  moneyInvestedInStocks: number
+  moneyInvestedInBrokers: number
+  newBrokers: number
+  buyFunctions: Array<() => void>
+  sellFunctions: Array<() => number>
 
-  constructor(cookies) {
+  constructor(cookies: number) {
+    super()
     const goods = StockMarket.stableActiveGoods.sort((g1, g2) => g2.val - g1.val) //Sorts by price in descending order
     const fullStockPrice = goods.reduce((total, good) => {
       const price = StockMarket.price(good)
@@ -2460,6 +2306,7 @@ class Investment {
         return {
           remainingMoney: remainingMoney - buyPrice,
           buyFunctions: buyFunctions.concat([buyFunction]),
+          // @ts-ignore
           sellFunctions: sellFunctions.concat([sellFunction]),
         }
       } else {
@@ -2474,11 +2321,11 @@ class Investment {
     this.sellFunctions = sellFunctions
   }
 
-  get totalInvestment() {
+  get totalInvestment(): number {
     return this.moneyInvestedInStocks + this.moneyInvestedInBrokers
   }
 
-  get cookieInvestment() {
+  get cookieInvestment(): number {
     return StockMarket.moneyToCookies(this.totalInvestment)
   }
 
@@ -2487,7 +2334,7 @@ class Investment {
    * @param buyable The buyable to invest around
    * @returns {number} The estimated cookies we would gain should we run this investment
    */
-  estimateReturns(buyable) {
+  estimateReturns<T extends GameObject>(buyable: Buyable<T>): number {
     if (buyable.percentCpsIncrease === Infinity) return 0
     const estimatedReturnPercent = buyable.estimatedReturnPercent(this.newBrokers)
     const cpsAfterBuying = Game.unbuffedCps * buyable.percentCpsIncrease
@@ -2498,7 +2345,7 @@ class Investment {
   /**
    * @returns {number} The total cookies invested
    */
-  invest() {
+  invest(): number {
     this.buyFunctions.forEach(f => f())
     return this.cookieInvestment
   }
@@ -2506,63 +2353,54 @@ class Investment {
   /**
    * @returns {number} The total cookies gotten from selling this investment
    */
-  sellInvestment() {
-    const moneyFromSales = this.buyFunctions.reduce((total, sellFunction) => total + sellFunction(), 0)
+  sellInvestment(): number {
+    const moneyFromSales = this.sellFunctions.reduce((total, sellFunction) => total + sellFunction(), 0)
     return StockMarket.moneyToCookies(moneyFromSales)
   }
 }
 
 class StockMarket {
-  static get game() {
+  private static get game(): Market {
     return Game.Objects.Bank.minigame
   }
 
-  static get isLoaded() {
+  static get isLoaded(): boolean {
     return Game.Objects.Bank.minigameLoaded
   }
 
-  static get millisToNextTick() {
+  static get millisToNextTick(): number {
     return (1800 - StockMarket.game.tickT) / Game.fps * 1000
   }
 
-  static get brokers() {
+  static get brokers(): number {
     return StockMarket.game.brokers
   }
 
-  static get maxBrokers() {
+  static get maxBrokers(): number {
     return StockMarket.game.getMaxBrokers()
   }
 
-  static calculateOverhead(brokers) {
+  static calculateOverhead(brokers: number): number {
     return 0.2 * Math.pow(0.95, brokers)
   }
 
-  static get overhead() {
+  static get overhead(): number {
     return this.calculateOverhead(StockMarket.brokers)
   }
 
-  static goodByID(id) {
-    return StockMarket.game.goodsById(id)
-  }
-
-  static maxStock(good) {
+  static maxStock(good: Good): number {
     return StockMarket.game.getGoodMaxStock(good)
   }
 
-  static price(good) {
+  static price(good: Good): number {
     return StockMarket.game.getGoodPrice(good)
   }
 
-  static estimatedInvestmentReturnPercent(buyable, additionalBrokers = 0) {
-    const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
-    return StockMarket.isLoaded ? 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (buyable.percentCpsIncrease - overhead) : 1
-  }
-
-  static get activeGoods() {
+  static get activeGoods(): Array<Good> {
     return StockMarket.game.goodsById.flatMap(good => good.active ? [good] : [])
   }
 
-  static get stableActiveGoods() {
+  static get stableActiveGoods(): Array<Good> {
     return StockMarket.activeGoods.filter(good => {
       if (good.vals.length >= STOCK_MARKET_STABILITY_MIN_PRICES) { //Need at least 5 values to check if a good is stable
         const prices = good.vals.slice(0, STOCK_MARKET_STABILITY_MAX_PRICES)
@@ -2575,14 +2413,15 @@ class StockMarket {
     })
   }
 
-  static buyBrokers(amount) {
+  static buyBrokers(amount: number): void {
     for (let i = 0; i < amount; i++) {
       //Apparently there is no accessible function to buy brokers, this is the best I found
+      // @ts-ignore
       document.getElementById("bankBrokersBuy").click()
     }
   }
 
-  static buy(good, amount) {
+  static buy(good: Good, amount: number): void {
     if (StockMarket.game.buyGood(good.id, amount)) {
       log(`Bought ${amount} ${good.name}`)
     }
@@ -2594,7 +2433,7 @@ class StockMarket {
    * @param amount Amount of good to sell
    * @returns {number} The money we got from the sale
    */
-  static sell(good, amount) {
+  static sell(good: Good, amount: number): number {
     if (StockMarket.game.sellGood(good.id, amount)) {
       const price = StockMarket.price(good) * amount
       log(`Sold ${amount} ${good.name}`)
@@ -2604,12 +2443,12 @@ class StockMarket {
     }
   }
 
-  static calculateBrokersToBuy(stockPrice) {
+  static calculateBrokersToBuy(stockPrice: number): number {
     const increase = .25 //This simulates an upgrade, this can be any value above the current overhead
     if (StockMarket.brokers === StockMarket.maxBrokers) return 0;
     const maxNewBrokers = StockMarket.maxBrokers - StockMarket.brokers
 
-    function calculateProfit(brokers) {
+    function calculateProfit(brokers: number): number {
       return stockPrice * (increase - StockMarket.calculateOverhead(StockMarket.brokers + brokers)) - brokers * 1200
     }
 
@@ -2623,7 +2462,7 @@ class StockMarket {
     return maxNewBrokers
   }
 
-  static cookiesToMoney(cookies) {
+  static cookiesToMoney(cookies: number): number {
     return cookies / Game.cookiesPsRawHighest
   }
 
@@ -2633,12 +2472,12 @@ class StockMarket {
    * @param highestCps {number} An option value of the highest cookies per second to use which defaults to the current games one
    * @returns {number} The money in cookies
    */
-  static moneyToCookies(money, highestCps = 0) {
+  static moneyToCookies(money: number, highestCps: number = 0): number {
     return money * Math.max(highestCps, Game.cookiesPsRawHighest)
   }
 
-  createInvestment(cookies) {
-    return StockMarket.isLoaded && cookies > 0 ? new Investment(cookies) : new EmptyInvestment()
+  createInvestment(cookies: number): Investment {
+    return StockMarket.isLoaded && cookies > 0 ? new RealInvestment(cookies) : new EmptyInvestment()
   }
 }
 
@@ -2647,46 +2486,33 @@ class AutoCookie {
   buyLocked = true
   buying = false
 
-  /**
-   * @type {Reserve}
-   */
-  reserve
-  stockMarket
-  timeUpdate
-  bestBuyable
+  reserve: Reserve
+  stockMarket: StockMarket
+  bestBuyable: Buyable<GameObject>
 
-  noteArea
-  spawnWindowNote
-  reserveNote
-  goalNote
-  nextBuyNote
-  notes = []
+  noteArea: NoteArea
+  spawnWindowNote: GoldenCookieSpawnNote
+  reserveNote: ReserveNote
+  goalNote: GoalNote
+  nextBuyNote: NextBuyNote
+  notes: Array<Note> = []
 
-  /**
-   * @type {Building[]}
-   */
-  buildings = []
-  /**
-   * @type {Upgrade[]}
-   */
-  upgrades = []
-  /**
-   * @type {Achievement[]}
-   */
-  achievements = []
-  buyables = []
+  buildings: Array<Building> = []
+  upgrades: Array<Upgrade> = []
+  achievements: Array<Achievement> = []
+  buyables: Array<Buyable<GameObject>> = []
 
-  mainInterval
-  noteUpdateInterval
+  mainInterval: number
+  noteUpdateInterval: number
 
-  lastCps = 0
-  notesShown = 3
+  lastCps: number = 0
+  notesShown: number = 3
 
-  addBuildings() {
+  addBuildings(): void {
     Game.ObjectsById.forEach(building => this.buildings[building.name] = new Building(building.name));
   }
 
-  addUpgrades() {
+  addUpgrades(): void {
 //Generates a list with all possible upgrades
     //region Legacy
     new LegacyUpgrade("Legacy");
@@ -3313,7 +3139,7 @@ class AutoCookie {
     //endregion
   }
 
-  addAchievements() {
+  addAchievements(): void {
     //region Cursor
     new Achievement("Click", new BuildingRequirement(Game.Objects.Cursor, 1));
     new Achievement("Double-click", new BuildingRequirement(Game.Objects.Cursor, 2));
@@ -3569,7 +3395,7 @@ class AutoCookie {
     //endregion
   }
 
-  updatedBuyables() {
+  updatedBuyables(): Array<Buyable<GameObject>> {
     this.buyables.forEach(b => b.needsUpdate = true);
     for (let buildingName in this.buildings) {
       this.buildings[buildingName].update();
@@ -3578,19 +3404,20 @@ class AutoCookie {
     return this.buyables;
   }
 
-  updateNotes() {
+  updateNotes(): void {
     const cps = getCps();
     if (this.lastCps !== cps) {
       this.lastCps = cps;
-      this.loop(`Cookies per second changed`)
+      setTimeout(() => this.loop(`Cookies per second changed`))
     } else {
       this.lastCps = cps;
     }
     this.notes.forEach(note => note.update(this))
+    // @ts-ignore
     document.getElementById("specialPopup").style.bottom = `${25 + 37 * this.notesShown}px`
   }
 
-  testEverything() {
+  testEverything(): void {
     const buyables = this.updatedBuyables();
 
     buyables
@@ -3613,7 +3440,7 @@ class AutoCookie {
   /**
    * Creates the notification area and notes
    */
-  createNotes() {
+  createNotes(): void {
     this.noteArea = new NoteArea();
     this.spawnWindowNote = new GoldenCookieSpawnNote()
     this.reserveNote = new ReserveNote()
@@ -3628,16 +3455,17 @@ class AutoCookie {
     this.noteArea.html.appendChild(this.nextBuyNote.html);
 
     const notes = document.getElementById("notes");
+    // @ts-ignore
     notes.parentElement.insertBefore(this.noteArea.html, notes);
     log("All notes created successfully.");
   }
 
-  toggleBuyLock() {
+  toggleBuyLock(): void {
     this.buyLocked = !this.buyLocked;
     this.loop(`Set buy lock to ${this.buyLocked}`);
   }
 
-  loop(message) {
+  loop(message): void {
     debug("Loop: " + message)
     if (this.stopped) return
     if (this.mainInterval) clearTimeout(this.mainInterval) //Prevent two or more timers from running this.
@@ -3661,7 +3489,6 @@ class AutoCookie {
             this.loop("Investment Sold")
           }, 50 + StockMarket.millisToNextTick)
         }
-        setTimeout(() => this.loop("After buy"))
       } else {
         if (nextMilestone.millisToBuy < Infinity) {
           // Set timeout to the expected time we can purchase the target buyable
@@ -3679,13 +3506,15 @@ class AutoCookie {
     this.updateNotes();
   }
 
-  engageHooks() {
+  engageHooks(): void {
     Game.registerHook("click", () => this.loop("Big Cookie clicked"))
+    // @ts-ignore
     document.getElementById("store").addEventListener("click", () => this.loop("Store clicked")); //Hook store items and buildings
+    // @ts-ignore
     document.getElementById("shimmers").addEventListener("click", () => setTimeout(() => this.loop("Golden Cookie clicked"), 50)); //Hook golden cookie clicks
   }
 
-  start() {
+  start(): void {
     if (this.stopped) {
       this.stopped = false;
       for (let buildingName in this.buildings) {
@@ -3717,7 +3546,7 @@ class AutoCookie {
     }
   }
 
-  stop() {
+  stop(): void {
     clearInterval(this.noteUpdateInterval)
     clearTimeout(this.mainInterval)
     this.stopped = true
@@ -3725,10 +3554,11 @@ class AutoCookie {
     //clear buyables
   }
 
-  init() {
+  init(): void {
     this.reserve = new Reserve();
     this.stockMarket = new StockMarket();
     this.createNotes();
+    // @ts-ignore
     document.getElementById("versionNumber").hidden = true;
     this.addBuildings();
     this.addAchievements();
@@ -3738,7 +3568,7 @@ class AutoCookie {
     this.start()
   }
 
-  save() {
+  save(): string {
     //This can never return empty string or load will never be called
     const saveString = [
       AUTO_COOKIE_VERSION,
@@ -3750,7 +3580,7 @@ class AutoCookie {
     return saveString
   }
 
-  load(string) {
+  load(string): void {
     const load = () => { //This is an arrow function to avoid dereferencing this
       const split = string.split("|")
       const version = parseFloat(split[0]) || 0

@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "outDir": "./target",
+    "target": "ESNext",
+    "strictNullChecks": true,
+    "alwaysStrict": true,
+    "allowSyntheticDefaultImports": true,
+  },
+  "include": [
+    "./src/**/*"
+  ],
+}
