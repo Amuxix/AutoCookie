@@ -830,28 +830,76 @@ abstract class Buyable<T extends GameObject> {
   investment: Investment
   buyMillis: number
   originalBuyMillis: number = 0
-  needsUpdate: boolean = true
 
   protected constructor(gameObject: T) {
     this.gameObject = gameObject
     this.name = gameObject.name
   }
 
-  update(): void {
-    if (this.needsUpdate) {
-      const price = this.calculatePrice()
-      const cpsIncrease = this.calculateCpsIncrease()
-      if (price !== undefined && !isNaN(price) && cpsIncrease !== undefined && !isNaN(cpsIncrease)) {
-        this.price = price
-        this.cpsIncrease = cpsIncrease
-        this.payback = this.calculatePayback()
-        this.needsUpdate = false
+  get millisToBuy(): number {
+    return Math.max(0, this.buyMillis - Date.now())
+  }
+
+  /**
+   * Can this be bought in this ascension? ie if this depends on a legacy upgrade we don't have this ascension this can't be bought.
+   */
+  abstract get canEventuallyGet(): boolean
+
+  get nextMilestone(): Buyable<GameObject> {
+    return this
+  }
+
+  get percentCpsIncrease(): number {
+    return this.cpsIncrease / Game.cookiesPs
+  }
+
+  get cpsIncreasePercentText(): string {
+    return this.percentCpsIncrease > 0 && this.percentCpsIncrease !== Infinity ? ` (+${round(this.percentCpsIncrease * 100, 2)}%)` : ""
+  }
+
+  get timeSavedText(): string {
+    const millisChange = this.millisChange
+    const absMillisChange = Math.abs(millisChange)
+    if (absMillisChange < 1000) {
+      return ""
+    } else {
+      const timeText = timeString(Math.ceil(absMillisChange / 1000))
+      if (millisChange >= 1) {
+        return ` (${timeText})`
+      } else {
+        return ` (-${timeText})`
       }
     }
   }
 
+  get timeSavedTextColour(): string {
+    if (Math.sign(this.millisChange) === 1) {
+      return "#6F6"
+    } else {
+      return "#F66"
+    }
+  }
+
+  private get cookiesNeeded(): number {
+    return AUTO_COOKIE.reserve.reserveAmount + this.price - Game.cookies - this.investment.estimatedReturns
+  }
+
+  private get millisChange(): number {
+    return this.originalBuyMillis - this.buyMillis
+  }
+
+  update(): void {
+    const price = this.calculatePrice()
+    const cpsIncrease = this.calculateCpsIncrease()
+    if (price !== undefined && !isNaN(price) && cpsIncrease !== undefined && !isNaN(cpsIncrease)) {
+      this.price = price
+      this.cpsIncrease = cpsIncrease
+      this.payback = this.calculatePayback()
+    }
+  }
+
   updateInvestmentAndBuyMillis(): void {
-    this.investment = AUTO_COOKIE.stockMarket.createInvestment(Game.cookies - this.price)
+    this.investment = AUTO_COOKIE.stockMarket.createInvestment(this, Game.cookies - this.price)
     this.buyMillis = this.calculateBuyMillis()
     if (this.originalBuyMillis === 0) {
       this.originalBuyMillis = this.buyMillis
@@ -868,11 +916,67 @@ abstract class Buyable<T extends GameObject> {
     }
   }
 
-  get cookiesNeeded(): number {
-    return AUTO_COOKIE.reserve.reserveAmount + this.price - Game.cookies - this.investment.estimateReturns(this)
+  /**
+   * Calculates the price to buy this and all its requirements if any.
+   */
+  abstract calculatePrice(): number
+
+  buy(): void {
+    if (this.gameObject === undefined) {
+      error("Buyable has no gameObject")
+      AUTO_COOKIE.stopped = true
+      return
+    }
+    if (this instanceof Upgrade && this.gameObject.unlocked === 0) {
+      log(`Trying to buy ${this.name} but its not unlocked yet!`)
+      unlockRequirements()
+    }
+    AUTO_COOKIE.buying = true
+    const oldBuyMode = Game.buyMode
+    Game.buyMode = 1 //Make sure we are not selling
+    if (this.gameObject instanceof Game.Object) {
+      // @ts-ignore
+      const amount: string = convertNumeral((this.gameObject as GameBuilding).amount + 1)
+      const text = `Bought the ${amount} ${this.name}`
+      log(text)
+      Game.Notify(text, "")
+    } else {
+      const text = `Bought ${this.name}`
+      log(text)
+      Game.Notify(text, "")
+    }
+    if (this instanceof Upgrade) {
+      this.removeFromBuyables()
+    }
+    this.gameObject.buy(1)
+    this.resetOriginalBuyMillis()
+    Game.buyMode = oldBuyMode
+    Game.CalculateGains()
+    AUTO_COOKIE.buying = false
   }
 
-  calculateBuyMillis(): number {
+  estimatedReturnPercent(additionalBrokers: number): number {
+    const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
+    return 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (this.percentCpsIncrease - overhead)
+  }
+
+  /**
+   * Calculates the cps increase of getting this considering all requirements are already met.
+   */
+  protected abstract calculateCpsIncrease(): number
+
+  protected removeFromBuyables(): void {
+    AUTO_COOKIE.buyables = AUTO_COOKIE.buyables.filter(buyable => buyable !== this)
+  }
+
+  protected calculatePayback(): number {
+    const cps = getCps()
+    if (this.cpsIncrease === 0 || cps === 0) return Infinity
+    const payback = this.price / this.cpsIncrease + Math.max(0, this.price + AUTO_COOKIE.reserve.reserveAmount - Game.cookies) / cps
+    return round(payback, 6)
+  }
+
+  private calculateBuyMillis(): number {
     const cookiesNeeded = this.cookiesNeeded
     if (cookiesNeeded <= 0) return Date.now()
 
@@ -931,116 +1035,6 @@ abstract class Buyable<T extends GameObject> {
     }
     return Date.now() + buySeconds * 1000
   }
-
-  get millisToBuy(): number {
-    return Math.max(0, this.buyMillis - Date.now())
-  }
-
-  /**
-   * Can this be bought in this ascension? ie if this depends on a legacy upgrade we don't have this ascension this can't be bought.
-   */
-  abstract get canEventuallyGet(): boolean
-
-  /**
-   * Calculates the cps increase of getting this considering all requirements are already met.
-   */
-  abstract calculateCpsIncrease(): number
-
-  /**
-   * Calculates the price to buy this and all its requirements if any.
-   */
-  abstract calculatePrice(): number
-
-  get nextMilestone(): Buyable<GameObject> {
-    return this
-  }
-
-  buy(): void {
-    if (this.gameObject === undefined) {
-      error("Buyable has no gameObject")
-      AUTO_COOKIE.stopped = true
-      return
-    }
-    if (this instanceof Upgrade && this.gameObject.unlocked === 0) {
-      log(`Trying to buy ${this.name} but its not unlocked yet!`)
-      unlockRequirements()
-    }
-    if (this instanceof Achievement) {
-      error(`Trying to buy an Achievement (${this.name}, cpsIncrease: ${this.calculateCpsIncrease()})!`)
-      AUTO_COOKIE.stopped = true
-      return
-    }
-    AUTO_COOKIE.buying = true
-    const oldBuyMode = Game.buyMode
-    Game.buyMode = 1 //Make sure we are not selling
-    if (this.gameObject instanceof Game.Object) {
-      // @ts-ignore
-      const amount: string = convertNumeral((<GameBuilding>this.gameObject).amount + 1)
-      const text = `Bought the ${amount} ${this.name}`
-      log(text)
-      Game.Notify(text, "")
-    } else {
-      const text = `Bought ${this.name}`
-      log(text)
-      Game.Notify(text, "")
-    }
-    if (this instanceof Upgrade) {
-      log(`Removing upgrade ${this.name}`)
-      AUTO_COOKIE.buyables = AUTO_COOKIE.buyables.filter(upgrade => upgrade !== this)
-    }
-    this.gameObject.buy(1)
-    this.resetOriginalBuyMillis()
-    Game.buyMode = oldBuyMode
-    Game.CalculateGains()
-    AUTO_COOKIE.buying = false
-  }
-
-  calculatePayback(): number {
-    const cps = getCps()
-    if (this.cpsIncrease === 0 || cps === 0) return Infinity
-    const payback = this.price / this.cpsIncrease + Math.max(0, this.price + AUTO_COOKIE.reserve.reserveAmount - Game.cookies) / cps
-    return round(payback, 6)
-  }
-
-  get percentCpsIncrease(): number {
-    return this.cpsIncrease / Game.cookiesPs
-  }
-
-  get cpsIncreasePercentText(): string {
-    return this.percentCpsIncrease > 0 && this.percentCpsIncrease !== Infinity ? ` (+${round(this.percentCpsIncrease * 100, 2)}%)` : ""
-  }
-
-  estimatedReturnPercent(additionalBrokers: number): number {
-    const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
-    return 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (this.percentCpsIncrease - overhead)
-  }
-
-  get millisChange(): number {
-    return this.originalBuyMillis - this.buyMillis
-  }
-
-  get timeSavedText(): string {
-    const millisChange = this.millisChange
-    const absMillisChange = Math.abs(millisChange)
-    if (absMillisChange < 1000) {
-      return ""
-    } else {
-      const timeText = timeString(Math.ceil(absMillisChange / 1000))
-      if (millisChange >= 1) {
-        return ` (${timeText})`
-      } else {
-        return ` (-${timeText})`
-      }
-    }
-  }
-
-  get timeSavedTextColour(): string {
-    if (Math.sign(this.millisChange) === 1) {
-      return "#6F6"
-    } else {
-      return "#F66"
-    }
-  }
 }
 
 abstract class BuyableWithBuildingRequirements<T extends GameObject> extends Buyable<T> {
@@ -1050,21 +1044,9 @@ abstract class BuyableWithBuildingRequirements<T extends GameObject> extends Buy
    * @param gameObject This is the object we are wrapping, it can be the game version of a Building, an Upgrade or an Achievement.
    * @param {Array<BuildingRequirement>} buildingRequirements
    */
-  constructor(gameObject: T, buildingRequirements: Array<BuildingRequirement>) {
+  protected constructor(gameObject: T, buildingRequirements: Array<BuildingRequirement>) {
     super(gameObject)
     this.buildingRequirements = buildingRequirements
-  }
-
-  get filteredBuildingRequirements(): Array<BuildingRequirement> {
-    return this.buildingRequirements.filter(req => req.amount > req.gameObject.amount)
-  }
-
-  get hasRequirements(): boolean {
-    return this.filteredBuildingRequirements.length > 0
-  }
-
-  get bestRequirement(): Buyable<GameBuilding | GameUpgrade> {
-    return minByPayback(this.filteredBuildingRequirements)
   }
 
   get nextMilestone(): Buyable<GameObject> {
@@ -1073,6 +1055,18 @@ abstract class BuyableWithBuildingRequirements<T extends GameObject> extends Buy
     } else {
       return this
     }
+  }
+
+  protected get filteredBuildingRequirements(): Array<BuildingRequirement> {
+    return this.buildingRequirements.filter(req => req.amount > req.gameObject.amount)
+  }
+
+  protected get hasRequirements(): boolean {
+    return this.filteredBuildingRequirements.length > 0
+  }
+
+  protected get bestRequirement(): Buyable<GameBuilding | GameUpgrade> {
+    return minByPayback(this.filteredBuildingRequirements)
   }
 }
 
@@ -1083,14 +1077,6 @@ class Building extends Buyable<GameBuilding> {
 
   get canEventuallyGet(): boolean {
     return true
-  }
-
-  calculateCpsIncrease(): number {
-    return calculateCpsIncrease([new BuildingRequirement(this.gameObject, this.gameObject.amount + 1)])
-  }
-
-  calculatePrice(): number {
-    return this.gameObject.getPrice()
   }
 
   static getByName(name): Building {
@@ -1110,6 +1096,14 @@ class Building extends Buyable<GameBuilding> {
       return building
     }
   }
+
+  calculatePrice(): number {
+    return this.gameObject.getPrice()
+  }
+
+  protected calculateCpsIncrease(): number {
+    return calculateCpsIncrease([new BuildingRequirement(this.gameObject, this.gameObject.amount + 1)])
+  }
 }
 
 class BuildingRequirement extends Building {
@@ -1124,20 +1118,8 @@ class BuildingRequirement extends Building {
     this.amount = amount
   }
 
-  update(): void {
-    throw new Error("Trying to update BuildingRequirement")
-  }
-
   get missingAmount(): number {
     return Math.max(0, this.amount - this.gameObject.amount)
-  }
-
-  calculateCpsIncrease(): number {
-    return calculateCpsIncrease([this])
-  }
-
-  calculatePrice(): number {
-    return this.gameObject.getSumPrice(this.missingAmount)
   }
 
   get nextMilestone(): Buyable<GameBuilding> {
@@ -1146,6 +1128,18 @@ class BuildingRequirement extends Building {
 
   static generateRequirementsForAllBuildings(amount: number): Array<BuildingRequirement> {
     return Game.ObjectsById.map(building => new BuildingRequirement(building, amount))
+  }
+
+  update(): void {
+    throw new Error("Trying to update BuildingRequirement")
+  }
+
+  calculatePrice(): number {
+    return this.gameObject.getSumPrice(this.missingAmount)
+  }
+
+  protected calculateCpsIncrease(): number {
+    return calculateCpsIncrease([this])
   }
 }
 
@@ -1171,78 +1165,36 @@ abstract class Upgrade extends BuyableWithBuildingRequirements<GameUpgrade> {
     return !this.owned && this.filteredUpgradeRequirements.reduce((acc, upgrade) => acc && upgrade.canEventuallyGet, true)
   }
 
-  get filteredBuildingRequirements(): Array<BuildingRequirement> {
-    return this.flattenedBuildingRequirements.filter(req => req.amount > req.gameObject.amount)
-  }
-
-  get filteredUpgradeRequirements(): Array<Upgrade> {
-    return this.flattenedUpgradeRequirements.filter(upgrade => !upgrade.owned)
-  }
-
-  get filteredAchievementRequirements(): Array<Achievement> {
-    return this.achievementsUnlocked.filter(achievement => !achievement.won)
-  }
-
-  /**
-   * All upgrade requirements of this upgrade.
-   */
-  getFlattenedUpgradeRequirements(): Array<Upgrade> {
-    const upgradeRequirements = this.upgradeRequirements.filter(upgrade => !upgrade.owned)
-    return upgradeRequirements.concat(upgradeRequirements.flatMap(upgrade => upgrade.getFlattenedUpgradeRequirements()))
-  }
-
-  /**
-   * Calculates the building requirements to unlock all required upgrades
-   * @return {Array<BuildingRequirement>}
-   */
-  getFattenBuildingRequirements(): Array<BuildingRequirement> {
-    const upgradeRequirements = this.upgradeRequirements.filter(upgrade => !upgrade.owned).flatMap(upgrade => upgrade.getFattenBuildingRequirements())
-    return Game.ObjectsById.reduce<Array<BuildingRequirement>>((totalBuildingRequirements, building) => {
-      const buildingRequirementsOfUpgrades = upgradeRequirements.filter(req => req.gameObject === building)
-      const buildingRequirementsOfThis = this.buildingRequirements.filter(req => req.amount > req.gameObject.amount && req.gameObject === building)
-      const amounts = buildingRequirementsOfUpgrades.concat(buildingRequirementsOfThis).map(req => req.amount)
-      if (amounts.length > 0) {
-        totalBuildingRequirements.push(new BuildingRequirement(building, Math.max(...amounts)))
-      }
-      return totalBuildingRequirements
-    }, [])
-  }
-
   get upgradeRequirementsTotalCostWithoutBuildings(): number {
     return this.filteredUpgradeRequirements.reduce((acc, upgrade) => acc + upgrade.gameObject.getPrice(), 0)
   }
 
-  get hasRequirements(): boolean {
+  get owned(): boolean {
+    return this.gameObject.bought === 1
+  }
+
+  protected get filteredBuildingRequirements(): Array<BuildingRequirement> {
+    return this.flattenedBuildingRequirements.filter(req => req.amount > req.gameObject.amount)
+  }
+
+  protected get hasRequirements(): boolean {
     const needsBuilding = this.filteredBuildingRequirements.length > 0
     const needsUpgrade = this.filteredUpgradeRequirements.length > 0
     return needsBuilding || needsUpgrade
   }
 
-  get bestRequirement(): Buyable<GameBuilding | GameUpgrade> {
+  protected get bestRequirement(): Buyable<GameBuilding | GameUpgrade> {
     // @ts-ignore
     const requirements: Array<Buyable<GameBuilding | GameUpgrade>> = this.filteredBuildingRequirements.concat(this.filteredUpgradeRequirements)
     return minByPayback(requirements)
   }
 
-  /**
-   * Calculates the cps increase of getting this considering all requirements are already met.
-   */
-  calculateCpsIncrease(): number {
-    const achievementsCpsIncrease = this.filteredAchievementRequirements.reduce((acc, achievement) => acc + achievement.cpsIncreaseWithoutRequirements, 0)
-    return calculateCpsIncrease(this.filteredBuildingRequirements, this.filteredUpgradeRequirements.concat(this)) + achievementsCpsIncrease
+  private get filteredUpgradeRequirements(): Array<Upgrade> {
+    return this.flattenedUpgradeRequirements.filter(upgrade => !upgrade.owned)
   }
 
-  /**
-   * Calculates the price to buy this and all its requirements if any.
-   */
-  calculatePrice(): number {
-    const buildingRequirementsPrice = this.filteredBuildingRequirements.reduce((acc, b) => acc + b.calculatePrice(), 0)
-    const upgradeRequirementsPrice = this.upgradeRequirementsTotalCostWithoutBuildings
-    return this.gameObject.getPrice() + buildingRequirementsPrice + upgradeRequirementsPrice
-  }
-
-  get owned(): boolean {
-    return this.gameObject.bought === 1
+  private get filteredAchievementRequirements(): Array<Achievement> {
+    return this.achievementsUnlocked.filter(achievement => !achievement.won)
   }
 
   /**
@@ -1275,6 +1227,48 @@ abstract class Upgrade extends BuyableWithBuildingRequirements<GameUpgrade> {
     const achievement = Game.Upgrades[name]
     if (achievement === undefined) throw new Error(`Failed to find upgrade named ${name}`)
     return achievement
+  }
+
+  /**
+   * All upgrade requirements of this upgrade.
+   */
+  getFlattenedUpgradeRequirements(): Array<Upgrade> {
+    const upgradeRequirements = this.upgradeRequirements.filter(upgrade => !upgrade.owned)
+    return upgradeRequirements.concat(upgradeRequirements.flatMap(upgrade => upgrade.getFlattenedUpgradeRequirements()))
+  }
+
+  /**
+   * Calculates the building requirements to unlock all required upgrades
+   * @return {Array<BuildingRequirement>}
+   */
+  getFattenBuildingRequirements(): Array<BuildingRequirement> {
+    const upgradeRequirements = this.upgradeRequirements.filter(upgrade => !upgrade.owned).flatMap(upgrade => upgrade.getFattenBuildingRequirements())
+    return Game.ObjectsById.reduce<Array<BuildingRequirement>>((totalBuildingRequirements, building) => {
+      const buildingRequirementsOfUpgrades = upgradeRequirements.filter(req => req.gameObject === building)
+      const buildingRequirementsOfThis = this.buildingRequirements.filter(req => req.amount > req.gameObject.amount && req.gameObject === building)
+      const amounts = buildingRequirementsOfUpgrades.concat(buildingRequirementsOfThis).map(req => req.amount)
+      if (amounts.length > 0) {
+        totalBuildingRequirements.push(new BuildingRequirement(building, Math.max(...amounts)))
+      }
+      return totalBuildingRequirements
+    }, [])
+  }
+
+  /**
+   * Calculates the price to buy this and all its requirements if any.
+   */
+  calculatePrice(): number {
+    const buildingRequirementsPrice = this.filteredBuildingRequirements.reduce((acc, b) => acc + b.calculatePrice(), 0)
+    const upgradeRequirementsPrice = this.upgradeRequirementsTotalCostWithoutBuildings
+    return this.gameObject.getPrice() + buildingRequirementsPrice + upgradeRequirementsPrice
+  }
+
+  /**
+   * Calculates the cps increase of getting this considering all requirements are already met.
+   */
+  protected calculateCpsIncrease(): number {
+    const achievementsCpsIncrease = this.filteredAchievementRequirements.reduce((acc, achievement) => acc + achievement.cpsIncreaseWithoutRequirements, 0)
+    return calculateCpsIncrease(this.filteredBuildingRequirements, this.filteredUpgradeRequirements.concat(this)) + achievementsCpsIncrease
   }
 }
 
@@ -1360,7 +1354,11 @@ class MouseUpgrade extends Upgrade {
     super(gameUpgrade)
   }
 
-  calculateCpsIncrease(): number {
+  private static get clickBuffs(): Array<Buff> {
+    return getBuffs().filter(buff => buff.multClick > 1)
+  }
+
+  protected calculateCpsIncrease(): number {
     let add = 0 //Increase to base cursor cps and mouse clicks per non cursor gameObject
     if (Game.Has("Thousand fingers")) add += 0.1
     if (Game.Has("Million fingers")) add *= 5
@@ -1398,10 +1396,6 @@ class MouseUpgrade extends Upgrade {
       return 0
     }
   }
-
-  static get clickBuffs(): Array<Buff> {
-    return getBuffs().filter(buff => buff.multClick > 1)
-  }
 }
 
 class GoldenCookieUpgrade extends Upgrade {
@@ -1413,16 +1407,16 @@ class GoldenCookieUpgrade extends Upgrade {
     super(gameUpgrade)
   }
 
-  calculateCpsIncrease(): number {
+  estimatedReturnPercent(): number {
+    return 1
+  }
+
+  protected calculateCpsIncrease(): number {
     if (this.gameObject.unlocked === 1 && AUTO_COOKIE.reserve.reserveAmount + this.price <= Game.cookies) {
       return Infinity
     } else {
       return 0
     }
-  }
-
-  estimatedReturnPercent(): number {
-    return 1
   }
 }
 
@@ -1439,7 +1433,7 @@ class KittenUpgrade extends Upgrade {
     this.milkRequired = milkRequired
   }
 
-  calculateCpsIncrease(): number {
+  protected calculateCpsIncrease(): number {
     if (Game.milkProgress >= this.milkRequired) {
       const cps = getCps()
       const base_cps = cps / Game.globalCpsMult
@@ -1462,7 +1456,7 @@ class HeavenlyChipUpgrade extends Upgrade {
     this.unlockPercentage = percentUnlock
   }
 
-  calculateCpsIncrease(): number {
+  protected calculateCpsIncrease(): number {
     const multiplier = Game.prestige * 0.01 * this.unlockPercentage / 100
     return getCps() * multiplier
   }
@@ -1488,22 +1482,6 @@ class ResearchUpgrade extends Upgrade {
     super(gameUpgrade, buildingRequirements, upgradesRequirements)
   }
 
-  calculateCpsIncrease(): number {
-    if (Achievement.getByName("Elder").won && ResearchUpgrade.nextResearch() !== this) {
-      return super.calculateCpsIncrease()
-    } else {
-      return 0
-    }
-  }
-
-  calculatePayback(): number {
-    if (Game.researchT > 0) { //We must wait for the research to finish researching
-      return Infinity
-    } else {
-      return super.calculatePayback()
-    }
-  }
-
   static fullResearchTime(): number {
     const researchTime = Game.baseResearchTime
     if (Game.Has("Persistent memory")) {
@@ -1517,6 +1495,22 @@ class ResearchUpgrade extends Upgrade {
     const nextResearchId = Game.nextResearch
     if (nextResearchId > 0) {
       return AUTO_COOKIE.upgrades[Game.UpgradesById[nextResearchId].name]
+    }
+  }
+
+  protected calculateCpsIncrease(): number {
+    if (Achievement.getByName("Elder").won && ResearchUpgrade.nextResearch() !== this) {
+      return super.calculateCpsIncrease()
+    } else {
+      return 0
+    }
+  }
+
+  protected calculatePayback(): number {
+    if (Game.researchT > 0) { //We must wait for the research to finish researching
+      return Infinity
+    } else {
+      return super.calculatePayback()
     }
   }
 }
@@ -1560,14 +1554,6 @@ class Achievement extends BuyableWithBuildingRequirements<GameAchievement> {
     }
   }
 
-  calculateCpsIncrease(): number {
-    return calculateCpsIncrease(this.filteredBuildingRequirements) + this.cpsIncreaseWithoutRequirements
-  }
-
-  calculatePrice(): number {
-    return this.filteredBuildingRequirements.reduce((acc, b) => acc + b.calculatePrice(), 0)
-  }
-
   get won(): boolean {
     return this.gameObject.won === 1
   }
@@ -1589,6 +1575,20 @@ class Achievement extends BuyableWithBuildingRequirements<GameAchievement> {
     const achievement = Game.Achievements[name]
     if (achievement === undefined) throw new Error(`Failed to find achievement named ${name}`)
     return achievement
+  }
+
+  calculatePrice(): number {
+    return this.filteredBuildingRequirements.reduce((acc, b) => acc + b.calculatePrice(), 0)
+  }
+
+  buy(): void {
+    if (this.won) {
+      this.removeFromBuyables()
+    }
+  }
+
+  protected calculateCpsIncrease(): number {
+    return calculateCpsIncrease(this.filteredBuildingRequirements) + this.cpsIncreaseWithoutRequirements
   }
 }
 
@@ -1612,6 +1612,20 @@ class ReserveLevel {
     this.amountF = amountF
   }
 
+  static get all(): Array<ReserveLevel> {
+    return [
+      LUCKY_RESERVE,
+      BAKED_GOODS_RESERVE,
+      CHAIN_RESERVE,
+      FRENZY_LUCKY_RESERVE,
+      FRENZY_CHAIN_RESERVE,
+      FRENZY_BAKED_GOODS_RESERVE,
+      DRAGON_HARVEST_LUCKY_RESERVE,
+      DRAGON_HARVEST_CHAIN_RESERVE,
+      DRAGON_HARVEST_BAKED_GOODS_RESERVE,
+    ]
+  }
+
   get title(): string {
     if (this.effects.length === 0) {
       return "Disabled"
@@ -1620,6 +1634,10 @@ class ReserveLevel {
     } else {
       return this.effects.map(effect => effect.shortName).join(" with ")
     }
+  }
+
+  get amount(): number {
+    return this.amountF()
   }
 
   static goldenCookieMultiplier(): number {
@@ -1668,24 +1686,6 @@ class ReserveLevel {
   static conjuredBakedGoods(): number {
     return (Game.unbuffedCps * 30 * 60) / .15
   }
-
-  get amount(): number {
-    return this.amountF()
-  }
-
-  static get all(): Array<ReserveLevel> {
-    return [
-      LUCKY_RESERVE,
-      BAKED_GOODS_RESERVE,
-      CHAIN_RESERVE,
-      FRENZY_LUCKY_RESERVE,
-      FRENZY_CHAIN_RESERVE,
-      FRENZY_BAKED_GOODS_RESERVE,
-      DRAGON_HARVEST_LUCKY_RESERVE,
-      DRAGON_HARVEST_CHAIN_RESERVE,
-      DRAGON_HARVEST_BAKED_GOODS_RESERVE,
-    ]
-  }
 }
 
 const LUCKY = new CookieEffect("Lucky")
@@ -1713,15 +1713,15 @@ class Reserve {
     this.updateReserveLevel()
   }
 
-  get reserveAmount(): number {
-    return this.amount
-  }
-
   static get reservePossibilities(): Array<ReserveLevel> {
     const activeButtonEffects = AUTO_COOKIE.reserveNote ? AUTO_COOKIE.reserveNote.activeButtonEffects : []
     if (activeButtonEffects.length === 0) return []
 
     return ReserveLevel.all.filter(reserve => reserve.effects.reduce((acc, effect) => acc && activeButtonEffects.includes(effect), true))
+  }
+
+  get reserveAmount(): number {
+    return this.amount
   }
 
   updateReserveLevel(): void {
@@ -2018,6 +2018,16 @@ class ReserveButton extends AutoElement {
     this.style.textDecoration = "none"
   }
 
+  static get all(): Array<ReserveButton> {
+    return [
+      new ReserveButton("🍀 ", LUCKY, () => true),
+      new ReserveButton("🔗 ", CHAIN, () => Game.cookiesEarned >= 100000),
+      new ReserveButton("ɮ ", BAKED_GOODS, () => Game.Objects["Wizard tower"].level > 0),
+      new ReserveButton("🍪 ", FRENZY, () => Game.elderWrath < 3 && Game.Has("Get lucky")),
+      new ReserveButton("🐉 ", DRAGON_HARVEST, () => Game.hasAura("Reaper of Fields")),
+    ]
+  }
+
   get unlocked(): boolean {
     return this.unlockedF()
   }
@@ -2036,16 +2046,6 @@ class ReserveButton extends AutoElement {
     this.html.style.textShadow = ""
     this.active = false
     return this
-  }
-
-  static get all(): Array<ReserveButton> {
-    return [
-      new ReserveButton("🍀 ", LUCKY, () => true),
-      new ReserveButton("🔗 ", CHAIN, () => Game.cookiesEarned >= 100000),
-      new ReserveButton("ɮ ", BAKED_GOODS, () => Game.Objects["Wizard tower"].level > 0),
-      new ReserveButton("🍪 ", FRENZY, () => Game.elderWrath < 3 && Game.Has("Get lucky")),
-      new ReserveButton("🐉 ", DRAGON_HARVEST, () => Game.hasAura("Reaper of Fields")),
-    ]
   }
 }
 
@@ -2243,11 +2243,9 @@ function logMissingUpgrades(): void {
 
 abstract class Investment {
   /**
-   * Estimates the profit we would make if we ran this investment around the given buyable
-   * @param buyable The buyable to invest around
-   * @returns {number} The estimated cookies we would gain should we run this investment
+   * Estimates the profit we would make if we ran this investment
    */
-  abstract estimateReturns<T extends GameObject>(buyable: Buyable<T>): number
+  abstract get estimatedReturns(): number
 
   /**
    * @returns {number} The total cookies invested
@@ -2266,11 +2264,9 @@ class EmptyInvestment extends Investment {
   }
 
   /**
-   * Estimates the profit we would make if we ran this investment around the given buyable
-   * @param buyable The buyable to invest around
-   * @returns {number} The estimated cookies we would gain should we run this investment
+   * Estimates the profit we would make if we ran this investment
    */
-  estimateReturns<T extends GameObject>(buyable: Buyable<T>): number {
+  get estimatedReturns(): number {
     return 0
   }
 
@@ -2290,14 +2286,16 @@ class EmptyInvestment extends Investment {
 }
 
 class RealInvestment extends Investment {
+  buyable: Buyable<GameObject>
   moneyInvestedInStocks: number
   moneyInvestedInBrokers: number
   newBrokers: number
   buyFunctions: Array<() => void>
   sellFunctions: Array<() => number>
 
-  constructor(cookies: number) {
+  constructor(buyable: Buyable<GameObject>, cookies: number) {
     super()
+    this.buyable = buyable
     const goods = StockMarket.stableActiveGoods.sort((g1, g2) => g2.val - g1.val) //Sorts by price in descending order
     const fullStockPrice = goods.reduce((total, good) => {
       const price = StockMarket.price(good)
@@ -2357,14 +2355,12 @@ class RealInvestment extends Investment {
   }
 
   /**
-   * Estimates the profit we would make if we ran this investment around the given buyable
-   * @param buyable The buyable to invest around
-   * @returns {number} The estimated cookies we would gain should we run this investment
+   * Estimates the profit we would make if we ran this investment
    */
-  estimateReturns<T extends GameObject>(buyable: Buyable<T>): number {
-    if (buyable.percentCpsIncrease === Infinity) return 0
-    const estimatedReturnPercent = buyable.estimatedReturnPercent(this.newBrokers)
-    const cpsAfterBuying = Game.unbuffedCps * buyable.percentCpsIncrease
+  get estimatedReturns(): number {
+    if (this.buyable.percentCpsIncrease === Infinity) return 0
+    const estimatedReturnPercent = this.buyable.estimatedReturnPercent(this.newBrokers)
+    const cpsAfterBuying = Game.unbuffedCps * this.buyable.percentCpsIncrease
     const returns = StockMarket.moneyToCookies(this.moneyInvestedInStocks, cpsAfterBuying) * estimatedReturnPercent
     return returns - this.cookieInvestment
   }
@@ -2387,10 +2383,6 @@ class RealInvestment extends Investment {
 }
 
 class StockMarket {
-  private static get game(): Market {
-    return Game.Objects.Bank.minigame
-  }
-
   static get isLoaded(): boolean {
     return Game.Objects.Bank.minigameLoaded
   }
@@ -2407,20 +2399,8 @@ class StockMarket {
     return StockMarket.game.getMaxBrokers()
   }
 
-  static calculateOverhead(brokers: number): number {
-    return 0.2 * Math.pow(0.95, brokers)
-  }
-
   static get overhead(): number {
     return this.calculateOverhead(StockMarket.brokers)
-  }
-
-  static maxStock(good: Good): number {
-    return StockMarket.game.getGoodMaxStock(good)
-  }
-
-  static price(good: Good): number {
-    return StockMarket.game.getGoodPrice(good)
   }
 
   static get activeGoods(): Array<Good> {
@@ -2438,6 +2418,22 @@ class StockMarket {
         return false
       }
     })
+  }
+
+  private static get game(): Market {
+    return Game.Objects.Bank.minigame
+  }
+
+  static calculateOverhead(brokers: number): number {
+    return 0.2 * Math.pow(0.95, brokers)
+  }
+
+  static maxStock(good: Good): number {
+    return StockMarket.game.getGoodMaxStock(good)
+  }
+
+  static price(good: Good): number {
+    return StockMarket.game.getGoodPrice(good)
   }
 
   static buyBrokers(amount: number): void {
@@ -2503,8 +2499,8 @@ class StockMarket {
     return money * Math.max(highestCps, Game.cookiesPsRawHighest)
   }
 
-  createInvestment(cookies: number): Investment {
-    return StockMarket.isLoaded && cookies > 0 ? new RealInvestment(cookies) : new EmptyInvestment()
+  createInvestment(buyable: Buyable<GameObject>, cookies: number): Investment {
+    return StockMarket.isLoaded && cookies > 0 ? new RealInvestment(buyable, cookies) : new EmptyInvestment()
   }
 }
 
@@ -3423,7 +3419,6 @@ class AutoCookie {
   }
 
   updatedBuyables(): Array<Buyable<GameObject>> {
-    this.buyables.forEach(b => b.needsUpdate = true)
     for (let buildingName in this.buildings) {
       this.buildings[buildingName].update()
     }
