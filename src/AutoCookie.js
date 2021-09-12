@@ -6,225 +6,14 @@ const CLICKS_PER_SEC = 3;
 const NOTE_UPDATE_FREQUENCY = 500;
 
 const STOCK_MARKET_STABILITY_THRESHOLD = 0.05
+const STOCK_MARKET_STABILITY_MIN_PRICES = 5
+const STOCK_MARKET_STABILITY_MAX_PRICES = 10
 
 /*const GAME_WIN_FUNCTION = Game.Win;
 const GAME_ASCEND_FUNCTION = Game.Ascend;
 const GAME_REINCARNATE_FUNCTION = Game.Reincarnate;
 const GAME_UNLOCK_FUNCTION = Game.Unlock;*/
 
-//region Update Game functions
-/*Game.crateTooltip = function (me, context, mysteriousOverride = false) {
-  let tags = [];
-  let mysterious = false;
-  let neuromancy = 0;
-  let price = '';
-  if (context === 'stats' && (Game.Has('Neuromancy') || (Game.sesame && me.pool === 'debug'))) neuromancy = 1;
-
-  if (me.type === 'upgrade') {
-    if (me.pool === 'prestige') tags.push('Heavenly', '#efa438');
-    else if (me.pool === 'tech') tags.push('Tech', '#36a4ff');
-    else if (me.pool === 'cookie') tags.push('Cookie', 0);
-    else if (me.pool === 'debug') tags.push('Debug', '#00c462');
-    else if (me.pool === 'toggle') tags.push('Switch', 0);
-    else tags.push('Upgrade', 0);
-
-    if (me.tier !== 0 && Game.Has('Label printer')) tags.push('Tier : ' + Game.Tiers[me.tier].name, Game.Tiers[me.tier].color);
-    if (me.name === 'Label printer' && Game.Has('Label printer')) tags.push('Tier : Self-referential', '#ff00ea');
-
-    if (me.isVaulted()) tags.push('Vaulted', '#4e7566');
-
-    if (me.bought > 0) {
-      if (me.pool === 'tech') tags.push('Researched', 0);
-      else if (me.kitten) tags.push('Purrchased', 0);
-      else tags.push('Purchased', 0);
-    }
-
-    if (me.lasting && me.unlocked) tags.push('Unlocked forever', '#f2ff87');
-
-    if (neuromancy && me.bought === 0) tags.push('Click to learn!', '#00c462');
-    else if (neuromancy && me.bought > 0) tags.push('Click to unlearn!', '#00c462');
-
-    let canBuy = (context === 'store' ? me.canBuy() : true);
-    let cost = me.getPrice();
-    if (me.priceLumps > 0) cost = me.priceLumps;
-
-    if (me.priceLumps === 0 && cost === 0) price = '';
-    else {
-      price = '<div style="float:right;text-align:right;"><span class="price' +
-        (me.priceLumps > 0 ? (' lump') : '') +
-        (me.pool === 'prestige' ? ((me.bought || Game.heavenlyChips >= cost) ? ' heavenly' : ' heavenly disabled') : '') +
-        (context === 'store' ? (canBuy ? '' : ' disabled') : '') +
-        '">' + Beautify(Math.round(cost)) + '</span>' + ((me.pool !== 'prestige' && me.priceLumps === 0) ? Game.costDetails(cost) : '') + '</div>';
-    }
-  } else if (me.type === 'achievement') {
-    if (me.pool === 'shadow') tags.push('Shadow Achievement', '#9700cf');
-    else tags.push('Achievement', 0);
-    if (me.won > 0) tags.push('Unlocked', 0);
-    else {
-      tags.push('Locked', 0);
-      if (!mysteriousOverride) {
-        mysterious = 1 ;
-      }
-    }
-
-    if (neuromancy && me.won === 0) tags.push('Click to win!', '#00c462');
-    else if (neuromancy && me.won > 0) tags.push('Click to lose!', '#00c462');
-  }
-
-  let tagsStr = '';
-  for (let i = 0; i < tags.length; i += 2) {
-    if (i % 2 === 0) tagsStr += ' <div class="tag" style="color:' + (tags[i + 1] === 0 ? '#fff' : tags[i + 1]) + ';">[' + tags[i] + ']</div>';
-  }
-  tagsStr = tagsStr.substring(1);
-
-  let icon = me.icon;
-  if (mysterious) icon = [0, 7];
-
-  if (me.iconFunction) icon = me.iconFunction();
-
-
-  let tip = '';
-  if (context === 'store') {
-    if (me.pool !== 'toggle' && me.pool !== 'tech') {
-      if (Game.Has('Inspired checklist')) {
-        if (me.isVaulted()) tip = 'Upgrade is vaulted and will not be auto-purchased.<br>Click to purchase. Shift-click to unvault.';
-        else tip = 'Click to purchase. Shift-click to vault.';
-        if (Game.keys[16]) tip += '<br>(You are holding Shift.)';
-        else tip += '<br>(You are not holding Shift.)';
-      } else tip = 'Click to purchase.';
-    } else if (me.pool === 'toggle' && me.choicesFunction) tip = 'Click to open selector.';
-    else if (me.pool === 'toggle') tip = 'Click to toggle.';
-    else if (me.pool === 'tech') tip = 'Click to research.';
-  }
-
-  let desc = me.desc;
-  if (me.descFunc) desc = me.descFunc();
-  if (me.bought && context === 'store' && me.displayFuncWhenOwned) desc = me.displayFuncWhenOwned() + '<div class="line"></div>' + desc;
-  if (me.unlockAt) {
-    if (me.unlockAt.require) {
-      let it = Game.Upgrades[me.unlockAt.require];
-      desc = '<div style="font-size:80%;text-align:center;">From <div class="icon" style="vertical-align:middle;display:inline-block;' + (it.icon[2] ? 'background-image:url(' + it.icon[2] + ');' : '') + 'background-position:' + (-it.icon[0] * 48) + 'px ' + (-it.icon[1] * 48) + 'px;transform:scale(0.5);margin:-16px;"></div> ' + it.name + '</div><div class="line"></div>' + desc;
-    }
-    /!*else if (me.unlockAt.season)
-    {
-      let it=Game.seasons[me.unlockAt.season];
-      desc='<div style="font-size:80%;text-align:center;">From <div class="icon" style="vertical-align:middle;display:inline-block;'+(Game.Upgrades[it.trigger].icon[2]?'background-image:url('+Game.Upgrades[it.trigger].icon[2]+');':'')+'background-position:'+(-Game.Upgrades[it.trigger].icon[0]*48)+'px '+(-Game.Upgrades[it.trigger].icon[1]*48)+'px;transform:scale(0.5);margin:-16px;"></div> '+it.name+'</div><div class="line"></div>'+desc;
-    }*!/
-    else if (me.unlockAt.text) {
-      let it = Game.Upgrades[me.unlockAt.require];
-      desc = '<div style="font-size:80%;text-align:center;">From <b>' + text + '</b></div><div class="line"></div>' + desc;
-    }
-  }
-
-  return '<div style="padding:8px 4px;min-width:350px;">' +
-    '<div class="icon" style="float:left;margin-left:-8px;margin-top:-8px;' + (icon[2] ? 'background-image:url(' + icon[2] + ');' : '') + 'background-position:' + (-icon[0] * 48) + 'px ' + (-icon[1] * 48) + 'px;"></div>' +
-    (me.bought && context === 'store' ? '' : price) +
-    '<div class="name">' + (mysterious ? '???' : me.name) + '</div>' +
-    tagsStr +
-    '<div class="line"></div><div class="description">' + (mysterious ? '???' : desc) + '</div></div>' +
-    (tip !== '' ? ('<div class="line"></div><div style="font-size:10px;font-weight:bold;color:#999;text-align:center;padding-bottom:4px;line-height:100%;">' + tip + '</div>') : '') +
-    (Game.sesame ? ('<div style="font-size:9px;">Id : ' + me.id + ' | Order : ' + Math.floor(me.order) + (me.tier ? ' | Tier : ' + me.tier : '') + '</div>') : '');
-};
-Game.DrawSpecial = function () {
-  let len = Game.specialTabs.length;
-  if (len === 0) return;
-  Game.LeftBackground.globalAlpha = 1;
-  let y = Game.LeftBackground.canvas.height - 24 - 48 * len - AUTO_COOKIE.NOTES_SHOWN * NOTES_HEIGHT - 15;
-  let tabI = 0;
-
-  for (let i in Game.specialTabs) {
-    let selected = 0;
-    let hovered = 0;
-    if (Game.specialTab === Game.specialTabs[i]) selected = 1;
-    if (Game.specialTabHovered === Game.specialTabs[i]) hovered = 1;
-    let x = 24;
-    let s = 1;
-    let pic = '';
-    let frame = 0;
-    if (hovered) {
-      s = 1;
-      x = 24;
-    }
-    if (selected) {
-      s = 1;
-      x = 48;
-    }
-
-    if (Game.specialTabs[i] === 'santa') {
-      pic = 'santa.png';
-      frame = Game.santaLevel;
-    } else if (Game.specialTabs[i] === 'dragon') {
-      pic = 'dragon.png?v=' + Game.version;
-      frame = Game.dragonLevels[Game.dragonLevel].pic;
-    } else {
-      pic = 'dragon.png?v=' + Game.version;
-      frame = 4;
-    }
-
-    if (hovered || selected) {
-      let ss = s * 64;
-      let r = Math.floor((Game.T * 0.5) % 360);
-      Game.LeftBackground.save();
-      Game.LeftBackground.translate(x, y);
-      if (Game.prefs.fancy) Game.LeftBackground.rotate((r / 360) * Math.PI * 2);
-      Game.LeftBackground.globalAlpha = 0.75;
-      Game.LeftBackground.drawImage(Pic('shine.png'), -ss / 2, -ss / 2, ss, ss);
-      Game.LeftBackground.restore();
-    }
-
-    if (Game.prefs.fancy) Game.LeftBackground.drawImage(Pic(pic), 96 * frame, 0, 96, 96, (x + (selected ? 0 : Math.sin(Game.T * 0.2 + tabI) * 3) - 24 * s), (y - (selected ? 6 : Math.abs(Math.cos(Game.T * 0.2 + tabI)) * 6) - 24 * s), 48 * s, 48 * s);
-    else Game.LeftBackground.drawImage(Pic(pic), 96 * frame, 0, 96, 96, (x - 24 * s), (y - 24 * s), 48 * s, 48 * s);
-
-    tabI++;
-    y += 48;
-  }
-
-};
-Game.UpdateSpecial = function () {
-  Game.specialTabs = [];
-  if (Game.Has('A festive hat')) Game.specialTabs.push('santa');
-  if (Game.Has('A crumbly egg')) Game.specialTabs.push('dragon');
-  if (Game.specialTabs.length === 0) {
-    Game.ToggleSpecialMenu(0);
-    return;
-  }
-
-  if (Game.LeftBackground) {
-    Game.specialTabHovered = '';
-    const len = Game.specialTabs.length;
-    if (len === 0) return;
-    let y = Game.LeftBackground.canvas.height - 24 - 48 * len - AUTO_COOKIE.NOTES_SHOWN * NOTES_HEIGHT - 15;
-    for (let i in Game.specialTabs) {
-      let selected = 0;
-      if (Game.specialTab === Game.specialTabs[i]) selected = 1;
-      let x = 24;
-      let s = 1;
-      if (selected) {
-        s = 2;
-        x += 24;
-      }
-
-      if (Math.abs(Game.mouseX - x) <= 24 * s && Math.abs(Game.mouseY - y) <= 24 * s) {
-        Game.specialTabHovered = Game.specialTabs[i];
-        Game.mousePointer = 1;
-        Game.CanClick = 0;
-        if (Game.Click) {
-          if (Game.specialTab !== Game.specialTabs[i]) {
-            Game.specialTab = Game.specialTabs[i];
-            Game.ToggleSpecialMenu(1);
-            PlaySound('snd/press.mp3');
-          } else {
-            Game.ToggleSpecialMenu(0);
-            PlaySound('snd/press.mp3');
-          }
-          //PlaySound('snd/tick.mp3');
-        }
-      }
-
-      y += 48;
-    }
-  }
-};*/
 function unlockRequirements() {
   for (let i in Game.UnlockAt) {
     let unlock = Game.UnlockAt[i];
@@ -1057,6 +846,7 @@ class Buyable {
   payback;
   investment;
   buyMillis;
+  originalBuyMillis = 0;
   needsUpdate = true;
 
   /**
@@ -1083,14 +873,27 @@ class Buyable {
   updateInvestmentAndBuyMillis() {
     this.investment = AUTO_COOKIE.stockMarket.createInvestment(Game.cookies - this.price)
     this.buyMillis = this.calculateBuyMillis()
+    if (this.originalBuyMillis === 0) {
+      this.originalBuyMillis = this.buyMillis
+    }
     if (this.nextMilestone !== this) {
       this.nextMilestone.updateInvestmentAndBuyMillis()
     }
   }
 
-  calculateBuyMillis() {
-    const cookiesNeeded = AUTO_COOKIE.reserve.reserveAmount - Game.cookies - this.price + this.investment.estimateReturns(this)
+  resetOriginalBuyMillis() {
+    this.originalBuyMillis = 0
+    if (this.nextMilestone !== this) {
+      this.nextMilestone.resetOriginalBuyMillis()
+    }
+  }
 
+  get cookiesNeeded() {
+    return AUTO_COOKIE.reserve.reserveAmount + this.price - Game.cookies - this.investment.estimateReturns(this)
+  }
+
+  calculateBuyMillis() {
+    const cookiesNeeded = this.cookiesNeeded
     if (cookiesNeeded <= 0) return Date.now()
 
     const cps = getCps()
@@ -1137,10 +940,10 @@ class Buyable {
 
     const cpsBuffs = getBuffs().filter(buff => typeof buff.multCpS !== "undefined" && buff.multCpS !== 0)
     if (cpsBuffs.length > 0) {
-      let buffedNextBuyTime = cookiesNeeded / cps
+      const buffedNextBuyTime = cookiesNeeded / cps
       const shortBuffs = cpsBuffs.filter(buff => buff.time / Game.fps < buffedNextBuyTime)
       if (shortBuffs.length > 0) {
-        //Time the cpsBuffs that will save us
+        //Time the cpsBuffs will save us
         const shortBuffsTime = shortBuffs.reduce((acc, buff) => acc + (buff.time / Game.fps), 0)
         const shortBuffsPower = shortBuffs.reduce((acc, buff) => acc * buff.multCpS, 1)
         buySeconds = shortBuffsTime + (buySeconds - shortBuffsTime) * shortBuffsPower
@@ -1219,6 +1022,7 @@ class Buyable {
       AUTO_COOKIE.buyables = AUTO_COOKIE.buyables.filter(upgrade => upgrade !== this)
     }
     this.gameObject.buy(1);
+    this.resetOriginalBuyMillis()
     Game.buyMode = oldBuyMode;
     Game.CalculateGains();
     AUTO_COOKIE.buying = false;
@@ -1242,6 +1046,34 @@ class Buyable {
   estimatedReturnPercent(additionalBrokers) {
     const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
     return 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (this.percentCpsIncrease - overhead)
+  }
+
+  get millisChange() {
+    return this.originalBuyMillis - this.buyMillis
+  }
+
+  get timeSavedText() {
+    const millisChange = this.millisChange
+    const absMillisChange = Math.abs(millisChange);
+    if (absMillisChange < 1000) {
+      return "";
+    } else {
+      const sign = Math.sign(millisChange);
+      const timeText = timeString(Math.ceil(absMillisChange / 1000));
+      if (sign === 1) {
+        return ` (${timeText})`
+      } else if (sign === -1) {
+        return ` (-${timeText})`
+      }
+    }
+  }
+
+  get timeSavedTextColour() {
+    if (Math.sign(this.millisChange) === 1)  {
+      return "#6F6"
+    } else {
+      return "#F66"
+    }
   }
 }
 
@@ -1983,11 +1815,11 @@ class ReserveLevel {
   static lucky() {
     //This adds 15% of current cookies in bank or 15 mins of production
     //Reserve for this must make 15% of cookies in bank equal to 15 mins of production
-    return (cookiesPs() * 15 * 60) / .15; //Multiplier doesn't matter here as it would cancel out.
+    return (Game.unbuffedCps * 15 * 60) / .15; //Multiplier doesn't matter here as it would cancel out.
   }
 
   static conjuredBakedGoods() {
-    return (cookiesPs() * 30 * 60) / .15;
+    return (Game.unbuffedCps * 30 * 60) / .15;
   }
 
   get amount() {
@@ -2014,12 +1846,12 @@ const DRAGON_HARVEST = new CookieEffect("Dragon Harvest", "DH")
 const DISABLED = new ReserveLevel([], () => 0);
 const LUCKY_RESERVE = new ReserveLevel([LUCKY], ReserveLevel.lucky);
 const BAKED_GOODS_RESERVE = new ReserveLevel([BAKED_GOODS], ReserveLevel.conjuredBakedGoods);
-const CHAIN_RESERVE = new ReserveLevel([CHAIN], () => ReserveLevel.calculateCookieChainReserve(cookiesPs()));
+const CHAIN_RESERVE = new ReserveLevel([CHAIN], () => ReserveLevel.calculateCookieChainReserve(Game.unbuffedCps));
 const FRENZY_LUCKY_RESERVE = new ReserveLevel([LUCKY, FRENZY], () => ReserveLevel.lucky() * 7);
-const FRENZY_CHAIN_RESERVE = new ReserveLevel([CHAIN, FRENZY], () => ReserveLevel.calculateCookieChainReserve(cookiesPs() * 7));
+const FRENZY_CHAIN_RESERVE = new ReserveLevel([CHAIN, FRENZY], () => ReserveLevel.calculateCookieChainReserve(Game.unbuffedCps * 7));
 const FRENZY_BAKED_GOODS_RESERVE = new ReserveLevel([BAKED_GOODS, FRENZY], () => ReserveLevel.conjuredBakedGoods() * 7);
 const DRAGON_HARVEST_LUCKY_RESERVE = new ReserveLevel([LUCKY, DRAGON_HARVEST], () => ReserveLevel.lucky() * 15);
-const DRAGON_HARVEST_CHAIN_RESERVE = new ReserveLevel([CHAIN, DRAGON_HARVEST], () => ReserveLevel.calculateCookieChainReserve(cookiesPs() * 15));
+const DRAGON_HARVEST_CHAIN_RESERVE = new ReserveLevel([CHAIN, DRAGON_HARVEST], () => ReserveLevel.calculateCookieChainReserve(Game.unbuffedCps * 15));
 const DRAGON_HARVEST_BAKED_GOODS_RESERVE = new ReserveLevel([BAKED_GOODS, DRAGON_HARVEST], () => ReserveLevel.conjuredBakedGoods() * 15);
 
 /**
@@ -2064,6 +1896,7 @@ class Reserve {
       this.reserveLevel = reserveLevel.level
       this.amount = reserveLevel.amount
       AUTO_COOKIE.reserveNote?.update(AUTO_COOKIE)
+      AUTO_COOKIE.bestBuyable?.resetOriginalBuyMillis()
       AUTO_COOKIE.loop("Reserve changed");
     }
   }
@@ -2227,37 +2060,38 @@ class GoalNote extends Note {
   }
 
   update(autoCookie) {
-    if (typeof autoCookie.bestBuyable === 'undefined') return;
+    const bestBuyable = autoCookie.bestBuyable
+    if (typeof bestBuyable === 'undefined') return;
 
-    if (autoCookie.bestBuyable.name === autoCookie.bestBuyable.nextMilestone.name) {
-      autoCookie.NOTES_SHOWN = 3
+    if (bestBuyable.name === bestBuyable.nextMilestone.name) {
+      autoCookie.notesShown = 3
       this.hide()
       return
     } else {
-      autoCookie.NOTES_SHOWN = 4
-      this.setDescription(autoCookie.bestBuyable.name)
+      autoCookie.notesShown = 4
+      this.setDescription(bestBuyable.name)
       this.show()
     }
 
-    let title = "Goal: " + autoCookie.bestBuyable instanceof Achievement ? "Achieve" : "Unlock"
-    const buyTime = autoCookie.bestBuyable.millisToBuy / 1000
-    if (buyTime > 0) {
-      const buyTimeString = timeString(Math.ceil(buyTime))
+    let title = "Goal: " + bestBuyable instanceof Achievement ? "Achieve" : "Unlock"
+    const secondsToBuy = bestBuyable.millisToBuy / 1000
+    if (secondsToBuy > 0) {
+      const buyTimeString = timeString(Math.ceil(secondsToBuy))
       title += ` in ${buyTimeString}`
+      this.setExtraTitle(bestBuyable.timeSavedText, bestBuyable.timeSavedTextColour)
     }
-    this.setTitle(title)
 
-    if (autoCookie.bestBuyable instanceof Achievement) {
+    if (bestBuyable instanceof Achievement) {
       this.html.onmouseover = () => {
-        const achievement = {...Game.Achievements[autoCookie.bestBuyable.name], won: 1} //Clone the achiev and set it as won to avoid it showing as mysterious
+        const achievement = {...Game.Achievements[bestBuyable.name], won: 1} //Clone the achiev and set it as won to avoid it showing as mysterious
         return Game.tooltip.draw(this.html, () => Game.crateTooltip(achievement, "stats"), "this")
       };
-    } else if (autoCookie.bestBuyable instanceof Upgrade) {
-      this.html.onmouseover = () => Game.tooltip.draw(this.html,() => Game.crateTooltip(Game.Upgrades[autoCookie.bestBuyable.name],'stats'),'this');
+    } else if (bestBuyable instanceof Upgrade) {
+      this.html.onmouseover = () => Game.tooltip.draw(this.html,() => Game.crateTooltip(Game.Upgrades[bestBuyable.name],'stats'),'this');
     } else {
       this.html.onmouseover = undefined;
     }
-    this.setExtraDescription(autoCookie.bestBuyable.cpsIncreasePercentText)
+    this.setTitle(title).setExtraDescription(bestBuyable.cpsIncreasePercentText)
   }
 }
 
@@ -2289,15 +2123,11 @@ class NextBuyNote extends GoalNote {
     //Maybe change remain cost
     if (!autoCookie.bestBuyable) return; //Next buy still not set
     const nextMilestone = autoCookie.bestBuyable.nextMilestone;
-    const note = autoCookie.nextBuyNote
-    const nextBuyTime = nextMilestone.millisToBuy / 1000
-    TimeUpdate.update(autoCookie.bestBuyable.nextMilestone, nextBuyTime);
+    const secondsToBuy = nextMilestone.millisToBuy / 1000
     let title
-    let extraTitle = ""
-    let extraTitleColor = "FFF"
     if (Game.cookiesPs === 0) {
       title = "No production click cookie to buy";
-    } else if (nextBuyTime === 0) {
+    } else if (secondsToBuy === 0) {
       if (autoCookie.buyLocked) {
         title = "Best buy is"
       } else {
@@ -2308,14 +2138,13 @@ class NextBuyNote extends GoalNote {
         }
       }
     } else {
-      const buyTime = timeString(Math.ceil(nextBuyTime));
+      const buyTime = timeString(Math.ceil(secondsToBuy));
       if (autoCookie.buyLocked) {
         title = `Can buy in ${buyTime}`;
       } else {
         title = `Next buy in ${buyTime}`;
       }
-      extraTitle = autoCookie.timeUpdate.timeSavedText
-      extraTitleColor = autoCookie.timeUpdate.timeSavedTextColour
+      this.setExtraTitle(nextMilestone.timeSavedText, nextMilestone.timeSavedTextColour)
     }
 
     if (nextMilestone instanceof Upgrade) {
@@ -2324,12 +2153,10 @@ class NextBuyNote extends GoalNote {
       this.html.onmouseover = undefined;
     }
 
-    note.setTitle(title)
+    this.setTitle(title)
       .setDescription(nextMilestone.name)
       .setExtraDescription(nextMilestone.cpsIncreasePercentText)
-      .setExtraTitle(extraTitle, extraTitleColor)
       .updateLockedIcon()
-    return this
   }
 }
 
@@ -2420,6 +2247,7 @@ class ReserveNote extends Note {
   addButtons() {
     this.buttons.forEach(button => {
       if (button.unlocked && !button.added) {
+        AUTO_COOKIE.buyLocked = true
         this.buttonDiv.appendChild(button.html)
         button.added = true
       }
@@ -2478,91 +2306,6 @@ class GoldenCookieSpawnNote extends Note {
     }
 
     this.setTitle(title).setDescription(description)
-  }
-}
-
-class TimeUpdate {
-  nextBuyMillis;
-  millisChange;
-  lastTimeSaveUpdate;
-  lastTimeUpdateMillis;
-  nextBuyName;
-  nextBuyAmount;
-  reserveLevel;
-
-  /**
-   * @param {number} millisSaved
-   * @param {Buyable} buyable
-   * @param {number} nextBuyMillis
-   * @param {number} lastTimeSaveUpdate
-   * @param {number} lastTimeUpdateMillis
-   */
-  constructor(millisSaved, buyable, nextBuyMillis, lastTimeSaveUpdate = window.performance.now(), lastTimeUpdateMillis = window.performance.now()) {
-    this.millisChange = millisSaved;
-    this.lastTimeSaveUpdate = lastTimeSaveUpdate;
-    this.lastTimeUpdateMillis = lastTimeUpdateMillis;
-    this.nextBuyName = buyable.name;
-    this.nextBuyMillis = nextBuyMillis;
-    if (buyable instanceof Building) {
-      this.nextBuyAmount = buyable.gameObject.amount;
-    }
-    this.reserveLevel = AUTO_COOKIE.reserve.reserveLevel;
-  }
-
-  isSameTarget(buyable) {
-    return buyable.name === this.nextBuyName && buyable.gameObject.amount === this.nextBuyAmount;
-  }
-
-  get timeSavedText() {
-    const millisChange = Math.abs(this.millisChange);
-    if (millisChange < 1000) {
-      return "";
-    } else {
-      const sign = Math.sign(this.millisChange);
-      const timeText = timeString(Math.ceil(millisChange / 1000));
-      if (sign === 1) {
-        return ` (${timeText})`
-      } else if (sign === -1) {
-        return ` (-${timeText})`
-      }
-    }
-  }
-
-  get timeSavedTextColour() {
-    if (Math.sign(this.millisChange) === 1)  {
-      return "#6F6"
-    } else {
-      return "#F66"
-    }
-  }
-
-  /**
-   *
-   * @param {Buyable} nextBuy
-   * @param {number} nextBuyTime
-   */
-  static update(nextBuy, nextBuyTime) {
-    const nextBuyMillis = nextBuyTime * 1000;
-    if (AUTO_COOKIE.timeUpdate === undefined) {
-      AUTO_COOKIE.timeUpdate = new TimeUpdate(0, nextBuy, nextBuyMillis);
-      return;
-    }
-    const millisSinceLastUpdate = window.performance.now() - AUTO_COOKIE.timeUpdate.lastTimeUpdateMillis;
-    const millisChange = AUTO_COOKIE.timeUpdate.nextBuyMillis - nextBuyMillis - millisSinceLastUpdate;
-    const millisSinceLastSave = window.performance.now() - AUTO_COOKIE.timeUpdate.lastTimeSaveUpdate
-    if (AUTO_COOKIE.timeUpdate.reserveLevel === AUTO_COOKIE.reserve.reserveLevel && //Reserve level didn't change
-      AUTO_COOKIE.timeUpdate.isSameTarget(nextBuy) && //What we're buying didnt change
-      //millisSinceLastSave < TIME_SAVED_DURATION && //We've saved time in the last TIME_SAVED_DURATION
-      (Math.abs(millisChange) >= 50 || AUTO_COOKIE.timeUpdate.millisChange !== 0)) {
-
-      if (Math.abs(millisChange) >= 50) {
-        AUTO_COOKIE.timeUpdate = new TimeUpdate(AUTO_COOKIE.timeUpdate.millisChange + millisChange, nextBuy, nextBuyMillis)
-      } else {
-        AUTO_COOKIE.timeUpdate = new TimeUpdate(AUTO_COOKIE.timeUpdate.millisChange, nextBuy, nextBuyMillis, AUTO_COOKIE.timeUpdate.lastTimeSaveUpdate)
-      }
-    } else {
-      AUTO_COOKIE.timeUpdate = new TimeUpdate(0, nextBuy, nextBuyMillis)
-    }
   }
 }
 
@@ -2634,18 +2377,9 @@ function calculateWrinklersWorthPopping() {
   return worthWrinklers;
 }
 
-function cookiesPs() {
-  //This deals with the case where the unbuffed cps is not yet calculated during the first moments after loading
-  return Game.unbuffedCps || Game.cookiesPs;
-}
-
 function getCps() {
   return Game.cookiesPs * (1 - Game.cpsSucked);
 }
-
-/*function getUnbuffedCps() {
-  return cookiesPs() * (1 - Game.cpsSucked);
-}*/
 
 /**
  * Log achievements AutoCookie doesn't know about
@@ -2756,7 +2490,7 @@ class Investment {
   estimateReturns(buyable) {
     if (buyable.percentCpsIncrease === Infinity) return 0
     const estimatedReturnPercent = buyable.estimatedReturnPercent(this.newBrokers)
-    const cpsAfterBuying = cookiesPs() * buyable.percentCpsIncrease
+    const cpsAfterBuying = Game.unbuffedCps * buyable.percentCpsIncrease
     const returns = StockMarket.moneyToCookies(this.moneyInvestedInStocks, cpsAfterBuying) * estimatedReturnPercent
     return returns - this.cookieInvestment
   }
@@ -2830,9 +2564,10 @@ class StockMarket {
 
   static get stableActiveGoods() {
     return StockMarket.activeGoods.filter(good => {
-      if (good.vals.length >= 5) { //Need at least 5 values to check if a good is stable
-        const min = Math.min(...good.vals)
-        const max = Math.max(...good.vals)
+      if (good.vals.length >= STOCK_MARKET_STABILITY_MIN_PRICES) { //Need at least 5 values to check if a good is stable
+        const prices = good.vals.slice(0, STOCK_MARKET_STABILITY_MAX_PRICES)
+        const min = Math.min(...prices)
+        const max = Math.max(...prices)
         return (max - min) / min < STOCK_MARKET_STABILITY_THRESHOLD
       } else {
         return false
@@ -2903,7 +2638,7 @@ class StockMarket {
   }
 
   createInvestment(cookies) {
-    return StockMarket.isLoaded ? new Investment(cookies) : new EmptyInvestment()
+    return StockMarket.isLoaded && cookies > 0 ? new Investment(cookies) : new EmptyInvestment()
   }
 }
 
@@ -2944,7 +2679,7 @@ class AutoCookie {
   mainInterval
   noteUpdateInterval
 
-  lastCps = getCps()
+  lastCps = 0
   notesShown = 3
 
   addBuildings() {
@@ -3844,15 +3579,15 @@ class AutoCookie {
   }
 
   updateNotes() {
-    this.notes.forEach(note => note.update(this))
-    document.getElementById("specialPopup").style.bottom = `${25 + 37 * this.notesShown}px`
     const cps = getCps();
     if (this.lastCps !== cps) {
       this.lastCps = cps;
-      this.loop("Cookies per second changed")
+      this.loop(`Cookies per second changed`)
     } else {
       this.lastCps = cps;
     }
+    this.notes.forEach(note => note.update(this))
+    document.getElementById("specialPopup").style.bottom = `${25 + 37 * this.notesShown}px`
   }
 
   testEverything() {
@@ -3902,10 +3637,14 @@ class AutoCookie {
     this.loop(`Set buy lock to ${this.buyLocked}`);
   }
 
-  deferredLoop() {
+  loop(message) {
+    debug("Loop: " + message)
+    if (this.stopped) return
+    if (this.mainInterval) clearTimeout(this.mainInterval) //Prevent two or more timers from running this.
     const bestBuyableTarget = minByPayback(this.updatedBuyables())
     if (this.bestBuyable !== bestBuyableTarget) {
       this.bestBuyable = bestBuyableTarget
+      this.bestBuyable.resetOriginalBuyMillis()
     }
     this.bestBuyable.updateInvestmentAndBuyMillis()
 
@@ -3918,11 +3657,11 @@ class AutoCookie {
           //Sell investment on the next stock market price update since we can't sell in the same update we buy
           setTimeout(() => {
             const profit = nextMilestone.investment.sellInvestment() - invested
-            log(`Investments earned ${Beautify(profit)} or ${timeString(profit / cookiesPs())} of production`)
+            log(`Investments earned ${Beautify(profit)} or ${timeString(profit / Game.unbuffedCps)} of production`)
             this.loop("Investment Sold")
           }, 50 + StockMarket.millisToNextTick)
         }
-        this.loop("After buy")
+        setTimeout(() => this.loop("After buy"))
       } else {
         if (nextMilestone.millisToBuy < Infinity) {
           // Set timeout to the expected time we can purchase the target buyable
@@ -3933,8 +3672,6 @@ class AutoCookie {
             message = `Buying ${nextMilestone.name}`;
           }
 
-          //const buffExpirationTime = getBuffs().reduce((acc, buff) => Math.min(acc, (buff.time / Game.fps)), Infinity);
-          //this.MAIN_INTERVAL = setTimeout(() => this.loop(message), Math.ceil(Math.min(nextBuyTime, buffExpirationTime + .05) * 1000));
           this.mainInterval = setTimeout(() => this.loop(message), nextMilestone.millisToBuy);
         }
       }
@@ -3942,46 +3679,10 @@ class AutoCookie {
     this.updateNotes();
   }
 
-  loop(message) {
-    debug("Loop: " + message)
-    if (this.stopped) return
-    if (this.mainInterval) clearTimeout(this.mainInterval) //Prevent two or more timers from running this.
-    setTimeout(() => this.deferredLoop())
-  }
-
   engageHooks() {
-    Game.registerHook("click", () => this.loop("bigCookie"))
-    document.getElementById("store").addEventListener("click", () => this.loop("Store")); //Hook store items and buildings
-    document.getElementById("shimmers").addEventListener("click", () => setTimeout(() => this.loop("Golden Cookie"), 50)); //Hook golden cookie clicks
-    /*Game.Win = function() {
-      let runLoop = false;
-      if (typeof arguments[0] === 'string') {
-        const achievement = Game.Achievements[arguments[0]];
-        if (achievement) {
-          if (achievement.won === 0) {
-            runLoop = true;
-            log(`Won ${achievement.name}`);
-            AUTO_COOKIE.BUYABLES = AUTO_COOKIE.BUYABLES.filter(a => a.name !== achievement.name)
-          }
-        }
-      }
-      GAME_WIN_FUNCTION.apply(this, arguments);
-      if (runLoop && !AUTO_COOKIE.STOPPED) {
-        loop(`Achievement ${arguments[0]}`);
-      }
-    }; //Hook achievement winning
-    Game.Ascend = function() {
-      GAME_ASCEND_FUNCTION.apply(this, arguments);
-      if (arguments[0] === 1) { //We are really ascending not just showing popup
-        stopAutoCookie();
-      }
-    };
-    Game.Reincarnate = function() {
-      GAME_REINCARNATE_FUNCTION.apply(this, arguments);
-      if (arguments[0] === 1) { //We are really reincarnating not just showing popup
-        startAutoCookie();
-      }
-    };*/
+    Game.registerHook("click", () => this.loop("Big Cookie clicked"))
+    document.getElementById("store").addEventListener("click", () => this.loop("Store clicked")); //Hook store items and buildings
+    document.getElementById("shimmers").addEventListener("click", () => setTimeout(() => this.loop("Golden Cookie clicked"), 50)); //Hook golden cookie clicks
   }
 
   start() {
@@ -3996,6 +3697,12 @@ class AutoCookie {
           this.buyables.push(upgrade);
         }
       }
+
+      let i = 0
+      for (let achievementName in AUTO_COOKIE.achievements) {
+        i += 1
+      }
+
       for (let achievementName in this.achievements) {
         const achievement = this.achievements[achievementName];
         if (achievement.canEventuallyGet) {
@@ -4014,6 +3721,8 @@ class AutoCookie {
     clearInterval(this.noteUpdateInterval)
     clearTimeout(this.mainInterval)
     this.stopped = true
+    //remove hooks
+    //clear buyables
   }
 
   init() {
@@ -4063,9 +3772,8 @@ class AutoCookie {
       load()
     } else {
       const cpsHook = (cps) => {
-        if (cps > 0) {
+        if (Game.unbuffedCps > 0) { //Wait for Game.unbuffedCps to be updated
           Game.removeHook('cps', cpsHook)
-          debug("Loading normally")
           load()
         }
         return cps
