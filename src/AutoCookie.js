@@ -4,8 +4,6 @@ const AUTO_COOKIE_VERSION = 6
 
 const CLICKS_PER_SEC = 3;
 const NOTE_UPDATE_FREQUENCY = 500;
-const TIME_SAVED_DURATION = 10000;
-const NOTES_HEIGHT = 37;
 
 const STOCK_MARKET_STABILITY_THRESHOLD = 0.05
 
@@ -1238,7 +1236,12 @@ class Buyable {
   }
 
   get cpsIncreasePercentText() {
-    return this.percentCpsIncrease > 0 ? ` (+${round(this.percentCpsIncrease * 100, 2)}%)` : ""
+    return this.percentCpsIncrease > 0 && this.percentCpsIncrease !== Infinity ? ` (+${round(this.percentCpsIncrease * 100, 2)}%)` : ""
+  }
+
+  estimatedReturnPercent(additionalBrokers) {
+    const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
+    return 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (this.percentCpsIncrease - overhead)
   }
 }
 
@@ -1723,6 +1726,10 @@ class GoldenCookieUpgrade extends Upgrade {
       return 0;
     }
   }
+
+  estimatedReturnPercent() {
+    return 1
+  }
 }
 
 class KittenUpgrade extends Upgrade {
@@ -1920,12 +1927,10 @@ class Achievement extends BuyableWithBuildingRequirements {
 class ReserveLevel {
   effects;
   amountF;
-  icon;
 
   constructor(effects, amountF, icon) {
     this.effects = effects;
     this.amountF = amountF;
-    this.icon = icon;
   }
 
   get title() {
@@ -1934,7 +1939,7 @@ class ReserveLevel {
     } else if (this.effects.length === 1) {
       return this.effects[0].shortName
     } else {
-      this.effects.map(effect => effect.shortName).join(" with ")
+      return this.effects.map(effect => effect.shortName).join(" with ")
     }
   }
 
@@ -2293,7 +2298,7 @@ class NextBuyNote extends GoalNote {
     if (Game.cookiesPs === 0) {
       title = "No production click cookie to buy";
     } else if (nextBuyTime === 0) {
-      if (autoCookie.BUY_LOCKED) {
+      if (autoCookie.buyLocked) {
         title = "Best buy is"
       } else {
         if (nextMilestone instanceof Building) {
@@ -2304,7 +2309,7 @@ class NextBuyNote extends GoalNote {
       }
     } else {
       const buyTime = timeString(Math.ceil(nextBuyTime));
-      if (autoCookie.BUY_LOCKED) {
+      if (autoCookie.buyLocked) {
         title = `Can buy in ${buyTime}`;
       } else {
         title = `Next buy in ${buyTime}`;
@@ -2698,12 +2703,6 @@ class Investment {
   sellFunctions
 
   constructor(cookies) {
-    if (!StockMarket.isLoaded) {
-      error(`Trying to create investment but Stock Market is not loaded`)
-      AUTO_COOKIE.stopped = true;
-      return;
-    }
-
     const goods = StockMarket.stableActiveGoods.sort((g1, g2) => g2.val - g1.val) //Sorts by price in descending order
     const fullStockPrice = goods.reduce((total, good) => {
       const price = StockMarket.price(good)
@@ -2749,18 +2748,14 @@ class Investment {
     return StockMarket.moneyToCookies(this.totalInvestment)
   }
 
-  static estimatedReturnPercent(buyable, additionalBrokers = 0) {
-    const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
-    return 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (buyable.percentCpsIncrease - overhead)
-  }
-
   /**
    * Estimates the profit we would make if we ran this investment around the given buyable
    * @param buyable The buyable to invest around
    * @returns {number} The estimated cookies we would gain should we run this investment
    */
   estimateReturns(buyable) {
-    const estimatedReturnPercent = Investment.estimatedReturnPercent(buyable, this.newBrokers)
+    if (buyable.percentCpsIncrease === Infinity) return 0
+    const estimatedReturnPercent = buyable.estimatedReturnPercent(this.newBrokers)
     const cpsAfterBuying = cookiesPs() * buyable.percentCpsIncrease
     const returns = StockMarket.moneyToCookies(this.moneyInvestedInStocks, cpsAfterBuying) * estimatedReturnPercent
     return returns - this.cookieInvestment
@@ -3907,10 +3902,7 @@ class AutoCookie {
     this.loop(`Set buy lock to ${this.buyLocked}`);
   }
 
-  loop(message) {
-    debug("Loop: " + message)
-    if (this.stopped) return
-    if (this.mainInterval) clearTimeout(this.mainInterval) //Prevent two or more timers from running this.
+  deferredLoop() {
     const bestBuyableTarget = minByPayback(this.updatedBuyables())
     if (this.bestBuyable !== bestBuyableTarget) {
       this.bestBuyable = bestBuyableTarget
@@ -3948,6 +3940,13 @@ class AutoCookie {
       }
     }
     this.updateNotes();
+  }
+
+  loop(message) {
+    debug("Loop: " + message)
+    if (this.stopped) return
+    if (this.mainInterval) clearTimeout(this.mainInterval) //Prevent two or more timers from running this.
+    setTimeout(() => this.deferredLoop())
   }
 
   engageHooks() {
