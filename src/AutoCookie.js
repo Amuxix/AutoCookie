@@ -7,6 +7,8 @@ const NOTE_UPDATE_FREQUENCY = 500;
 const TIME_SAVED_DURATION = 10000;
 const NOTES_HEIGHT = 37;
 
+const STOCK_MARKET_STABILITY_THRESHOLD = 0.05
+
 /*const GAME_WIN_FUNCTION = Game.Win;
 const GAME_ASCEND_FUNCTION = Game.Ascend;
 const GAME_REINCARNATE_FUNCTION = Game.Reincarnate;
@@ -1050,12 +1052,14 @@ function minByPayback(buyableList) {
  * @abstract
  */
 class Buyable {
+  gameObject;
   name;
   price;
   cpsIncrease;
   payback;
+  investment;
+  buyMillis;
   needsUpdate = true;
-  gameObject;
 
   /**
    * @param gameObject This is the object we are wrapping, it can be the game version of a Building, an Upgrade or an Achievement.
@@ -1072,10 +1076,83 @@ class Buyable {
       if (price !== undefined && !isNaN(price) && cpsIncrease !== undefined && !isNaN(cpsIncrease)) {
         this.price = price;
         this.cpsIncrease = cpsIncrease;
-        this.payback = this.calculatePayback();
+        this.payback = this.calculatePayback()
         this.needsUpdate = false;
       }
     }
+  }
+
+  updateInvestmentAndBuyMillis() {
+    this.investment = AUTO_COOKIE.stockMarket.createInvestment(Game.cookies - this.price)
+    this.buyMillis = this.calculateBuyMillis()
+    if (this.nextMilestone !== this) {
+      this.nextMilestone.updateInvestmentAndBuyMillis()
+    }
+  }
+
+  calculateBuyMillis() {
+    const cookiesNeeded = AUTO_COOKIE.reserve.reserveAmount - Game.cookies - this.price + this.investment.estimateReturns(this)
+
+    if (cookiesNeeded <= 0) return Date.now()
+
+    const cps = getCps()
+    let buySeconds = cookiesNeeded / cps
+
+    /*const maxWrinklers = Game.getWrinklersMax();
+    const activeWrinklers = Game.wrinklers.reduce((acc, wrinkler) => acc + wrinkler.close, 0);
+    if (maxWrinklers === activeWrinklers) {
+      const bestWrinkler = getBestWrinkler();
+      const suckMultiplier = calculateWrinklerSuckMultiplier();
+      const sucked = bestWrinkler.sucked * suckMultiplier;
+
+      const cookiesLostDuringWrinklerRespawn = calculateCookiesLostDuringWrinklerRespawn();
+      if (sucked >= cookiesNeeded && sucked >= cookiesLostDuringWrinklerRespawn) {
+        //We're gonna pop a wrinkler to buy
+        debug("Popping wrinkler");
+        buySeconds = 0;
+      } else if (sucked >= cookiesLostDuringWrinklerRespawn) {
+        //We can pop wrinkler now but we won't have enough cookies to buy
+        debug("Popping wrinkler as soon as it covers buying cost");
+        //How much do we lack considering we pop the wrinkler?
+        const cookiesNeededAfterPopping = cookiesNeeded - sucked;
+        //How many cookies are we producing per second counting with the wrinkler we're gonna pop
+        const cpsWithWrinkler = Game.cookiesPs * ((1 - Game.cpsSucked) + (Game.cpsSucked * suckMultiplier));
+        buySeconds = cookiesNeededAfterPopping / cpsWithWrinkler
+      } else {
+        //We can't pop wrinkler yet
+        const timeToPopWrinkler = (cookiesLostDuringWrinklerRespawn - sucked) / suckMultiplier;
+        if (timeToPopWrinkler <= buySeconds) {
+          //We can pop a wrinkler before we buy
+          if (cookiesLostDuringWrinklerRespawn >= cookiesNeeded) {
+            //Pop wrinkler as soon as we can as it will allow us to buy
+            debug("Popping wrinkler as soon as possible");
+            buySeconds = timeToPopWrinkler
+          } else {
+            debug("Gonna take a while");
+            const cookiesNeededAfterPopping = cookiesNeeded - cookiesLostDuringWrinklerRespawn;
+            const cpsWithWrinkler = Game.cookiesPs * ((1 - Game.cpsSucked) + (Game.cpsSucked * suckMultiplier));
+            buySeconds = cookiesNeededAfterPopping / cpsWithWrinkler
+          }
+        }
+      }
+    }*/
+
+    const cpsBuffs = getBuffs().filter(buff => typeof buff.multCpS !== "undefined" && buff.multCpS !== 0)
+    if (cpsBuffs.length > 0) {
+      let buffedNextBuyTime = cookiesNeeded / cps
+      const shortBuffs = cpsBuffs.filter(buff => buff.time / Game.fps < buffedNextBuyTime)
+      if (shortBuffs.length > 0) {
+        //Time the cpsBuffs that will save us
+        const shortBuffsTime = shortBuffs.reduce((acc, buff) => acc + (buff.time / Game.fps), 0)
+        const shortBuffsPower = shortBuffs.reduce((acc, buff) => acc * buff.multCpS, 1)
+        buySeconds = shortBuffsTime + (buySeconds - shortBuffsTime) * shortBuffsPower
+      }
+    }
+    return Date.now() + buySeconds * 1000
+  }
+
+  get millisToBuy() {
+    return Math.max(0, this.buyMillis - Date.now())
   }
 
   /**
@@ -1108,7 +1185,7 @@ class Buyable {
   /**
    * @return {Buyable}
    */
-  get nextBuy() {
+  get nextMilestone() {
     return this;
   }
 
@@ -1155,6 +1232,14 @@ class Buyable {
     const payback = this.price / this.cpsIncrease + Math.max(0, this.price + AUTO_COOKIE.reserve.reserveAmount - Game.cookies) / cps;
     return round(payback, 6);
   }
+
+  get percentCpsIncrease() {
+    return this.cpsIncrease / Game.cookiesPs
+  }
+
+  get cpsIncreasePercentText() {
+    return this.percentCpsIncrease > 0 ? ` (+${round(this.percentCpsIncrease * 100, 2)}%)` : ""
+  }
 }
 
 /**
@@ -1195,9 +1280,9 @@ class BuyableWithBuildingRequirements extends Buyable {
   /**
    * @return {Buyable}
    */
-  get nextBuy() {
+  get nextMilestone() {
     if (this.hasRequirements) {
-      return this.bestRequirement.nextBuy;
+      return this.bestRequirement.nextMilestone;
     } else {
       return this;
     }
@@ -1284,7 +1369,7 @@ class BuildingRequirement extends Building {
   /**
    * @return {Buyable}
    */
-  get nextBuy() {
+  get nextMilestone() {
     return Building.getByName(this.name);
   }
 
@@ -2137,37 +2222,37 @@ class GoalNote extends Note {
   }
 
   update(autoCookie) {
-    if (typeof autoCookie.NEXT_BUY === 'undefined') return;
+    if (typeof autoCookie.bestBuyable === 'undefined') return;
 
-    if (autoCookie.NEXT_BUY.name === autoCookie.NEXT_BUY.nextBuy.name) {
+    if (autoCookie.bestBuyable.name === autoCookie.bestBuyable.nextMilestone.name) {
       autoCookie.NOTES_SHOWN = 3
       this.hide()
       return
     } else {
       autoCookie.NOTES_SHOWN = 4
-      this.setDescription(autoCookie.NEXT_BUY.name)
+      this.setDescription(autoCookie.bestBuyable.name)
       this.show()
     }
 
-    let title = "Goal: " + autoCookie.NEXT_BUY instanceof Achievement ? "Achieve" : "Unlock"
-    const buyTime = autoCookie.calculateBuyTime(autoCookie.NEXT_BUY.price)
+    let title = "Goal: " + autoCookie.bestBuyable instanceof Achievement ? "Achieve" : "Unlock"
+    const buyTime = autoCookie.bestBuyable.millisToBuy / 1000
     if (buyTime > 0) {
       const buyTimeString = timeString(Math.ceil(buyTime))
       title += ` in ${buyTimeString}`
     }
     this.setTitle(title)
 
-    if (autoCookie.NEXT_BUY instanceof Achievement) {
+    if (autoCookie.bestBuyable instanceof Achievement) {
       this.html.onmouseover = () => {
-        const achievement = {...Game.Achievements[autoCookie.NEXT_BUY.name], won: 1} //Clone the achiev and set it as won to avoid it showing as mysterious
+        const achievement = {...Game.Achievements[autoCookie.bestBuyable.name], won: 1} //Clone the achiev and set it as won to avoid it showing as mysterious
         return Game.tooltip.draw(this.html, () => Game.crateTooltip(achievement, "stats"), "this")
       };
-    } else if (autoCookie.NEXT_BUY instanceof Upgrade) {
-      this.html.onmouseover = () => Game.tooltip.draw(this.html,() => Game.crateTooltip(Game.Upgrades[autoCookie.NEXT_BUY.name],'stats'),'this');
+    } else if (autoCookie.bestBuyable instanceof Upgrade) {
+      this.html.onmouseover = () => Game.tooltip.draw(this.html,() => Game.crateTooltip(Game.Upgrades[autoCookie.bestBuyable.name],'stats'),'this');
     } else {
       this.html.onmouseover = undefined;
     }
-    this.setExtraDescription(cpsIncreasePercentText(autoCookie.NEXT_BUY))
+    this.setExtraDescription(autoCookie.bestBuyable.cpsIncreasePercentText)
   }
 }
 
@@ -2197,11 +2282,11 @@ class NextBuyNote extends GoalNote {
 
   update(autoCookie) {
     //Maybe change remain cost
-    if (!autoCookie.NEXT_BUY) return; //Next buy still not set
-    const nextBuy = autoCookie.NEXT_BUY.nextBuy;
+    if (!autoCookie.bestBuyable) return; //Next buy still not set
+    const nextMilestone = autoCookie.bestBuyable.nextMilestone;
     const note = autoCookie.nextBuyNote
-    const nextBuyTime = autoCookie.calculateBuyTime(autoCookie.NEXT_BUY.nextBuy.price);
-    TimeUpdate.update(autoCookie.NEXT_BUY.nextBuy, nextBuyTime);
+    const nextBuyTime = nextMilestone.millisToBuy / 1000
+    TimeUpdate.update(autoCookie.bestBuyable.nextMilestone, nextBuyTime);
     let title
     let extraTitle = ""
     let extraTitleColor = "FFF"
@@ -2211,8 +2296,8 @@ class NextBuyNote extends GoalNote {
       if (autoCookie.BUY_LOCKED) {
         title = "Best buy is"
       } else {
-        if (nextBuy instanceof Building) {
-          title = "Buying the " + convertNumeral(nextBuy.gameObject.amount + 1);
+        if (nextMilestone instanceof Building) {
+          title = "Buying the " + convertNumeral(nextMilestone.gameObject.amount + 1);
         } else { //Upgrade
           title = "Buying "
         }
@@ -2228,15 +2313,15 @@ class NextBuyNote extends GoalNote {
       extraTitleColor = autoCookie.TIME_UPDATE.timeSavedTextColour
     }
 
-    if (nextBuy instanceof Upgrade) {
-      this.html.onmouseover = () => Game.tooltip.draw(this.html,() => Game.crateTooltip(Game.Upgrades[nextBuy.name],'stats', true),'this');
+    if (nextMilestone instanceof Upgrade) {
+      this.html.onmouseover = () => Game.tooltip.draw(this.html,() => Game.crateTooltip(Game.Upgrades[nextMilestone.name],'stats', true),'this');
     } else {
       this.html.onmouseover = undefined;
     }
 
     note.setTitle(title)
-      .setDescription(nextBuy.name)
-      .setExtraDescription(cpsIncreasePercentText(nextBuy))
+      .setDescription(nextMilestone.name)
+      .setExtraDescription(nextMilestone.cpsIncreasePercentText)
       .setExtraTitle(extraTitle, extraTitleColor)
       .updateLockedIcon()
     return this
@@ -2388,19 +2473,6 @@ class GoldenCookieSpawnNote extends Note {
     }
 
     this.setTitle(title).setDescription(description)
-  }
-}
-
-/**
- * @param {Buyable} buyable
- */
-function cpsIncreasePercentText(buyable) {
-  const percentIncrease = round(buyable.cpsIncrease / Game.cookiesPs * 100, 2);
-  if (percentIncrease > 0) {
-    //return `<span class='text' style='color: #6F6'> (+${percentIncrease}%)</span>`;
-    return ` (+${percentIncrease}%)`;
-  } else {
-    return "";
   }
 }
 
@@ -2557,14 +2629,18 @@ function calculateWrinklersWorthPopping() {
   return worthWrinklers;
 }
 
-function getCps() {
-  return Game.cookiesPs * (1 - Game.cpsSucked);
-}
-
 function cookiesPs() {
   //This deals with the case where the unbuffed cps is not yet calculated during the first moments after loading
   return Game.unbuffedCps || Game.cookiesPs;
 }
+
+function getCps() {
+  return Game.cookiesPs * (1 - Game.cpsSucked);
+}
+
+/*function getUnbuffedCps() {
+  return cookiesPs() * (1 - Game.cpsSucked);
+}*/
 
 /**
  * Log achievements AutoCookie doesn't know about
@@ -2587,11 +2663,262 @@ function missingUpgrades() {
   }
 }
 
+class EmptyInvestment {
+  constructor() {}
+
+  /**
+   * Estimates the profit we would make if we ran this investment around the given buyable
+   * @param buyable The buyable to invest around
+   * @returns {number} The estimated cookies we would gain should we run this investment
+   */
+  estimateReturns(buyable) {
+    return 0;
+  }
+
+  /**
+   * @returns {number} The total cookies invested
+   */
+  invest() {
+    return 0;
+  }
+
+  /**
+   * @returns {number} The total cookies gotten from selling this investment
+   */
+  sellInvestment() {
+    return 0;
+  }
+}
+
+class Investment {
+  moneyInvestedInStocks
+  moneyInvestedInBrokers
+  newBrokers
+  buyFunctions
+  sellFunctions
+
+  constructor(cookies) {
+    if (!StockMarket.isLoaded) {
+      error(`Trying to create investment but Stock Market is not loaded`)
+      AUTO_COOKIE.STOPPED = true;
+      return;
+    }
+
+    const goods = StockMarket.stableActiveGoods.sort((g1, g2) => g2.val - g1.val) //Sorts by price in descending order
+    const fullStockPrice = goods.reduce((total, good) => {
+      const price = StockMarket.price(good)
+      const stockToFillWarehouse = StockMarket.maxStock(good) - good.stock
+      return total + price * stockToFillWarehouse
+    }, 0)
+    const startingMoney = StockMarket.cookiesToMoney(cookies)
+    const brokersToBuy = StockMarket.calculateBrokersToBuy(Math.min(startingMoney, fullStockPrice))
+    const brokersCost = brokersToBuy * 1200
+    const money = startingMoney - brokersCost
+
+    const {remainingMoney, buyFunctions, sellFunctions} = goods.reduce((acc, good) => {
+      const {remainingMoney, buyFunctions, sellFunctions} = acc
+      const price = StockMarket.price(good)
+      const stockToFillWarehouse = StockMarket.maxStock(good) - good.stock
+      const stockToBuy = Math.min(stockToFillWarehouse, Math.floor(remainingMoney / price))
+      if (stockToBuy > 0) {
+        const buyPrice = stockToBuy * price
+        const buyFunction = () => StockMarket.buy(good, stockToBuy)
+        const sellFunction = () => StockMarket.sell(good, stockToBuy)
+        return {
+          remainingMoney: remainingMoney - buyPrice,
+          buyFunctions: buyFunctions.concat([buyFunction]),
+          sellFunctions: sellFunctions.concat([sellFunction]),
+        }
+      } else {
+        return acc
+      }
+    }, {remainingMoney: money, buyFunctions: [() => StockMarket.buyBrokers(brokersToBuy)], sellFunctions: []})
+
+    this.moneyInvestedInStocks = money - remainingMoney
+    this.moneyInvestedInBrokers = brokersCost
+    this.newBrokers = brokersToBuy
+    this.buyFunctions = buyFunctions
+    this.sellFunctions = sellFunctions
+  }
+
+  get totalInvestment() {
+    return this.moneyInvestedInStocks + this.moneyInvestedInBrokers
+  }
+
+  get cookieInvestment() {
+    return StockMarket.moneyToCookies(this.totalInvestment)
+  }
+
+  static estimatedReturnPercent(buyable, additionalBrokers = 0) {
+    const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
+    return 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (buyable.percentCpsIncrease - overhead)
+  }
+
+  /**
+   * Estimates the profit we would make if we ran this investment around the given buyable
+   * @param buyable The buyable to invest around
+   * @returns {number} The estimated cookies we would gain should we run this investment
+   */
+  estimateReturns(buyable) {
+    const estimatedReturnPercent = Investment.estimatedReturnPercent(buyable, this.newBrokers)
+    const cpsAfterBuying = cookiesPs() * buyable.percentCpsIncrease
+    const returns = StockMarket.moneyToCookies(this.moneyInvestedInStocks, cpsAfterBuying) * estimatedReturnPercent
+    return returns - this.cookieInvestment
+  }
+
+  /**
+   * @returns {number} The total cookies invested
+   */
+  invest() {
+    this.buyFunctions.forEach(f => f())
+    return this.cookieInvestment
+  }
+
+  /**
+   * @returns {number} The total cookies gotten from selling this investment
+   */
+  sellInvestment() {
+    const moneyFromSales = this.buyFunctions.reduce((total, sellFunction) => total + sellFunction(), 0)
+    return StockMarket.moneyToCookies(moneyFromSales)
+  }
+}
+
+class StockMarket {
+  static get game() {
+    return Game.Objects.Bank.minigame
+  }
+
+  static get isLoaded() {
+    return Game.Objects.Bank.minigameLoaded
+  }
+
+  static get millisToNextTick() {
+    return (1800 - StockMarket.game.tickT) / Game.fps * 1000
+  }
+
+  static get brokers() {
+    return StockMarket.game.brokers
+  }
+
+  static get maxBrokers() {
+    return StockMarket.game.getMaxBrokers()
+  }
+
+  static calculateOverhead(brokers) {
+    return 0.2 * Math.pow(0.95, brokers)
+  }
+
+  static get overhead() {
+    return this.calculateOverhead(StockMarket.brokers)
+  }
+
+  static goodByID(id) {
+    return StockMarket.game.goodsById(id)
+  }
+
+  static maxStock(good) {
+    return StockMarket.game.getGoodMaxStock(good)
+  }
+
+  static price(good) {
+    return StockMarket.game.getGoodPrice(good)
+  }
+
+  static estimatedInvestmentReturnPercent(buyable, additionalBrokers = 0) {
+    const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
+    return StockMarket.isLoaded ? 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (buyable.percentCpsIncrease - overhead) : 1
+  }
+
+  static get activeGoods() {
+    return StockMarket.game.goodsById.flatMap(good => good.active ? [good] : [])
+  }
+
+  static get stableActiveGoods() {
+    return StockMarket.activeGoods.filter(good => {
+      if (good.vals.length >= 5) { //Need at least 5 values to check if a good is stable
+        const min = Math.min(...good.vals)
+        const max = Math.max(...good.vals)
+        return (max - min) / min < STOCK_MARKET_STABILITY_THRESHOLD
+      } else {
+        return false
+      }
+    })
+  }
+
+  static buyBrokers(amount) {
+    for (let i = 0; i < amount; i++) {
+      //Apparently there is no accessible function to buy brokers, this is the best I found
+      document.getElementById("bankBrokersBuy").click()
+    }
+  }
+
+  static buy(good, amount) {
+    if (StockMarket.game.buyGood(good.id, amount)) {
+      log(`Bought ${amount} ${good.name}`)
+    }
+  }
+
+  /**
+   * Sells the given amount of the given good
+   * @param good Good to sell
+   * @param amount Amount of good to sell
+   * @returns {number} The money we got from the sale
+   */
+  static sell(good, amount) {
+    if (StockMarket.game.sellGood(good.id, amount)) {
+      const price = StockMarket.price(good) * amount
+      log(`Sold ${amount} ${good.name}`)
+      return price;
+    } else {
+      return 0;
+    }
+  }
+
+  static calculateBrokersToBuy(stockPrice) {
+    const increase = .25 //This simulates an upgrade, this can be any value above the current overhead
+    if (StockMarket.brokers === StockMarket.maxBrokers) return 0;
+    const maxNewBrokers = StockMarket.maxBrokers - StockMarket.brokers
+
+    function calculateProfit(brokers) {
+      return stockPrice * (increase - StockMarket.calculateOverhead(StockMarket.brokers + brokers)) - brokers * 1200
+    }
+
+    for (let brokers = 0; brokers < maxNewBrokers - 1; brokers++) {
+      const profit = calculateProfit(brokers)
+      const nextProfit = calculateProfit(brokers + 1)
+      if (profit >= nextProfit) {
+        return brokers
+      }
+    }
+    return maxNewBrokers
+  }
+
+  static cookiesToMoney(cookies) {
+    return cookies / Game.cookiesPsRawHighest
+  }
+
+  /**
+   * Converts a given amount of money into cookies
+   * @param money {number} The moneyh to convert
+   * @param highestCps {number} An option value of the highest cookies per second to use which defaults to the current games one
+   * @returns {number} The money in cookies
+   */
+  static moneyToCookies(money, highestCps = 0) {
+    return money * Math.max(highestCps, Game.cookiesPsRawHighest)
+  }
+
+  createInvestment(cookies) {
+    return StockMarket.isLoaded ? new Investment(cookies) : new EmptyInvestment()
+  }
+}
+
 class AutoCookie {
   /**
    * @type {Reserve}
    */
   reserve
+  stockMarket
+
   noteArea
   spawnWindowNote
   reserveNote
@@ -2606,7 +2933,7 @@ class AutoCookie {
   BUY_LOCKED = true;
   BUYING = false;
   TIME_UPDATE;
-  NEXT_BUY;
+  bestBuyable;
   /**
    * @type {Upgrade[]}
    */
@@ -3519,77 +3846,6 @@ class AutoCookie {
     return this.BUYABLES;
   }
 
-  /**
-   * Calculates the best thing to buy
-   * @return {Buyable} The best thing to buy
-   */
-  getBestBuy() {
-    return minByPayback(this.updatedBuyables());
-  }
-
-  calculateBuyTime(price) {
-    let cookiesRemaining = this.reserve.reserveAmount + price - Game.cookies;
-    if (cookiesRemaining <= 0) return 0;
-    const cps = getCps();
-    if (cps >= price) {
-      //Buy things that cost less than 1 sec of production
-      cookiesRemaining -= this.reserve.reserveAmount;
-    }
-    let buyTime = cookiesRemaining / cps;
-    const maxWrinklers = Game.getWrinklersMax();
-    const activeWrinklers = Game.wrinklers.reduce((acc, wrinkler) => acc + wrinkler.close, 0);
-    if (maxWrinklers === activeWrinklers) {
-      const bestWrinkler = getBestWrinkler();
-      const suckMultiplier = calculateWrinklerSuckMultiplier();
-      const sucked = bestWrinkler.sucked * suckMultiplier;
-
-      const cookiesLostDuringWrinklerRespawn = calculateCookiesLostDuringWrinklerRespawn();
-      if (sucked >= cookiesRemaining && sucked >= cookiesLostDuringWrinklerRespawn) {
-        //We're gonna pop a wrinkler to buy
-        debug("Popping wrinkler");
-        buyTime = 0;
-      } else if (sucked >= cookiesLostDuringWrinklerRespawn) {
-        //We can pop wrinkler now but we won't have enough cookies to buy
-        debug("Popping wrinkler as soon as it covers buying cost");
-        //How much do we lack considering we pop the wrinkler?
-        const cookiesNeededAfterPopping = cookiesRemaining - sucked;
-        //How many cookies are we producing per second counting with the wrinkler we're gonna pop
-        const cpsWithWrinkler = Game.cookiesPs * ((1 - Game.cpsSucked) + (Game.cpsSucked * suckMultiplier));
-        buyTime = cookiesNeededAfterPopping / cpsWithWrinkler
-      } else {
-        //We can't pop wrinkler yet
-        const timeToPopWrinkler = (cookiesLostDuringWrinklerRespawn - sucked) / suckMultiplier;
-        if (timeToPopWrinkler <= buyTime) {
-          //We can pop a wrinkler before we buy
-          if (cookiesLostDuringWrinklerRespawn >= cookiesRemaining) {
-            //Pop wrinkler as soon as we can as it will allow us to buy
-            debug("Popping wrinkler as soon as possible");
-            buyTime = timeToPopWrinkler
-          } else {
-            debug("Gonna take a while");
-            const cookiesNeededAfterPopping = cookiesRemaining - cookiesLostDuringWrinklerRespawn;
-            const cpsWithWrinkler = Game.cookiesPs * ((1 - Game.cpsSucked) + (Game.cpsSucked * suckMultiplier));
-            buyTime = cookiesNeededAfterPopping / cpsWithWrinkler
-          }
-        }
-      }
-    }
-
-    const cpsBuffs = getBuffs().filter(buff => typeof buff.multCpS !== "undefined" && buff.multCpS !== 0);
-    if (cpsBuffs.length > 0) {
-      let buffedNextBuyTime = cookiesRemaining / cps;
-      const shortBuffs = cpsBuffs.filter(buff => buff.time / Game.fps < buffedNextBuyTime);
-      //const longBuffs = cpsBuffs.filter(buff => buff.time / Game.fps >= buffedNextBuyTime);
-      if (shortBuffs.length > 0) {
-        //Time the cpsBuffs that will save us
-        const shortBuffsTime = shortBuffs.reduce((acc, buff) => acc + (buff.time / Game.fps), 0);
-        const shortBuffsPower = shortBuffs.reduce((acc, buff) => acc * buff.multCpS, 1);
-        buyTime = shortBuffsTime + (buyTime - shortBuffsTime) * shortBuffsPower
-      }
-    }
-    return buyTime;
-  }
-
   updateNotes() {
     this.notes.forEach(note => note.update(this))
     document.getElementById("specialPopup").style.bottom = `${25 + 37 * this.NOTES_SHOWN}px`
@@ -3649,46 +3905,45 @@ class AutoCookie {
     this.loop(`Set buy lock to ${this.BUY_LOCKED}`);
   }
 
-  /**
-   * Calculates best thing to buy
-   * Buys best thing if possible
-   * Checks if it is worth to pop a wrinkler
-   */
   loop(message) {
-    debug("Loop: " + message);
-    if (this.STOPPED) return;
-    if (this.MAIN_INTERVAL) clearTimeout(this.MAIN_INTERVAL); //Prevent two or more timers from running this.
-    this.NEXT_BUY = this.getBestBuy();
-    this.reserve.updateReserveLevel()
-    const nextBuyTime = this.calculateBuyTime(this.NEXT_BUY.nextBuy.price);
-    TimeUpdate.update(this.NEXT_BUY.nextBuy, nextBuyTime);
+    debug("Loop: " + message)
+    if (this.STOPPED) return
+    if (this.MAIN_INTERVAL) clearTimeout(this.MAIN_INTERVAL) //Prevent two or more timers from running this.
+    const bestBuyableTarget = minByPayback(this.updatedBuyables())
+    if (this.bestBuyable !== bestBuyableTarget) {
+      this.bestBuyable = bestBuyableTarget
+    }
+    this.bestBuyable.updateInvestmentAndBuyMillis()
+
     if (!this.BUY_LOCKED) {
-      const nextBuy = this.NEXT_BUY.nextBuy;
-      const cookiesNeeded = nextBuy.price + this.reserve.reserveAmount;
-      const wrinklersWorthPopping = calculateWrinklersWorthPopping();
-      if (wrinklersWorthPopping.length > 0) {
-        const suckMultiplier = calculateWrinklerSuckMultiplier();
-        const totalSucked = wrinklersWorthPopping.reduce((acc, wrinkler) => acc + wrinkler.sucked * suckMultiplier, 0);
-        if (totalSucked + Game.cookies >= cookiesNeeded) {
-          wrinklersWorthPopping.forEach(wrinkler => wrinkler.hp = 0);
-          Game.UpdateWrinklers(); //This will give us the cookies from the wrinklers
+      const nextMilestone = this.bestBuyable.nextMilestone
+      if (nextMilestone.millisToBuy <= 0) {
+        let invested = nextMilestone.investment.invest()
+        nextMilestone.buy()
+        if (invested > 0) {
+          //Sell investment on the next stock market price update since we can't sell in the same update we buy
+          setTimeout(() => {
+            const profit = nextMilestone.investment.sellInvestment() - invested
+            log(`Investments earned ${Beautify(profit)} or ${timeString(profit / cookiesPs())} of production`)
+            this.loop("Investment Sold")
+          }, 50 + StockMarket.millisToNextTick)
+        }
+        this.loop("After buy")
+      } else {
+        if (nextMilestone.millisToBuy < Infinity) {
+          // Set timeout to the expected time we can purchase the target buyable
+          let message = "";
+          if (nextMilestone instanceof Building) {
+            message = `Buying the ${convertNumeral(nextMilestone.gameObject.amount + 1)} ${nextMilestone.name}`;
+          } else {
+            message = `Buying ${nextMilestone.name}`;
+          }
+
+          //const buffExpirationTime = getBuffs().reduce((acc, buff) => Math.min(acc, (buff.time / Game.fps)), Infinity);
+          //this.MAIN_INTERVAL = setTimeout(() => this.loop(message), Math.ceil(Math.min(nextBuyTime, buffExpirationTime + .05) * 1000));
+          this.MAIN_INTERVAL = setTimeout(() => this.loop(message), nextMilestone.millisToBuy);
         }
       }
-      if (Game.cookies >= cookiesNeeded || (Game.cookies >= nextBuy.price && getCps() >= nextBuy.price)) {
-        nextBuy.buy();
-        this.NEXT_BUY = this.getBestBuy();
-      }
-      let message = "";
-      if (nextBuy instanceof Building) {
-        message = `Buying the ${convertNumeral(nextBuy.gameObject.amount + 1)} ${nextBuy.name}`;
-      } else {
-        message = `Buying ${nextBuy.name}`;
-      }
-
-      const buffExpirationTime = getBuffs().reduce((acc, buff) => Math.min(acc, (buff.time / Game.fps)), Infinity);
-
-      if (nextBuyTime < Infinity)
-        this.MAIN_INTERVAL = setTimeout(() => this.loop(message), Math.ceil(Math.min(nextBuyTime, buffExpirationTime + .05) * 1000));
     }
     this.updateNotes();
   }
@@ -3762,6 +4017,7 @@ class AutoCookie {
 
   init() {
     this.reserve = new Reserve();
+    this.stockMarket = new StockMarket();
     this.createNotes();
     document.getElementById("versionNumber").hidden = true;
     this.addBuildings();
