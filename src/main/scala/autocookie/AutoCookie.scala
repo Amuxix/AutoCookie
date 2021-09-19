@@ -76,16 +76,12 @@ object AutoCookie extends Named {
     document.getElementById("store")
       .addEventListener("click", (e) => loop("Store clicked")) //Hook store items and buildings
     document.getElementById("shimmers")
-      .addEventListener(
-        "click", (e) => setTimeout(50
-          .millis
-        )(loop("Golden Cookie clicked"))
-      ) //Hook golden cookie clicks
+      .addEventListener("click", (e) => setTimeout(50.millis)(loop("Golden Cookie clicked"))) //Hook golden cookie clicks
 
   def loop(message: String): Unit =
     debug(s"Loop: $message")
     if stopped then return
-      if mainTimeout.nonEmpty then mainTimeout.foreach(clearTimeout)
+    if mainTimeout.nonEmpty then mainTimeout.foreach(clearTimeout)
     profile("Update")(buyables.foreach(_.update()))
     val newBestBuyable = buyables.minBy(_.payback)
     if bestBuyable != newBestBuyable then

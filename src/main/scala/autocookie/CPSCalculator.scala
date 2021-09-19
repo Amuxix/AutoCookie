@@ -22,8 +22,16 @@ object CPSCalculator {
     val upgrade = Upgrade.getByName(upgradeName)
     upgrade.owned || upgrades.contains(upgrade)
 
-  def calculateBuildingCPS(upgrades: Set[Upgrade], level: Int, baseCps: Double, amount: Int, synergyMap: Map[String, 
-    Double], exponentialUpgrades: List[String], debug: Boolean, add: Double = 0): Double =
+  def calculateBuildingCPS(
+    upgrades: Set[Upgrade],
+    level: Int,
+    baseCps: Double,
+    amount: Int,
+    synergyMap: Map[String, Double],
+    exponentialUpgrades: List[String],
+    debug: Boolean,
+    add: Double = 0
+  ): Double =
     val exponentialMultiplier = math.pow(2, exponentialUpgrades.count(hasOrIsInChoices(_, upgrades)))
     val levelMultiplier = 1 + level * 0.01
     val synergyMultiplier = synergyMap.foldLeft(1D) {
@@ -32,12 +40,10 @@ object CPSCalculator {
       case (synergyMultiplier, _)                                                                    => 
         synergyMultiplier
     }
-    if debug then Logger.debug(s"base cps: $baseCps, exponentialMultiplier: $exponentialMultiplier, " +
-      s"levelMultiplier: $levelMultiplier, synergyMultiplier: $synergyMultiplier, add: $add")
+    if debug then Logger.debug(s"base cps: $baseCps, exponentialMultiplier: $exponentialMultiplier, levelMultiplier: $levelMultiplier, synergyMultiplier: $synergyMultiplier, add: $add")
     (baseCps * exponentialMultiplier + add) * amount * levelMultiplier * synergyMultiplier
 
-  def calculateCursorsCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], nonCursors: Int, debug: Boolean 
-  = false): Double =
+  def calculateCursorsCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], nonCursors: Int, debug: Boolean = false): Double =
     lazy val fingerAdd: Map[String, Double] = Map(
       "Million fingers" -> 5,
       "Billion fingers" -> 10,
@@ -49,16 +55,17 @@ object CPSCalculator {
       "Octillion fingers" -> 20,
       "Nonillion fingers" -> 20,
     )
-    val fingersAdd = if hasOrIsInChoices("Thousand fingers", upgrades) then
-      if debug then Logger.debug(s"nonCursors $nonCursors")
-      nonCursors * fingerAdd.foldLeft(0.1) {
-        case (totalAdd, (name, multiplier)) if hasOrIsInChoices(name, upgrades) =>
-          if debug then Logger.debug(s"Adding $name total: ${totalAdd * multiplier}")
-          totalAdd * multiplier
-        case (totalAdd, _)                                                      => totalAdd
-      }
-    else
-      0
+    val fingersAdd =
+      if hasOrIsInChoices("Thousand fingers", upgrades) then
+        if debug then Logger.debug(s"nonCursors $nonCursors")
+        nonCursors * fingerAdd.foldLeft(0.1) {
+          case (totalAdd, (name, multiplier)) if hasOrIsInChoices(name, upgrades) =>
+            if debug then Logger.debug(s"Adding $name total: ${totalAdd * multiplier}")
+            totalAdd * multiplier
+          case (totalAdd, _)                                                      => totalAdd
+        }
+      else
+        0
 
     val synergyMap: Map[String, Double] = Map(
       "Mice clicking mice" -> (buildings(Building.fractalEngine) * .05)
@@ -69,11 +76,7 @@ object CPSCalculator {
       "Ambidextrous"
     )
     //0.1 is the cursor base CPS
-    calculateBuildingCPS(
-      upgrades, Building.cursor.level.toInt, 0.1, buildings(Building
-        .cursor
-      ), synergyMap, exponentialUpgrades, debug, fingersAdd
-    )
+    calculateBuildingCPS(upgrades, Building.cursor.level.toInt, 0.1, buildings(Building.cursor), synergyMap, exponentialUpgrades, debug, fingersAdd)
 
   def calculateGrandmasCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
@@ -115,10 +118,7 @@ object CPSCalculator {
       case (baseIncrease, (upgradeName, increase)) if hasOrIsInChoices(upgradeName, upgrades) => baseIncrease + increase
       case (baseIncrease, _)                                                                  => baseIncrease
     }
-    calculateBuildingCPS(
-      upgrades, Building.grandma.level.toInt, baseCps, buildings(Building.grandma), Map
-        .empty, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.grandma.level.toInt, baseCps, buildings(Building.grandma), Map.empty, exponentialUpgrades, debug)
 
   def calculateFarmsCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
@@ -141,11 +141,7 @@ object CPSCalculator {
       "Magical botany" -> (buildings(Building.wizardTower) * .05),
       "Infernal crops" -> (buildings(Building.portal) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.farm.level.toInt, Building.farm.baseCps, buildings(Building
-        .farm
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.farm.level.toInt, Building.farm.baseCps, buildings(Building.farm), synergyMap, exponentialUpgrades, debug)
 
   def calculateMinesCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
@@ -169,11 +165,7 @@ object CPSCalculator {
       "Primordial ores" -> (buildings(Building.alchemyLab) * .05),
       "Gemmed talismans" -> (buildings(Building.chancemaker) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.mine.level.toInt, Building.mine.baseCps, buildings(Building
-        .mine
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.mine.level.toInt, Building.mine.baseCps, buildings(Building.mine), synergyMap, exponentialUpgrades, debug)
 
   def calculateFactoriesCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
@@ -196,11 +188,7 @@ object CPSCalculator {
       "Printing presses" -> (buildings(Building.bank) * .05),
       "Shipyards" -> (buildings(Building.shipment) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.factory.level.toInt, Building.factory.baseCps, buildings(Building
-        .factory
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.factory.level.toInt, Building.factory.baseCps, buildings(Building.factory), synergyMap, exponentialUpgrades, debug)
 
   def calculateBanksCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
@@ -223,11 +211,7 @@ object CPSCalculator {
       "Gold fund" -> (buildings(Building.alchemyLab) * .05),
       "Extra physics funding" -> (buildings(Building.antimatterCondenser) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.bank.level.toInt, Building.bank.baseCps, buildings(Building
-        .bank
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.bank.level.toInt, Building.bank.baseCps, buildings(Building.bank), synergyMap, exponentialUpgrades, debug)
 
   def calculateTemplesCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
@@ -250,14 +234,9 @@ object CPSCalculator {
       "God particle" -> (buildings(Building.antimatterCondenser) * .05),
       "Mystical energies" -> (buildings(Building.prism) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.temple.level.toInt, Building.temple.baseCps, buildings(Building
-        .temple
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.temple.level.toInt, Building.temple.baseCps, buildings(Building.temple), synergyMap, exponentialUpgrades, debug)
 
-  def calculateWizardTowersCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false)
-  : Double =
+  def calculateWizardTowersCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
       "Pointier hats",
       "Beardlier beards",
@@ -278,11 +257,7 @@ object CPSCalculator {
       "Magical botany" -> (buildings(Building.farm) * .001),
       "Light magic" -> (buildings(Building.prism) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.wizardTower.level.toInt, Building.wizardTower.baseCps, buildings(Building
-        .wizardTower
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.wizardTower.level.toInt, Building.wizardTower.baseCps, buildings(Building.wizardTower), synergyMap, exponentialUpgrades, debug)
 
   def calculateShipmentsCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
@@ -305,14 +280,9 @@ object CPSCalculator {
       "Magical botany" -> (buildings(Building.farm) * .001),
       "Light magic" -> (buildings(Building.prism) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.shipment.level.toInt, Building.shipment.baseCps, buildings(Building
-        .shipment
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.shipment.level.toInt, Building.shipment.baseCps, buildings(Building.shipment), synergyMap, exponentialUpgrades, debug)
 
-  def calculateAlchemyLabsCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false)
-  : Double =
+  def calculateAlchemyLabsCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
       "Antimony",
       "Essence of dough",
@@ -333,11 +303,7 @@ object CPSCalculator {
       "Gold fund" -> (buildings(Building.bank) * .001),
       "Chemical proficiency" -> (buildings(Building.antimatterCondenser) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.alchemyLab.level.toInt, Building.alchemyLab.baseCps, buildings(Building
-        .alchemyLab
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.alchemyLab.level.toInt, Building.alchemyLab.baseCps, buildings(Building.alchemyLab), synergyMap, exponentialUpgrades, debug)
 
   def calculatePortalsCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
@@ -360,11 +326,7 @@ object CPSCalculator {
       "Infernal crops" -> (buildings(Building.farm) * .001),
       "Abysmal glimmer" -> (buildings(Building.prism) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.portal.level.toInt, Building.portal.baseCps, buildings(Building
-        .portal
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.portal.level.toInt, Building.portal.baseCps, buildings(Building.portal), synergyMap, exponentialUpgrades, debug)
 
   def calculateTimeMachinesCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false)
   : Double =
@@ -388,14 +350,9 @@ object CPSCalculator {
       "Relativistic parsec-skipping" -> (buildings(Building.shipment) * .001),
       "Primeval glow" -> (buildings(Building.prism) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.timeMachine.level.toInt, Building.timeMachine.baseCps, buildings(Building
-        .timeMachine
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.timeMachine.level.toInt, Building.timeMachine.baseCps, buildings(Building.timeMachine), synergyMap, exponentialUpgrades, debug)
 
-  def calculateAntimatterCondensersCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = 
-  false): Double =
+  def calculateAntimatterCondensersCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
       "Sugar bosons",
       "String theory",
@@ -417,11 +374,7 @@ object CPSCalculator {
       "Chemical proficiency" -> (buildings(Building.alchemyLab) * .001),
       "Charm quarks" -> (buildings(Building.chancemaker) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.antimatterCondenser.level.toInt, Building
-        .antimatterCondenser
-        .baseCps, buildings(Building.antimatterCondenser), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.antimatterCondenser.level.toInt, Building.antimatterCondenser.baseCps, buildings(Building.antimatterCondenser), synergyMap, exponentialUpgrades, debug)
 
   def calculatePrismsCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
@@ -445,14 +398,9 @@ object CPSCalculator {
       "Mystical energies" -> (buildings(Building.temple) * .001),
       "Recursive mirrors" -> (buildings(Building.antimatterCondenser) * .05),
     )
-    calculateBuildingCPS(
-      upgrades, Building.prism.level.toInt, Building.prism.baseCps, buildings(Building
-        .prism
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.prism.level.toInt, Building.prism.baseCps, buildings(Building.prism), synergyMap, exponentialUpgrades, debug)
 
-  def calculateChancemakersCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false)
-  : Double =
+  def calculateChancemakersCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
       "Your lucky cookie",
       "\"All Bets Are Off\" magic coin",
@@ -471,14 +419,9 @@ object CPSCalculator {
       "Gemmed talismans" -> (buildings(Building.mine) * .001),
       "Charm quarks" -> (buildings(Building.antimatterCondenser) * .001),
     )
-    calculateBuildingCPS(
-      upgrades, Building.chancemaker.level.toInt, Building.chancemaker.baseCps, buildings(Building
-        .chancemaker
-      ), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.chancemaker.level.toInt, Building.chancemaker.baseCps, buildings(Building.chancemaker), synergyMap, exponentialUpgrades, debug)
 
-  def calculateFractalEnginesCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false)
-  : Double =
+  def calculateFractalEnginesCps(upgrades: Set[Upgrade], buildings: Map[GameBuilding, Int], debug: Boolean = false): Double =
     val exponentialUpgrades = List(
       "Metabakeries",
       "Mandelbrown sugar",
@@ -497,22 +440,14 @@ object CPSCalculator {
       "Recursive mirrors" -> (buildings(Building.prism) * .001),
       "Mice clicking mice" -> (buildings(Building.cursor) * .001),
     )
-    calculateBuildingCPS(
-      upgrades, Building.fractalEngine.level.toInt, Building
-        .fractalEngine
-        .baseCps, buildings(Building.fractalEngine), synergyMap, exponentialUpgrades, debug
-    )
+    calculateBuildingCPS(upgrades, Building.fractalEngine.level.toInt, Building.fractalEngine.baseCps, buildings(Building.fractalEngine), synergyMap, exponentialUpgrades, debug)
 
-  def apply(
-    buildingRequirements: Set[BuildingRequirement] = Set.empty, upgrades: Set[Upgrade] = Set
-      .empty, debug: Boolean = false
-  ): Double =
+  def apply(buildingRequirements: Set[BuildingRequirement] = Set.empty, upgrades: Set[Upgrade] = Set.empty, debug: Boolean = false): Double =
     val buildMult = godBuildingCpsMultiplier
     val requirementMap = buildingRequirements.map(req => req.gameBuyable -> req.amount).toMap
-    val buildings = Building
-      .all
-      .map(building => building -> (building.amount.toInt max requirementMap.getOrElse(building, 0)))
-      .toMap
+    val buildings = Building.all.map { building =>
+      building -> (building.amount.toInt max requirementMap.getOrElse(building, 0))
+    }.toMap
     val nonCursors = buildings.view.filterKeys(_ != Building.cursor).values.sum
     val oldBuildingCps: Double = Building.all.sumBy(_.storedTotalCps)
 
@@ -540,58 +475,22 @@ object CPSCalculator {
     )
 
     if debug then
-      Logger.debug(s"Cursors ${
-        calculateCursorsCps(upgrades, buildings, nonCursors, debug) - Building
-          .cursor
-          .storedTotalCps
-      }"
-      )
+      Logger.debug(s"Cursors ${calculateCursorsCps(upgrades, buildings, nonCursors, debug) - Building.cursor.storedTotalCps}")
       Logger.debug(s"Grandmas ${calculateGrandmasCps(upgrades, buildings, debug) - Building.grandma.storedTotalCps}")
       Logger.debug(s"Farms ${calculateFarmsCps(upgrades, buildings, debug) - Building.farm.storedTotalCps}")
       Logger.debug(s"Mines ${calculateMinesCps(upgrades, buildings, debug) - Building.mine.storedTotalCps}")
       Logger.debug(s"Factories ${calculateFactoriesCps(upgrades, buildings, debug) - Building.factory.storedTotalCps}")
       Logger.debug(s"Banks ${calculateBanksCps(upgrades, buildings, debug) - Building.bank.storedTotalCps}")
       Logger.debug(s"Temples ${calculateTemplesCps(upgrades, buildings, debug) - Building.temple.storedTotalCps}")
-      Logger.debug(s"WizardTowers ${
-        calculateWizardTowersCps(upgrades, buildings, debug) - Building
-          .wizardTower
-          .storedTotalCps
-      }"
-      )
+      Logger.debug(s"WizardTowers ${calculateWizardTowersCps(upgrades, buildings, debug) - Building.wizardTower.storedTotalCps}")
       Logger.debug(s"Shipments ${calculateShipmentsCps(upgrades, buildings, debug) - Building.shipment.storedTotalCps}")
-      Logger.debug(s"AlchemyLabs ${
-        calculateAlchemyLabsCps(upgrades, buildings, debug) - Building
-          .alchemyLab
-          .storedTotalCps
-      }"
-      )
+      Logger.debug(s"AlchemyLabs ${calculateAlchemyLabsCps(upgrades, buildings, debug) - Building.alchemyLab.storedTotalCps}")
       Logger.debug(s"Portals ${calculatePortalsCps(upgrades, buildings, debug) - Building.portal.storedTotalCps}")
-      Logger.debug(s"TimeMachines ${
-        calculateTimeMachinesCps(upgrades, buildings, debug) - Building
-          .timeMachine
-          .storedTotalCps
-      }"
-      )
-      Logger.debug(s"AntimatterCondensers ${
-        calculateAntimatterCondensersCps(upgrades, buildings, debug) - Building
-          .antimatterCondenser
-          .storedTotalCps
-      }"
-      )
+      Logger.debug(s"TimeMachines ${calculateTimeMachinesCps(upgrades, buildings, debug) - Building.timeMachine.storedTotalCps}")
+      Logger.debug(s"AntimatterCondensers ${calculateAntimatterCondensersCps(upgrades, buildings, debug) - Building.antimatterCondenser.storedTotalCps}")
       Logger.debug(s"Prisms ${calculatePrismsCps(upgrades, buildings, debug) - Building.prism.storedTotalCps}")
-      Logger.debug(s"Chancemakers ${
-        calculateChancemakersCps(upgrades, buildings, debug) - Building
-          .chancemaker
-          .storedTotalCps
-      }"
-      )
-      Logger.debug(s"FractalEngines ${
-        calculateFractalEnginesCps(upgrades, buildings, debug) - Building
-          .fractalEngine
-          .storedTotalCps
-      }"
-      )
+      Logger.debug(s"Chancemakers ${calculateChancemakersCps(upgrades, buildings, debug) - Building.chancemaker.storedTotalCps}")
+      Logger.debug(s"FractalEngines ${calculateFractalEnginesCps(upgrades, buildings, debug) - Building.fractalEngine.storedTotalCps}")
 
-    ((increases.sum * godBuildingCpsMultiplier * cookieUpgradesMultiplier - oldBuildingCps) * Game
-      .globalCpsMult).round(6)
+    ((increases.sum * godBuildingCpsMultiplier * cookieUpgradesMultiplier - oldBuildingCps) * Game.globalCpsMult).round(6)
 }

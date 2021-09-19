@@ -25,9 +25,7 @@ object Buyable {
 
 abstract class Buyable {
   type T <: GameBuyable
-
   def gameBuyable: T
-
   val name: String
 
   lazy val canEventuallyGet: Boolean = true
@@ -44,16 +42,18 @@ abstract class Buyable {
   /**
    * Calculates the price to buy this and all its requirements if any.
    */
-  protected def calculatePrice(buildingRequirements: Set[BuildingRequirement], upgradeRequirements: Set[Upgrade])
-  : Double =
+  protected def calculatePrice(buildingRequirements: Set[BuildingRequirement], upgradeRequirements: Set[Upgrade]): Double =
     val buildingsPrice = buildingRequirements.sumBy { requirement =>
       requirement.gameBuyable.getSumPrice(requirement.missingAmount)
     }
     val upgradesPrice = upgradeRequirements.sumBy(_.gameBuyable.getPrice())
     buildingsPrice + upgradesPrice
 
-  protected def calculateCpsIncrease(buildingRequirements: Set[BuildingRequirement],
-    upgradeRequirements: Set[Upgrade], achievmentRequirements: Set[Achievement]): Double =
+  protected def calculateCpsIncrease(
+    buildingRequirements: Set[BuildingRequirement],
+    upgradeRequirements: Set[Upgrade],
+    achievmentRequirements: Set[Achievement]
+  ): Double =
     val extraMilk = 0.04 * achievmentRequirements.size
     val multiplier = Game.globalCpsMult / Helpers.getKittenMultiplier(Game.milkProgress) * getKittenMultiplier(Game
       .milkProgress + extraMilk
@@ -177,8 +177,7 @@ abstract class Buyable {
   def cpsIncreasePercentText =
     if this.percentCpsIncrease > 0 then s"(+${math.round(this.percentCpsIncrease * 100)}%)" else ""
 
-  private def buyTimeDifference: Double =
-    originalBuyTime - buyTime
+  private def buyTimeDifference: Double = originalBuyTime - buyTime
 
   def timeSavedText: String =
     val millisChange = buyTimeDifference

@@ -17,8 +17,10 @@ object Achievement {
       .getOrElse(throw new Exception(s"Unable to find Game Achievement named \"$name\""))
 }
 
-class Achievement(val name: String, override protected val buildingRequirementsSeq: BuildingRequirement*) extends 
-  Buyable with BuildingsRequired with UnlocksAchievment {
+class Achievement(
+  val name: String,
+  override protected val buildingRequirementsSeq: BuildingRequirement*
+) extends Buyable with BuildingsRequired with UnlocksAchievment {
   override type T = GameAchievement
   override lazy val gameBuyable: GameAchievement = Achievement.getGameAchievementByName(name)
   override protected val achievmentName: String = name

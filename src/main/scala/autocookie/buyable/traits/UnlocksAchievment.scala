@@ -16,6 +16,4 @@ trait UnlocksAchievment {
       case _                                  => Set.empty
     }
     fromUpgrades + this.originalAchievmentUnlocked
-
-
 }
