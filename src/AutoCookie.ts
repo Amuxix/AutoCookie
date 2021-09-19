@@ -5,7 +5,8 @@ const AUTO_COOKIE_VERSION = 6
 const CLICKS_PER_SEC = 3
 const NOTE_UPDATE_FREQUENCY = 500
 
-const STOCK_MARKET_STABILITY_THRESHOLD = 0.05
+const STOCK_MARKET_STABILITY_THRESHOLD = 0.03
+const STOCK_MARKET_MAX_STD_DEV = 0.01
 const STOCK_MARKET_STABILITY_MIN_PRICES = 5
 const STOCK_MARKET_STABILITY_MAX_PRICES = 10
 
@@ -76,7 +77,7 @@ function timeString(seconds: number): string {
     }
   }
 
-  remainingSeconds = seconds
+  remainingSeconds = Math.abs(seconds)
   const years = Math.floor(remainingSeconds / (365 * 24 * 60 * 60))
   if (years > 0) {
     let yearString = "years"
@@ -119,7 +120,8 @@ function timeString(seconds: number): string {
 
   if (remainingSeconds > 1 || (minutes + hours + days === 0))
     showString = add(Math.floor(remainingSeconds) + "s")
-  return showString
+  const sign = Math.sign(seconds) < 0 ? "-" : ""
+  return sign + showString
 }
 
 function convertNumeral(number: number): string {
@@ -821,8 +823,55 @@ function minByPayback<T extends GameObject>(buyableList: Array<Buyable<T>>): Buy
   return buyableList.reduce((min, current) => (current.payback < min.payback) ? current : min)
 }
 
+function sliding<A, B>(array: Array<A>, f: (a1: A, a2: A) => B): Array<B> {
+  if (array.length < 2) throw new Error("Sliding needs at least 2 values")
+  const tail = array.slice(1)
+  return array
+    .slice(0, -1)
+    .map((a, i) => f(a, tail[i]))
+}
+
+function sum(array: Array<number>): number {
+  return array.reduce((total, n) => total + n, 0)
+}
+
+function stdDev(array: Array<number>): number {
+  const mean = sum(array) / array.length
+  const squared = array.map(n => Math.pow(n - mean, 2))
+  return Math.sqrt(sum(squared) / (squared.length - 1))
+}
+
+/*interface Array<T> {
+  sliding<B>(f: (t1: T, t2: T) => B): Array<B>
+  sum: T
+  mean: T
+  stdDev: T
+}
+
+Array.prototype.sliding = function <A, B>(f: (a1: A, a2: A) => B) {
+  if (this.length < 2) throw new Error("Sliding needs at least 2 values")
+  const tail = this.slice(1)
+  return this
+    .slice(0, -1)
+    .map((a, i) => f(a, tail[i]))
+}
+
+Array.prototype.sum = function () {
+  return this.reduce((total, a) => total + a, 0)
+}
+
+Array.prototype.mean = function () {
+  return this.sum() / this.length
+}
+
+Array.prototype.stdDev = function () {
+  const mean = this.mean()
+  const squared = this.map(val => Math.pow(val - mean, 2))
+  return Math.sqrt(squared.sum() / (squared.length - 1))
+}*/
+
 abstract class Buyable<T extends GameObject> {
-  gameObject: T
+  gameBuyable: T
   name: string
   price: number
   cpsIncrease: number
@@ -832,7 +881,7 @@ abstract class Buyable<T extends GameObject> {
   originalBuyMillis: number = 0
 
   protected constructor(gameObject: T) {
-    this.gameObject = gameObject
+    this.gameBuyable = gameObject
     this.name = gameObject.name
   }
 
@@ -881,7 +930,7 @@ abstract class Buyable<T extends GameObject> {
   }
 
   private get cookiesNeeded(): number {
-    return AUTO_COOKIE.reserve.reserveAmount + this.price - Game.cookies - this.investment.estimatedReturns
+    return AUTO_COOKIE.reserve.reserveAmount + this.price - Game.cookies - Math.max(this.investment.estimatedReturns, 0)
   }
 
   private get millisChange(): number {
@@ -898,8 +947,12 @@ abstract class Buyable<T extends GameObject> {
     }
   }
 
+  protected get createInvestment(): Investment {
+    return AUTO_COOKIE.stockMarket.createInvestment(this, Game.cookies - this.price)
+  }
+
   updateInvestmentAndBuyMillis(): void {
-    this.investment = AUTO_COOKIE.stockMarket.createInvestment(this, Game.cookies - this.price)
+    this.investment = this.createInvestment
     this.buyMillis = this.calculateBuyMillis()
     if (this.originalBuyMillis === 0) {
       this.originalBuyMillis = this.buyMillis
@@ -922,21 +975,21 @@ abstract class Buyable<T extends GameObject> {
   abstract calculatePrice(): number
 
   buy(): void {
-    if (this.gameObject === undefined) {
+    if (this.gameBuyable === undefined) {
       error("Buyable has no gameObject")
       AUTO_COOKIE.stopped = true
       return
     }
-    if (this instanceof Upgrade && this.gameObject.unlocked === 0) {
+    if (this instanceof Upgrade && this.gameBuyable.unlocked === 0) {
       log(`Trying to buy ${this.name} but its not unlocked yet!`)
       unlockRequirements()
     }
     AUTO_COOKIE.buying = true
     const oldBuyMode = Game.buyMode
     Game.buyMode = 1 //Make sure we are not selling
-    if (this.gameObject instanceof Game.Object) {
+    if (this.gameBuyable instanceof Game.Object) {
       // @ts-ignore
-      const amount: string = convertNumeral((this.gameObject as GameBuilding).amount + 1)
+      const amount: string = convertNumeral((this.gameBuyable as GameBuilding).amount + 1)
       const text = `Bought the ${amount} ${this.name}`
       log(text)
       Game.Notify(text, "")
@@ -948,7 +1001,7 @@ abstract class Buyable<T extends GameObject> {
     if (this instanceof Upgrade) {
       this.removeFromBuyables()
     }
-    this.gameObject.buy(1)
+    this.gameBuyable.buy(1)
     this.resetOriginalBuyMillis()
     Game.buyMode = oldBuyMode
     Game.CalculateGains()
@@ -957,7 +1010,8 @@ abstract class Buyable<T extends GameObject> {
 
   estimatedReturnPercent(additionalBrokers: number): number {
     const overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
-    return 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (this.percentCpsIncrease - overhead)
+    //Having 2 * max standard dev reduces the probably we lose money to about 5% if the values continue to vary the way they did so far
+    return 1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD - 2 * STOCK_MARKET_MAX_STD_DEV) * (this.percentCpsIncrease - overhead)
   }
 
   /**
@@ -1058,7 +1112,7 @@ abstract class BuyableWithBuildingRequirements<T extends GameObject> extends Buy
   }
 
   protected get filteredBuildingRequirements(): Array<BuildingRequirement> {
-    return this.buildingRequirements.filter(req => req.amount > req.gameObject.amount)
+    return this.buildingRequirements.filter(req => req.amount > req.gameBuyable.amount)
   }
 
   protected get hasRequirements(): boolean {
@@ -1098,11 +1152,11 @@ class Building extends Buyable<GameBuilding> {
   }
 
   calculatePrice(): number {
-    return this.gameObject.getPrice()
+    return this.gameBuyable.getPrice()
   }
 
   protected calculateCpsIncrease(): number {
-    return calculateCpsIncrease([new BuildingRequirement(this.gameObject, this.gameObject.amount + 1)])
+    return calculateCpsIncrease([new BuildingRequirement(this.gameBuyable, this.gameBuyable.amount + 1)])
   }
 }
 
@@ -1119,7 +1173,7 @@ class BuildingRequirement extends Building {
   }
 
   get missingAmount(): number {
-    return Math.max(0, this.amount - this.gameObject.amount)
+    return Math.max(0, this.amount - this.gameBuyable.amount)
   }
 
   get nextMilestone(): Buyable<GameBuilding> {
@@ -1135,7 +1189,7 @@ class BuildingRequirement extends Building {
   }
 
   calculatePrice(): number {
-    return this.gameObject.getSumPrice(this.missingAmount)
+    return this.gameBuyable.getSumPrice(this.missingAmount)
   }
 
   protected calculateCpsIncrease(): number {
@@ -1143,9 +1197,6 @@ class BuildingRequirement extends Building {
   }
 }
 
-/**
- * @abstract
- */
 abstract class Upgrade extends BuyableWithBuildingRequirements<GameUpgrade> {
   achievementsUnlocked: Array<Achievement>
   upgradeRequirements: Array<Upgrade>
@@ -1166,15 +1217,15 @@ abstract class Upgrade extends BuyableWithBuildingRequirements<GameUpgrade> {
   }
 
   get upgradeRequirementsTotalCostWithoutBuildings(): number {
-    return this.filteredUpgradeRequirements.reduce((acc, upgrade) => acc + upgrade.gameObject.getPrice(), 0)
+    return this.filteredUpgradeRequirements.reduce((acc, upgrade) => acc + upgrade.gameBuyable.getPrice(), 0)
   }
 
   get owned(): boolean {
-    return this.gameObject.bought === 1
+    return this.gameBuyable.bought === 1
   }
 
   protected get filteredBuildingRequirements(): Array<BuildingRequirement> {
-    return this.flattenedBuildingRequirements.filter(req => req.amount > req.gameObject.amount)
+    return this.flattenedBuildingRequirements.filter(req => req.amount > req.gameBuyable.amount)
   }
 
   protected get hasRequirements(): boolean {
@@ -1244,8 +1295,8 @@ abstract class Upgrade extends BuyableWithBuildingRequirements<GameUpgrade> {
   getFattenBuildingRequirements(): Array<BuildingRequirement> {
     const upgradeRequirements = this.upgradeRequirements.filter(upgrade => !upgrade.owned).flatMap(upgrade => upgrade.getFattenBuildingRequirements())
     return Game.ObjectsById.reduce<Array<BuildingRequirement>>((totalBuildingRequirements, building) => {
-      const buildingRequirementsOfUpgrades = upgradeRequirements.filter(req => req.gameObject === building)
-      const buildingRequirementsOfThis = this.buildingRequirements.filter(req => req.amount > req.gameObject.amount && req.gameObject === building)
+      const buildingRequirementsOfUpgrades = upgradeRequirements.filter(req => req.gameBuyable === building)
+      const buildingRequirementsOfThis = this.buildingRequirements.filter(req => req.amount > req.gameBuyable.amount && req.gameBuyable === building)
       const amounts = buildingRequirementsOfUpgrades.concat(buildingRequirementsOfThis).map(req => req.amount)
       if (amounts.length > 0) {
         totalBuildingRequirements.push(new BuildingRequirement(building, Math.max(...amounts)))
@@ -1260,7 +1311,7 @@ abstract class Upgrade extends BuyableWithBuildingRequirements<GameUpgrade> {
   calculatePrice(): number {
     const buildingRequirementsPrice = this.filteredBuildingRequirements.reduce((acc, b) => acc + b.calculatePrice(), 0)
     const upgradeRequirementsPrice = this.upgradeRequirementsTotalCostWithoutBuildings
-    return this.gameObject.getPrice() + buildingRequirementsPrice + upgradeRequirementsPrice
+    return this.gameBuyable.getPrice() + buildingRequirementsPrice + upgradeRequirementsPrice
   }
 
   /**
@@ -1280,7 +1331,7 @@ class LegacyUpgrade extends Upgrade {
   }
 
   get canEventuallyGet(): boolean {
-    return !this.owned && this.gameObject.unlocked === 1 //If this is not unlocked it won't be unlocked for this whole ascension
+    return !this.owned && this.gameBuyable.unlocked === 1 //If this is not unlocked it won't be unlocked for this whole ascension
   }
 }
 
@@ -1294,7 +1345,7 @@ class BuildingUpgrade extends Upgrade {
   }
 }
 
-class BuildingUpgradeWithAchievement extends Upgrade {
+class FirstBuildingUpgrade extends Upgrade {
   constructor(name: string, requiredBuilding: BuildingRequirement, achievementName: string) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name)
     const achievement = Achievement.getByName(achievementName)
@@ -1307,7 +1358,7 @@ class BuildingUpgradeWithAchievement extends Upgrade {
   }
 }
 
-class BuildingUpgradeWithUpgradeRequirement extends Upgrade {
+class BuildingUpgradeWithSingleUpgradeRequired extends Upgrade {
   constructor(name: string, upgradeRequirementName: string, ...requiredBuildings: Array<BuildingRequirement>) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name)
     const upgradeRequirement = Upgrade.getByName(upgradeRequirementName)
@@ -1331,11 +1382,11 @@ class CookieUpgrade extends Upgrade {
   }
 
   get powerMultiplier(): number {
-    return 1 + this.gameObject.power / 100
+    return 1 + this.gameBuyable.power / 100
   }
 }
 
-class CookieUpgradeWithUpgradeRequirement extends CookieUpgrade {
+class CookieUpgradeWithSingleUpgradeRequired extends CookieUpgrade {
   constructor(name: string, requiredUpgradeName: string) {
     super(
       name,
@@ -1354,6 +1405,10 @@ class MouseUpgrade extends Upgrade {
     super(gameUpgrade)
   }
 
+  protected override get createInvestment(): Investment {
+    return new EmptyInvestment()
+  }
+
   private static get clickBuffs(): Array<Buff> {
     return getBuffs().filter(buff => buff.multClick > 1)
   }
@@ -1362,8 +1417,8 @@ class MouseUpgrade extends Upgrade {
     let add = 0 //Increase to base cursor cps and mouse clicks per non cursor gameObject
     if (Game.Has("Thousand fingers")) add += 0.1
     if (Game.Has("Million fingers")) add *= 5
-    if (Game.Has("Billion fingers")) add *= 5
-    if (Game.Has("Trillion fingers")) add *= 10
+    if (Game.Has("Billion fingers")) add *= 10
+    if (Game.Has("Trillion fingers")) add *= 20
     if (Game.Has("Quadrillion fingers")) add *= 20
     if (Game.Has("Quintillion fingers")) add *= 20
     if (Game.Has("Sextillion fingers")) add *= 20
@@ -1407,12 +1462,16 @@ class GoldenCookieUpgrade extends Upgrade {
     super(gameUpgrade)
   }
 
+  protected override get createInvestment(): Investment {
+    return new EmptyInvestment()
+  }
+
   estimatedReturnPercent(): number {
     return 1
   }
 
   protected calculateCpsIncrease(): number {
-    if (this.gameObject.unlocked === 1 && AUTO_COOKIE.reserve.reserveAmount + this.price <= Game.cookies) {
+    if (this.gameBuyable.unlocked === 1 && AUTO_COOKIE.reserve.reserveAmount + this.price <= Game.cookies) {
       return Infinity
     } else {
       return 0
@@ -1462,8 +1521,10 @@ class HeavenlyChipUpgrade extends Upgrade {
   }
 }
 
-class HeavenlyChipUpgradeWithUpgradeRequirement extends Upgrade {
-  constructor(name: string, percentUnlocked: number, requiredUpgradeName: string) {
+class HeavenlyChipUpgradeWithSingleUpgradeRequired extends Upgrade {
+  unlockPercentage: number
+
+  constructor(name: string, percentUnlock: number, requiredUpgradeName: string) {
     const gameUpgrade = Upgrade.getGameUpgradeByName(name)
     const requiredUpgrade = Upgrade.getByName(requiredUpgradeName)
     super(
@@ -1471,6 +1532,12 @@ class HeavenlyChipUpgradeWithUpgradeRequirement extends Upgrade {
       [],
       [requiredUpgrade],
     )
+    this.unlockPercentage = percentUnlock
+  }
+
+  protected calculateCpsIncrease(): number {
+    const multiplier = Game.prestige * 0.01 * this.unlockPercentage / 100
+    return getCps() * multiplier
   }
 }
 
@@ -1539,11 +1606,11 @@ class Achievement extends BuyableWithBuildingRequirements<GameAchievement> {
   get canEventuallyGet(): boolean {
     //If an Achievement has no requirements it means we can't purchase our way to get it.
     //It comes from baking a certain amount of cookies for example, or having a certain amount of different grandmas
-    return this.gameObject.won === 0 && this.buildingRequirements.length > 0
+    return this.gameBuyable.won === 0 && this.buildingRequirements.length > 0
   }
 
   get cpsIncreaseWithoutRequirements(): number {
-    if (this.gameObject.won === 1) {
+    if (this.gameBuyable.won === 1) {
       return 0 //We already have this achievement
     } else {
       let multiplier = Game.globalCpsMult / getKittenMultiplier(Game.milkProgress)
@@ -1555,7 +1622,7 @@ class Achievement extends BuyableWithBuildingRequirements<GameAchievement> {
   }
 
   get won(): boolean {
-    return this.gameObject.won === 1
+    return this.gameBuyable.won === 1
   }
 
   static findByName(name): Achievement {
@@ -1968,7 +2035,7 @@ class NextBuyNote extends GoalNote {
         title = "Best buy is"
       } else {
         if (nextMilestone instanceof Building) {
-          title = "Buying the " + convertNumeral(nextMilestone.gameObject.amount + 1)
+          title = "Buying the " + convertNumeral(nextMilestone.gameBuyable.amount + 1)
         } else { //Upgrade
           title = "Buying "
         }
@@ -2242,6 +2309,8 @@ function logMissingUpgrades(): void {
 }
 
 abstract class Investment {
+  abstract get estimatedReturnPercent(): number
+
   /**
    * Estimates the profit we would make if we ran this investment
    */
@@ -2261,6 +2330,10 @@ abstract class Investment {
 class EmptyInvestment extends Investment {
   constructor() {
     super()
+  }
+
+  get estimatedReturnPercent(): number {
+    return 1
   }
 
   /**
@@ -2289,6 +2362,7 @@ class RealInvestment extends Investment {
   buyable: Buyable<GameObject>
   moneyInvestedInStocks: number
   moneyInvestedInBrokers: number
+  overheadMoney: number
   newBrokers: number
   buyFunctions: Array<() => void>
   sellFunctions: Array<() => number>
@@ -2305,15 +2379,18 @@ class RealInvestment extends Investment {
     const startingMoney = StockMarket.cookiesToMoney(cookies)
     const brokersToBuy = StockMarket.calculateBrokersToBuy(Math.min(startingMoney, fullStockPrice))
     const brokersCost = brokersToBuy * 1200
+    const overhead = StockMarket.calculateOverhead(StockMarket.brokers + brokersToBuy)
     const money = startingMoney - brokersCost
 
     const {
       remainingMoney,
+      overheadMoney,
       buyFunctions,
       sellFunctions,
     } = goods.reduce((acc, good) => {
       const {
         remainingMoney,
+        overheadMoney,
         buyFunctions,
         sellFunctions,
       } = acc
@@ -2322,10 +2399,12 @@ class RealInvestment extends Investment {
       const stockToBuy = Math.min(stockToFillWarehouse, Math.floor(remainingMoney / price))
       if (stockToBuy > 0) {
         const buyPrice = stockToBuy * price
+        const stockOverheadMoney = buyPrice * overhead
         const buyFunction = () => StockMarket.buy(good, stockToBuy)
         const sellFunction = () => StockMarket.sell(good, stockToBuy)
         return {
-          remainingMoney: remainingMoney - buyPrice,
+          remainingMoney: remainingMoney - buyPrice - stockOverheadMoney,
+          overheadMoney: overheadMoney + stockOverheadMoney,
           buyFunctions: buyFunctions.concat([buyFunction]),
           // @ts-ignore
           sellFunctions: sellFunctions.concat([sellFunction]),
@@ -2335,11 +2414,13 @@ class RealInvestment extends Investment {
       }
     }, {
       remainingMoney: money,
+      overheadMoney: 0,
       buyFunctions: [() => StockMarket.buyBrokers(brokersToBuy)],
       sellFunctions: [],
     })
 
-    this.moneyInvestedInStocks = money - remainingMoney
+    this.moneyInvestedInStocks = money - remainingMoney + overheadMoney
+    this.overheadMoney = overheadMoney
     this.moneyInvestedInBrokers = brokersCost
     this.newBrokers = brokersToBuy
     this.buyFunctions = buyFunctions
@@ -2347,11 +2428,15 @@ class RealInvestment extends Investment {
   }
 
   get totalInvestment(): number {
-    return this.moneyInvestedInStocks + this.moneyInvestedInBrokers
+    return this.moneyInvestedInStocks + this.moneyInvestedInBrokers + this.overheadMoney
   }
 
   get cookieInvestment(): number {
     return StockMarket.moneyToCookies(this.totalInvestment)
+  }
+
+  get estimatedReturnPercent(): number {
+    return this.buyable.estimatedReturnPercent(this.newBrokers)
   }
 
   /**
@@ -2359,9 +2444,7 @@ class RealInvestment extends Investment {
    */
   get estimatedReturns(): number {
     if (this.buyable.percentCpsIncrease === Infinity) return 0
-    const estimatedReturnPercent = this.buyable.estimatedReturnPercent(this.newBrokers)
-    const cpsAfterBuying = Game.unbuffedCps * this.buyable.percentCpsIncrease
-    const returns = StockMarket.moneyToCookies(this.moneyInvestedInStocks, cpsAfterBuying) * estimatedReturnPercent
+    const returns = StockMarket.moneyToCookies(this.moneyInvestedInStocks) * this.estimatedReturnPercent
     return returns - this.cookieInvestment
   }
 
@@ -2384,7 +2467,7 @@ class RealInvestment extends Investment {
 
 class StockMarket {
   static get isLoaded(): boolean {
-    return Game.Objects.Bank.minigameLoaded
+    return Game.Objects.Bank.amount > 0 && Game.Objects.Bank.level > 0 && Game.Objects.Bank.minigameLoaded
   }
 
   static get millisToNextTick(): number {
@@ -2407,17 +2490,19 @@ class StockMarket {
     return StockMarket.game.goodsById.flatMap(good => good.active ? [good] : [])
   }
 
+  private static isGoodStableOrTrendingUp(good: Good): boolean {
+    const prices = good.vals.slice(0, STOCK_MARKET_STABILITY_MAX_PRICES)
+    const percentageDifferences = sliding(prices, (v1, v2) => (v2 - v1) / v1)
+    const dev = stdDev(percentageDifferences)
+    const avg = sum(percentageDifferences) / percentageDifferences.length
+
+    const isTrendingUp = percentageDifferences.filter(diff => diff >= 0).length / percentageDifferences.length > 0.8
+    const isStable = avg < STOCK_MARKET_STABILITY_THRESHOLD && dev < STOCK_MARKET_MAX_STD_DEV
+    return isTrendingUp || isStable
+  }
+
   static get stableActiveGoods(): Array<Good> {
-    return StockMarket.activeGoods.filter(good => {
-      if (good.vals.length >= STOCK_MARKET_STABILITY_MIN_PRICES) { //Need at least 5 values to check if a good is stable
-        const prices = good.vals.slice(0, STOCK_MARKET_STABILITY_MAX_PRICES)
-        const min = Math.min(...prices)
-        const max = Math.max(...prices)
-        return (max - min) / min < STOCK_MARKET_STABILITY_THRESHOLD
-      } else {
-        return false
-      }
-    })
+    return StockMarket.activeGoods.filter(good => good.vals.length >= STOCK_MARKET_STABILITY_MIN_PRICES && StockMarket.isGoodStableOrTrendingUp(good))
   }
 
   private static get game(): Market {
@@ -2446,7 +2531,8 @@ class StockMarket {
 
   static buy(good: Good, amount: number): void {
     if (StockMarket.game.buyGood(good.id, amount)) {
-      log(`Bought ${amount} ${good.name}`)
+      const price = StockMarket.price(good) * amount
+      log(`Bought ${amount} ${good.name} for ${Beautify(price)}`)
     }
   }
 
@@ -2459,7 +2545,7 @@ class StockMarket {
   static sell(good: Good, amount: number): number {
     if (StockMarket.game.sellGood(good.id, amount)) {
       const price = StockMarket.price(good) * amount
-      log(`Sold ${amount} ${good.name}`)
+      log(`Sold ${amount} ${good.name} for ${Beautify(price)}`)
       return price
     } else {
       return 0
@@ -2611,34 +2697,34 @@ class AutoCookie {
     new LegacyUpgrade("Box of pastries", "Sugar crystal cookies")
     //endregion
     //region Cursor
-    new BuildingUpgradeWithAchievement("Reinforced index finger", new BuildingRequirement(Game.Objects.Cursor, 1), "Click")
-    new BuildingUpgradeWithAchievement("Carpal tunnel prevention cream", new BuildingRequirement(Game.Objects.Cursor, 1), "Click")
+    new FirstBuildingUpgrade("Reinforced index finger", new BuildingRequirement(Game.Objects.Cursor, 1), "Click")
+    new FirstBuildingUpgrade("Carpal tunnel prevention cream", new BuildingRequirement(Game.Objects.Cursor, 1), "Click")
     new BuildingUpgrade("Ambidextrous", new BuildingRequirement(Game.Objects.Cursor, 10))
     new BuildingUpgrade("Thousand fingers", new BuildingRequirement(Game.Objects.Cursor, 25))
-    new BuildingUpgradeWithAchievement("Million fingers", new BuildingRequirement(Game.Objects.Cursor, 50), "Mouse wheel")
-    new BuildingUpgradeWithAchievement("Billion fingers", new BuildingRequirement(Game.Objects.Cursor, 100), "Of Mice and Men")
+    new FirstBuildingUpgrade("Million fingers", new BuildingRequirement(Game.Objects.Cursor, 50), "Mouse wheel")
+    new FirstBuildingUpgrade("Billion fingers", new BuildingRequirement(Game.Objects.Cursor, 100), "Of Mice and Men")
     new BuildingUpgrade("Trillion fingers", new BuildingRequirement(Game.Objects.Cursor, 150))
-    new BuildingUpgradeWithAchievement("Quadrillion fingers", new BuildingRequirement(Game.Objects.Cursor, 200), "The Digital")
+    new FirstBuildingUpgrade("Quadrillion fingers", new BuildingRequirement(Game.Objects.Cursor, 200), "The Digital")
     new BuildingUpgrade("Quintillion fingers", new BuildingRequirement(Game.Objects.Cursor, 250))
-    new BuildingUpgradeWithAchievement("Sextillion fingers", new BuildingRequirement(Game.Objects.Cursor, 300), "Extreme polydactyly")
+    new FirstBuildingUpgrade("Sextillion fingers", new BuildingRequirement(Game.Objects.Cursor, 300), "Extreme polydactyly")
     new BuildingUpgrade("Septillion fingers", new BuildingRequirement(Game.Objects.Cursor, 350))
-    new BuildingUpgradeWithAchievement("Octillion fingers", new BuildingRequirement(Game.Objects.Cursor, 400), "Dr. T")
+    new FirstBuildingUpgrade("Octillion fingers", new BuildingRequirement(Game.Objects.Cursor, 400), "Dr. T")
     new BuildingUpgrade("Nonillion fingers", new BuildingRequirement(Game.Objects.Cursor, 450))
     //endregion
     //region Grandma
-    new BuildingUpgradeWithAchievement("Forwards from grandma", new BuildingRequirement(Game.Objects.Grandma, 1), "Grandma\'s cookies")
+    new FirstBuildingUpgrade("Forwards from grandma", new BuildingRequirement(Game.Objects.Grandma, 1), "Grandma\'s cookies")
     new BuildingUpgrade("Steel-plated rolling pins", new BuildingRequirement(Game.Objects.Grandma, 5))
     new BuildingUpgrade("Lubricated dentures", new BuildingRequirement(Game.Objects.Grandma, 25))
-    new BuildingUpgradeWithAchievement("Prune juice", new BuildingRequirement(Game.Objects.Grandma, 50), "Sloppy kisses")
-    new BuildingUpgradeWithAchievement("Double-thick glasses", new BuildingRequirement(Game.Objects.Grandma, 100), "Retirement home")
-    new BuildingUpgradeWithAchievement("Aging agents", new BuildingRequirement(Game.Objects.Grandma, 150), "Friend of the ancients")
-    new BuildingUpgradeWithAchievement("Xtreme walkers", new BuildingRequirement(Game.Objects.Grandma, 200), "Ruler of the ancients")
-    new BuildingUpgradeWithAchievement("The Unbridling", new BuildingRequirement(Game.Objects.Grandma, 250), "The old never bothered me anyway")
-    new BuildingUpgradeWithAchievement("Reverse dementia", new BuildingRequirement(Game.Objects.Grandma, 300), "The agemaster")
-    new BuildingUpgradeWithAchievement("Timeproof hair dyes", new BuildingRequirement(Game.Objects.Grandma, 350), "To oldly go")
-    new BuildingUpgradeWithAchievement("Good manners", new BuildingRequirement(Game.Objects.Grandma, 400), "Aged well")
-    new BuildingUpgradeWithAchievement("Generation degeneration", new BuildingRequirement(Game.Objects.Grandma, 450), "101st birthday")
-    new BuildingUpgradeWithAchievement("Visits", new BuildingRequirement(Game.Objects.Grandma, 500), "Defense of the ancients")
+    new FirstBuildingUpgrade("Prune juice", new BuildingRequirement(Game.Objects.Grandma, 50), "Sloppy kisses")
+    new FirstBuildingUpgrade("Double-thick glasses", new BuildingRequirement(Game.Objects.Grandma, 100), "Retirement home")
+    new FirstBuildingUpgrade("Aging agents", new BuildingRequirement(Game.Objects.Grandma, 150), "Friend of the ancients")
+    new FirstBuildingUpgrade("Xtreme walkers", new BuildingRequirement(Game.Objects.Grandma, 200), "Ruler of the ancients")
+    new FirstBuildingUpgrade("The Unbridling", new BuildingRequirement(Game.Objects.Grandma, 250), "The old never bothered me anyway")
+    new FirstBuildingUpgrade("Reverse dementia", new BuildingRequirement(Game.Objects.Grandma, 300), "The agemaster")
+    new FirstBuildingUpgrade("Timeproof hair dyes", new BuildingRequirement(Game.Objects.Grandma, 350), "To oldly go")
+    new FirstBuildingUpgrade("Good manners", new BuildingRequirement(Game.Objects.Grandma, 400), "Aged well")
+    new FirstBuildingUpgrade("Generation degeneration", new BuildingRequirement(Game.Objects.Grandma, 450), "101st birthday")
+    new FirstBuildingUpgrade("Visits", new BuildingRequirement(Game.Objects.Grandma, 500), "Defense of the ancients")
 
     new BuildingUpgrade("Farmer grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Farm, 15))
     new BuildingUpgrade("Miner grandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects.Mine, 15))
@@ -2656,225 +2742,225 @@ class AutoCookie {
     new BuildingUpgrade("Metagrandmas", new BuildingRequirement(Game.Objects.Grandma, 1), new BuildingRequirement(Game.Objects["Fractal engine"], 15))
     //endregion
     //region Farm
-    new BuildingUpgradeWithAchievement("Cheap hoes", new BuildingRequirement(Game.Objects.Farm, 1), "Bought the farm")
+    new FirstBuildingUpgrade("Cheap hoes", new BuildingRequirement(Game.Objects.Farm, 1), "Bought the farm")
     new BuildingUpgrade("Fertilizer", new BuildingRequirement(Game.Objects.Farm, 5))
     new BuildingUpgrade("Cookie trees", new BuildingRequirement(Game.Objects.Farm, 25))
-    new BuildingUpgradeWithAchievement("Genetically-modified cookies", new BuildingRequirement(Game.Objects.Farm, 50), "Reap what you sow")
-    new BuildingUpgradeWithAchievement("Gingerbread scarecrows", new BuildingRequirement(Game.Objects.Farm, 100), "Farm ill")
-    new BuildingUpgradeWithAchievement("Pulsar sprinklers", new BuildingRequirement(Game.Objects.Farm, 150), "Perfected agriculture")
-    new BuildingUpgradeWithAchievement("Fudge fungus", new BuildingRequirement(Game.Objects.Farm, 200), "Homegrown")
-    new BuildingUpgradeWithAchievement("Wheat triffids", new BuildingRequirement(Game.Objects.Farm, 250), "Gardener extraordinaire")
-    new BuildingUpgradeWithAchievement("Humane pesticides", new BuildingRequirement(Game.Objects.Farm, 300), "Seedy business")
-    new BuildingUpgradeWithAchievement("Barnstars", new BuildingRequirement(Game.Objects.Farm, 350), "You and the beanstalk")
-    new BuildingUpgradeWithAchievement("Lindworms", new BuildingRequirement(Game.Objects.Farm, 400), "Harvest moon")
-    new BuildingUpgradeWithAchievement("Global seed vault", new BuildingRequirement(Game.Objects.Farm, 450), "Make like a tree")
-    new BuildingUpgradeWithAchievement("Reverse-veganism", new BuildingRequirement(Game.Objects.Farm, 500), "Sharpest tool in the shed")
+    new FirstBuildingUpgrade("Genetically-modified cookies", new BuildingRequirement(Game.Objects.Farm, 50), "Reap what you sow")
+    new FirstBuildingUpgrade("Gingerbread scarecrows", new BuildingRequirement(Game.Objects.Farm, 100), "Farm ill")
+    new FirstBuildingUpgrade("Pulsar sprinklers", new BuildingRequirement(Game.Objects.Farm, 150), "Perfected agriculture")
+    new FirstBuildingUpgrade("Fudge fungus", new BuildingRequirement(Game.Objects.Farm, 200), "Homegrown")
+    new FirstBuildingUpgrade("Wheat triffids", new BuildingRequirement(Game.Objects.Farm, 250), "Gardener extraordinaire")
+    new FirstBuildingUpgrade("Humane pesticides", new BuildingRequirement(Game.Objects.Farm, 300), "Seedy business")
+    new FirstBuildingUpgrade("Barnstars", new BuildingRequirement(Game.Objects.Farm, 350), "You and the beanstalk")
+    new FirstBuildingUpgrade("Lindworms", new BuildingRequirement(Game.Objects.Farm, 400), "Harvest moon")
+    new FirstBuildingUpgrade("Global seed vault", new BuildingRequirement(Game.Objects.Farm, 450), "Make like a tree")
+    new FirstBuildingUpgrade("Reverse-veganism", new BuildingRequirement(Game.Objects.Farm, 500), "Sharpest tool in the shed")
     //endregion
     //region Mine
-    new BuildingUpgradeWithAchievement("Sugar gas", new BuildingRequirement(Game.Objects.Mine, 1), "You know the drill")
+    new FirstBuildingUpgrade("Sugar gas", new BuildingRequirement(Game.Objects.Mine, 1), "You know the drill")
     new BuildingUpgrade("Megadrill", new BuildingRequirement(Game.Objects.Mine, 5))
     new BuildingUpgrade("Ultradrill", new BuildingRequirement(Game.Objects.Mine, 25))
-    new BuildingUpgradeWithAchievement("Ultimadrill", new BuildingRequirement(Game.Objects.Mine, 50), "Excavation site")
-    new BuildingUpgradeWithAchievement("H-bomb mining", new BuildingRequirement(Game.Objects.Mine, 100), "Hollow the planet")
-    new BuildingUpgradeWithAchievement("Coreforge", new BuildingRequirement(Game.Objects.Mine, 150), "Can you dig it")
-    new BuildingUpgradeWithAchievement("Planetsplitters", new BuildingRequirement(Game.Objects.Mine, 200), "The center of the Earth")
-    new BuildingUpgradeWithAchievement("Canola oil wells", new BuildingRequirement(Game.Objects.Mine, 250), "Tectonic ambassador")
-    new BuildingUpgradeWithAchievement("Mole people", new BuildingRequirement(Game.Objects.Mine, 300), "Freak fracking")
-    new BuildingUpgradeWithAchievement("Mine canaries", new BuildingRequirement(Game.Objects.Mine, 350), "Romancing the stone")
-    new BuildingUpgradeWithAchievement("Bore again", new BuildingRequirement(Game.Objects.Mine, 400), "Mine?")
-    new BuildingUpgradeWithAchievement("Air mining", new BuildingRequirement(Game.Objects.Mine, 450), "Cave story")
-    new BuildingUpgradeWithAchievement("Caramel alloys", new BuildingRequirement(Game.Objects.Mine, 500), "Hey now, you're a rock")
+    new FirstBuildingUpgrade("Ultimadrill", new BuildingRequirement(Game.Objects.Mine, 50), "Excavation site")
+    new FirstBuildingUpgrade("H-bomb mining", new BuildingRequirement(Game.Objects.Mine, 100), "Hollow the planet")
+    new FirstBuildingUpgrade("Coreforge", new BuildingRequirement(Game.Objects.Mine, 150), "Can you dig it")
+    new FirstBuildingUpgrade("Planetsplitters", new BuildingRequirement(Game.Objects.Mine, 200), "The center of the Earth")
+    new FirstBuildingUpgrade("Canola oil wells", new BuildingRequirement(Game.Objects.Mine, 250), "Tectonic ambassador")
+    new FirstBuildingUpgrade("Mole people", new BuildingRequirement(Game.Objects.Mine, 300), "Freak fracking")
+    new FirstBuildingUpgrade("Mine canaries", new BuildingRequirement(Game.Objects.Mine, 350), "Romancing the stone")
+    new FirstBuildingUpgrade("Bore again", new BuildingRequirement(Game.Objects.Mine, 400), "Mine?")
+    new FirstBuildingUpgrade("Air mining", new BuildingRequirement(Game.Objects.Mine, 450), "Cave story")
+    new FirstBuildingUpgrade("Caramel alloys", new BuildingRequirement(Game.Objects.Mine, 500), "Hey now, you're a rock")
     //endregion
     //region Factory
-    new BuildingUpgradeWithAchievement("Sturdier conveyor belts", new BuildingRequirement(Game.Objects.Factory, 1), "Production chain")
+    new FirstBuildingUpgrade("Sturdier conveyor belts", new BuildingRequirement(Game.Objects.Factory, 1), "Production chain")
     new BuildingUpgrade("Child labor", new BuildingRequirement(Game.Objects.Factory, 5))
     new BuildingUpgrade("Sweatshop", new BuildingRequirement(Game.Objects.Factory, 25))
-    new BuildingUpgradeWithAchievement("Radium reactors", new BuildingRequirement(Game.Objects.Factory, 50), "Industrial revolution")
-    new BuildingUpgradeWithAchievement("Recombobulators", new BuildingRequirement(Game.Objects.Factory, 100), "Global warming")
-    new BuildingUpgradeWithAchievement("Deep-bake process", new BuildingRequirement(Game.Objects.Factory, 150), "Ultimate automation")
-    new BuildingUpgradeWithAchievement("Cyborg workforce", new BuildingRequirement(Game.Objects.Factory, 200), "Technocracy")
-    new BuildingUpgradeWithAchievement("78-hour days", new BuildingRequirement(Game.Objects.Factory, 250), "Rise of the machines")
-    new BuildingUpgradeWithAchievement("Machine learning", new BuildingRequirement(Game.Objects.Factory, 300), "Modern times")
-    new BuildingUpgradeWithAchievement("Brownie point system", new BuildingRequirement(Game.Objects.Factory, 350), "Ex machina")
-    new BuildingUpgradeWithAchievement("\"Volunteer\" interns", new BuildingRequirement(Game.Objects.Factory, 400), "In full gear")
-    new BuildingUpgradeWithAchievement("Behavioral reframing", new BuildingRequirement(Game.Objects.Factory, 450), "In-cog-neato")
-    new BuildingUpgradeWithAchievement("The infinity engine", new BuildingRequirement(Game.Objects.Factory, 500), "Break the mold")
+    new FirstBuildingUpgrade("Radium reactors", new BuildingRequirement(Game.Objects.Factory, 50), "Industrial revolution")
+    new FirstBuildingUpgrade("Recombobulators", new BuildingRequirement(Game.Objects.Factory, 100), "Global warming")
+    new FirstBuildingUpgrade("Deep-bake process", new BuildingRequirement(Game.Objects.Factory, 150), "Ultimate automation")
+    new FirstBuildingUpgrade("Cyborg workforce", new BuildingRequirement(Game.Objects.Factory, 200), "Technocracy")
+    new FirstBuildingUpgrade("78-hour days", new BuildingRequirement(Game.Objects.Factory, 250), "Rise of the machines")
+    new FirstBuildingUpgrade("Machine learning", new BuildingRequirement(Game.Objects.Factory, 300), "Modern times")
+    new FirstBuildingUpgrade("Brownie point system", new BuildingRequirement(Game.Objects.Factory, 350), "Ex machina")
+    new FirstBuildingUpgrade("\"Volunteer\" interns", new BuildingRequirement(Game.Objects.Factory, 400), "In full gear")
+    new FirstBuildingUpgrade("Behavioral reframing", new BuildingRequirement(Game.Objects.Factory, 450), "In-cog-neato")
+    new FirstBuildingUpgrade("The infinity engine", new BuildingRequirement(Game.Objects.Factory, 500), "Break the mold")
     //endregion
     //region Bank
-    new BuildingUpgradeWithAchievement("Taller tellers", new BuildingRequirement(Game.Objects.Bank, 1), "Pretty penny")
+    new FirstBuildingUpgrade("Taller tellers", new BuildingRequirement(Game.Objects.Bank, 1), "Pretty penny")
     new BuildingUpgrade("Scissor-resistant credit cards", new BuildingRequirement(Game.Objects.Bank, 5))
     new BuildingUpgrade("Acid-proof vaults", new BuildingRequirement(Game.Objects.Bank, 25))
-    new BuildingUpgradeWithAchievement("Chocolate coins", new BuildingRequirement(Game.Objects.Bank, 50), "Fit the bill")
-    new BuildingUpgradeWithAchievement("Exponential interest rates", new BuildingRequirement(Game.Objects.Bank, 100), "A loan in the dark")
-    new BuildingUpgradeWithAchievement("Financial zen", new BuildingRequirement(Game.Objects.Bank, 150), "Need for greed")
-    new BuildingUpgradeWithAchievement("Way of the wallet", new BuildingRequirement(Game.Objects.Bank, 200), "It\'s the economy, stupid")
-    new BuildingUpgradeWithAchievement("The stuff rationale", new BuildingRequirement(Game.Objects.Bank, 250), "Acquire currency")
-    new BuildingUpgradeWithAchievement("Edible money", new BuildingRequirement(Game.Objects.Bank, 300), "The nerve of war")
-    new BuildingUpgradeWithAchievement("Grand supercycles", new BuildingRequirement(Game.Objects.Bank, 350), "And I need it now")
-    new BuildingUpgradeWithAchievement("Rules of acquisition", new BuildingRequirement(Game.Objects.Bank, 400), "Treacle tart economics")
-    new BuildingUpgradeWithAchievement("Altruistic loop", new BuildingRequirement(Game.Objects.Bank, 450), "Save your breath because that's all you've got left")
-    new BuildingUpgradeWithAchievement("Diminishing tax returns", new BuildingRequirement(Game.Objects.Bank, 500), "Get the show on, get paid")
+    new FirstBuildingUpgrade("Chocolate coins", new BuildingRequirement(Game.Objects.Bank, 50), "Fit the bill")
+    new FirstBuildingUpgrade("Exponential interest rates", new BuildingRequirement(Game.Objects.Bank, 100), "A loan in the dark")
+    new FirstBuildingUpgrade("Financial zen", new BuildingRequirement(Game.Objects.Bank, 150), "Need for greed")
+    new FirstBuildingUpgrade("Way of the wallet", new BuildingRequirement(Game.Objects.Bank, 200), "It\'s the economy, stupid")
+    new FirstBuildingUpgrade("The stuff rationale", new BuildingRequirement(Game.Objects.Bank, 250), "Acquire currency")
+    new FirstBuildingUpgrade("Edible money", new BuildingRequirement(Game.Objects.Bank, 300), "The nerve of war")
+    new FirstBuildingUpgrade("Grand supercycles", new BuildingRequirement(Game.Objects.Bank, 350), "And I need it now")
+    new FirstBuildingUpgrade("Rules of acquisition", new BuildingRequirement(Game.Objects.Bank, 400), "Treacle tart economics")
+    new FirstBuildingUpgrade("Altruistic loop", new BuildingRequirement(Game.Objects.Bank, 450), "Save your breath because that's all you've got left")
+    new FirstBuildingUpgrade("Diminishing tax returns", new BuildingRequirement(Game.Objects.Bank, 500), "Get the show on, get paid")
     //endregion
     //region Temple
-    new BuildingUpgradeWithAchievement("Golden idols", new BuildingRequirement(Game.Objects.Temple, 1), "Your time to shrine")
+    new FirstBuildingUpgrade("Golden idols", new BuildingRequirement(Game.Objects.Temple, 1), "Your time to shrine")
     new BuildingUpgrade("Sacrifices", new BuildingRequirement(Game.Objects.Temple, 5))
     new BuildingUpgrade("Delicious blessing", new BuildingRequirement(Game.Objects.Temple, 25))
-    new BuildingUpgradeWithAchievement("Sun festival", new BuildingRequirement(Game.Objects.Temple, 50), "New-age cult")
-    new BuildingUpgradeWithAchievement("Enlarged pantheon", new BuildingRequirement(Game.Objects.Temple, 100), "New-age cult")
-    new BuildingUpgradeWithAchievement("Great Baker in the sky", new BuildingRequirement(Game.Objects.Temple, 150), "Organized religion")
-    new BuildingUpgradeWithAchievement("Creation myth", new BuildingRequirement(Game.Objects.Temple, 200), "Fanaticism")
-    new BuildingUpgradeWithAchievement("Theocracy", new BuildingRequirement(Game.Objects.Temple, 250), "Zealotry")
-    new BuildingUpgradeWithAchievement("Sick rap prayers", new BuildingRequirement(Game.Objects.Temple, 300), "Wololo")
-    new BuildingUpgradeWithAchievement("Psalm-reading", new BuildingRequirement(Game.Objects.Temple, 350), "Pray on the weak")
-    new BuildingUpgradeWithAchievement("War of the gods", new BuildingRequirement(Game.Objects.Temple, 400), "Holy cookies, grandma!")
-    new BuildingUpgradeWithAchievement("A novel idea", new BuildingRequirement(Game.Objects.Temple, 450), "Vengeful and almighty")
-    new BuildingUpgradeWithAchievement("Apparitions", new BuildingRequirement(Game.Objects.Temple, 500), "My world's on fire, how about yours")
+    new FirstBuildingUpgrade("Sun festival", new BuildingRequirement(Game.Objects.Temple, 50), "New-age cult")
+    new FirstBuildingUpgrade("Enlarged pantheon", new BuildingRequirement(Game.Objects.Temple, 100), "New-age cult")
+    new FirstBuildingUpgrade("Great Baker in the sky", new BuildingRequirement(Game.Objects.Temple, 150), "Organized religion")
+    new FirstBuildingUpgrade("Creation myth", new BuildingRequirement(Game.Objects.Temple, 200), "Fanaticism")
+    new FirstBuildingUpgrade("Theocracy", new BuildingRequirement(Game.Objects.Temple, 250), "Zealotry")
+    new FirstBuildingUpgrade("Sick rap prayers", new BuildingRequirement(Game.Objects.Temple, 300), "Wololo")
+    new FirstBuildingUpgrade("Psalm-reading", new BuildingRequirement(Game.Objects.Temple, 350), "Pray on the weak")
+    new FirstBuildingUpgrade("War of the gods", new BuildingRequirement(Game.Objects.Temple, 400), "Holy cookies, grandma!")
+    new FirstBuildingUpgrade("A novel idea", new BuildingRequirement(Game.Objects.Temple, 450), "Vengeful and almighty")
+    new FirstBuildingUpgrade("Apparitions", new BuildingRequirement(Game.Objects.Temple, 500), "My world's on fire, how about yours")
     //endregion
     //region Wizard tower
-    new BuildingUpgradeWithAchievement("Pointier hats", new BuildingRequirement(Game.Objects["Wizard tower"], 1), "Bewitched")
+    new FirstBuildingUpgrade("Pointier hats", new BuildingRequirement(Game.Objects["Wizard tower"], 1), "Bewitched")
     new BuildingUpgrade("Beardlier beards", new BuildingRequirement(Game.Objects["Wizard tower"], 5))
     new BuildingUpgrade("Ancient grimoires", new BuildingRequirement(Game.Objects["Wizard tower"], 25))
-    new BuildingUpgradeWithAchievement("Kitchen curses", new BuildingRequirement(Game.Objects["Wizard tower"], 50), "The sorcerer\'s apprentice")
-    new BuildingUpgradeWithAchievement("School of sorcery", new BuildingRequirement(Game.Objects["Wizard tower"], 100), "Charms and enchantments")
-    new BuildingUpgradeWithAchievement("Dark formulas", new BuildingRequirement(Game.Objects["Wizard tower"], 150), "Curses and maledictions")
-    new BuildingUpgradeWithAchievement("Cookiemancy", new BuildingRequirement(Game.Objects["Wizard tower"], 200), "Magic kingdom")
-    new BuildingUpgradeWithAchievement("Rabbit trick", new BuildingRequirement(Game.Objects["Wizard tower"], 250), "The wizarding world")
-    new BuildingUpgradeWithAchievement("Deluxe tailored wands", new BuildingRequirement(Game.Objects["Wizard tower"], 300), "And now for my next trick, I'll need a volunteer from the" +
+    new FirstBuildingUpgrade("Kitchen curses", new BuildingRequirement(Game.Objects["Wizard tower"], 50), "The sorcerer\'s apprentice")
+    new FirstBuildingUpgrade("School of sorcery", new BuildingRequirement(Game.Objects["Wizard tower"], 100), "Charms and enchantments")
+    new FirstBuildingUpgrade("Dark formulas", new BuildingRequirement(Game.Objects["Wizard tower"], 150), "Curses and maledictions")
+    new FirstBuildingUpgrade("Cookiemancy", new BuildingRequirement(Game.Objects["Wizard tower"], 200), "Magic kingdom")
+    new FirstBuildingUpgrade("Rabbit trick", new BuildingRequirement(Game.Objects["Wizard tower"], 250), "The wizarding world")
+    new FirstBuildingUpgrade("Deluxe tailored wands", new BuildingRequirement(Game.Objects["Wizard tower"], 300), "And now for my next trick, I'll need a volunteer from the" +
       " audience")
-    new BuildingUpgradeWithAchievement("Immobile spellcasting", new BuildingRequirement(Game.Objects["Wizard tower"], 350), "It's a kind of magic")
-    new BuildingUpgradeWithAchievement("Electricity", new BuildingRequirement(Game.Objects["Wizard tower"], 400), "The Prestige")
-    new BuildingUpgradeWithAchievement("Spelling bees", new BuildingRequirement(Game.Objects["Wizard tower"], 450), "Spell it out for you")
-    new BuildingUpgradeWithAchievement("Wizard basements", new BuildingRequirement(Game.Objects["Wizard tower"], 500), "The meteor men beg to differ")
+    new FirstBuildingUpgrade("Immobile spellcasting", new BuildingRequirement(Game.Objects["Wizard tower"], 350), "It's a kind of magic")
+    new FirstBuildingUpgrade("Electricity", new BuildingRequirement(Game.Objects["Wizard tower"], 400), "The Prestige")
+    new FirstBuildingUpgrade("Spelling bees", new BuildingRequirement(Game.Objects["Wizard tower"], 450), "Spell it out for you")
+    new FirstBuildingUpgrade("Wizard basements", new BuildingRequirement(Game.Objects["Wizard tower"], 500), "The meteor men beg to differ")
     //endregion
     //region Shipment
-    new BuildingUpgradeWithAchievement("Vanilla nebulae", new BuildingRequirement(Game.Objects.Shipment, 1), "Expedition")
+    new FirstBuildingUpgrade("Vanilla nebulae", new BuildingRequirement(Game.Objects.Shipment, 1), "Expedition")
     new BuildingUpgrade("Wormholes", new BuildingRequirement(Game.Objects.Shipment, 5))
     new BuildingUpgrade("Frequent flyer", new BuildingRequirement(Game.Objects.Shipment, 25))
-    new BuildingUpgradeWithAchievement("Warp drive", new BuildingRequirement(Game.Objects.Shipment, 50), "Galactic highway")
-    new BuildingUpgradeWithAchievement("Chocolate monoliths", new BuildingRequirement(Game.Objects.Shipment, 100), "Far far away")
-    new BuildingUpgradeWithAchievement("Generation ship", new BuildingRequirement(Game.Objects.Shipment, 150), "Type II civilization")
-    new BuildingUpgradeWithAchievement("Dyson sphere", new BuildingRequirement(Game.Objects.Shipment, 200), "We come in peace")
-    new BuildingUpgradeWithAchievement("The final frontier", new BuildingRequirement(Game.Objects.Shipment, 250), "Parsec-masher")
-    new BuildingUpgradeWithAchievement("Autopilot", new BuildingRequirement(Game.Objects.Shipment, 300), "It's not delivery")
-    new BuildingUpgradeWithAchievement("Restaurants at the end of the universe", new BuildingRequirement(Game.Objects.Shipment, 350), "Make it so")
-    new BuildingUpgradeWithAchievement("Universal alphabet", new BuildingRequirement(Game.Objects.Shipment, 400), "That's just peanuts to space")
-    new BuildingUpgradeWithAchievement("Toroid universe", new BuildingRequirement(Game.Objects.Shipment, 450), "Space space space space space")
-    new BuildingUpgradeWithAchievement("Prime directive", new BuildingRequirement(Game.Objects.Shipment, 500), "Only shooting stars")
+    new FirstBuildingUpgrade("Warp drive", new BuildingRequirement(Game.Objects.Shipment, 50), "Galactic highway")
+    new FirstBuildingUpgrade("Chocolate monoliths", new BuildingRequirement(Game.Objects.Shipment, 100), "Far far away")
+    new FirstBuildingUpgrade("Generation ship", new BuildingRequirement(Game.Objects.Shipment, 150), "Type II civilization")
+    new FirstBuildingUpgrade("Dyson sphere", new BuildingRequirement(Game.Objects.Shipment, 200), "We come in peace")
+    new FirstBuildingUpgrade("The final frontier", new BuildingRequirement(Game.Objects.Shipment, 250), "Parsec-masher")
+    new FirstBuildingUpgrade("Autopilot", new BuildingRequirement(Game.Objects.Shipment, 300), "It's not delivery")
+    new FirstBuildingUpgrade("Restaurants at the end of the universe", new BuildingRequirement(Game.Objects.Shipment, 350), "Make it so")
+    new FirstBuildingUpgrade("Universal alphabet", new BuildingRequirement(Game.Objects.Shipment, 400), "That's just peanuts to space")
+    new FirstBuildingUpgrade("Toroid universe", new BuildingRequirement(Game.Objects.Shipment, 450), "Space space space space space")
+    new FirstBuildingUpgrade("Prime directive", new BuildingRequirement(Game.Objects.Shipment, 500), "Only shooting stars")
     //endregion
     //region Alchemy lab
-    new BuildingUpgradeWithAchievement("Antimony", new BuildingRequirement(Game.Objects["Alchemy lab"], 1), "Transmutation")
+    new FirstBuildingUpgrade("Antimony", new BuildingRequirement(Game.Objects["Alchemy lab"], 1), "Transmutation")
     new BuildingUpgrade("Essence of dough", new BuildingRequirement(Game.Objects["Alchemy lab"], 5))
     new BuildingUpgrade("True chocolate", new BuildingRequirement(Game.Objects["Alchemy lab"], 25))
-    new BuildingUpgradeWithAchievement("Ambrosia", new BuildingRequirement(Game.Objects["Alchemy lab"], 50), "Transmogrification")
-    new BuildingUpgradeWithAchievement("Aqua crustulae", new BuildingRequirement(Game.Objects["Alchemy lab"], 100), "Gold member")
-    new BuildingUpgradeWithAchievement("Origin crucible", new BuildingRequirement(Game.Objects["Alchemy lab"], 150), "Gild wars")
-    new BuildingUpgradeWithAchievement("Theory of atomic fluidity", new BuildingRequirement(Game.Objects["Alchemy lab"], 200), "The secrets of the universe")
-    new BuildingUpgradeWithAchievement("Beige goo", new BuildingRequirement(Game.Objects["Alchemy lab"], 250), "The work of a lifetime")
-    new BuildingUpgradeWithAchievement("The advent of chemistry", new BuildingRequirement(Game.Objects["Alchemy lab"], 300), "Gold, Jerry! Gold!")
-    new BuildingUpgradeWithAchievement("On second thought", new BuildingRequirement(Game.Objects["Alchemy lab"], 350), "All that glitters is gold")
-    new BuildingUpgradeWithAchievement("Public betterment", new BuildingRequirement(Game.Objects["Alchemy lab"], 400), "Worth its weight in lead")
-    new BuildingUpgradeWithAchievement("Hermetic reconciliation", new BuildingRequirement(Game.Objects["Alchemy lab"], 450), "Don't get used to yourself, you're gonna have to change")
-    new BuildingUpgradeWithAchievement("Chromatic cycling", new BuildingRequirement(Game.Objects["Alchemy lab"], 500), "We could all use a little change")
+    new FirstBuildingUpgrade("Ambrosia", new BuildingRequirement(Game.Objects["Alchemy lab"], 50), "Transmogrification")
+    new FirstBuildingUpgrade("Aqua crustulae", new BuildingRequirement(Game.Objects["Alchemy lab"], 100), "Gold member")
+    new FirstBuildingUpgrade("Origin crucible", new BuildingRequirement(Game.Objects["Alchemy lab"], 150), "Gild wars")
+    new FirstBuildingUpgrade("Theory of atomic fluidity", new BuildingRequirement(Game.Objects["Alchemy lab"], 200), "The secrets of the universe")
+    new FirstBuildingUpgrade("Beige goo", new BuildingRequirement(Game.Objects["Alchemy lab"], 250), "The work of a lifetime")
+    new FirstBuildingUpgrade("The advent of chemistry", new BuildingRequirement(Game.Objects["Alchemy lab"], 300), "Gold, Jerry! Gold!")
+    new FirstBuildingUpgrade("On second thought", new BuildingRequirement(Game.Objects["Alchemy lab"], 350), "All that glitters is gold")
+    new FirstBuildingUpgrade("Public betterment", new BuildingRequirement(Game.Objects["Alchemy lab"], 400), "Worth its weight in lead")
+    new FirstBuildingUpgrade("Hermetic reconciliation", new BuildingRequirement(Game.Objects["Alchemy lab"], 450), "Don't get used to yourself, you're gonna have to change")
+    new FirstBuildingUpgrade("Chromatic cycling", new BuildingRequirement(Game.Objects["Alchemy lab"], 500), "We could all use a little change")
     //endregion
     //region Portal
-    new BuildingUpgradeWithAchievement("Ancient tablet", new BuildingRequirement(Game.Objects.Portal, 1), "A whole new world")
+    new FirstBuildingUpgrade("Ancient tablet", new BuildingRequirement(Game.Objects.Portal, 1), "A whole new world")
     new BuildingUpgrade("Insane oatling workers", new BuildingRequirement(Game.Objects.Portal, 5))
     new BuildingUpgrade("Soul bond", new BuildingRequirement(Game.Objects.Portal, 25))
-    new BuildingUpgradeWithAchievement("Sanity dance", new BuildingRequirement(Game.Objects.Portal, 50), "Now you\'re thinking")
-    new BuildingUpgradeWithAchievement("Brane transplant", new BuildingRequirement(Game.Objects.Portal, 100), "Dimensional shift")
-    new BuildingUpgradeWithAchievement("Deity-sized portals", new BuildingRequirement(Game.Objects.Portal, 150), "Brain-split")
-    new BuildingUpgradeWithAchievement("End of times back-up plan", new BuildingRequirement(Game.Objects.Portal, 200), "Realm of the Mad God")
-    new BuildingUpgradeWithAchievement("Maddening chants", new BuildingRequirement(Game.Objects.Portal, 250), "A place lost in time")
-    new BuildingUpgradeWithAchievement("The real world", new BuildingRequirement(Game.Objects.Portal, 300), "Forbidden zone")
-    new BuildingUpgradeWithAchievement("Dimensional garbage gulper", new BuildingRequirement(Game.Objects.Portal, 350), "H̸̷͓̳̳̯̟͕̟͍͍̣͡ḛ̢̦̰̺̮̝͖͖̘̪͉͘͡" +
+    new FirstBuildingUpgrade("Sanity dance", new BuildingRequirement(Game.Objects.Portal, 50), "Now you\'re thinking")
+    new FirstBuildingUpgrade("Brane transplant", new BuildingRequirement(Game.Objects.Portal, 100), "Dimensional shift")
+    new FirstBuildingUpgrade("Deity-sized portals", new BuildingRequirement(Game.Objects.Portal, 150), "Brain-split")
+    new FirstBuildingUpgrade("End of times back-up plan", new BuildingRequirement(Game.Objects.Portal, 200), "Realm of the Mad God")
+    new FirstBuildingUpgrade("Maddening chants", new BuildingRequirement(Game.Objects.Portal, 250), "A place lost in time")
+    new FirstBuildingUpgrade("The real world", new BuildingRequirement(Game.Objects.Portal, 300), "Forbidden zone")
+    new FirstBuildingUpgrade("Dimensional garbage gulper", new BuildingRequirement(Game.Objects.Portal, 350), "H̸̷͓̳̳̯̟͕̟͍͍̣͡ḛ̢̦̰̺̮̝͖͖̘̪͉͘͡" +
       " ̠̦͕̤̪̝̥̰̠̫̖̣͙̬͘ͅC̨̦̺̩̲̥͉̭͚̜̻̝̣̼͙̮̯̪o̴̡͇̘͎̞̲͇̦̲͞͡m̸̩̺̝̣̹̱͚̬̥̫̳̼̞̘̯͘ͅẹ͇̺̜́̕͢s̶̙̟̱̥̮̯̰̦͓͇͖͖̝͘͘͞")
-    new BuildingUpgradeWithAchievement("Embedded microportals", new BuildingRequirement(Game.Objects.Portal, 400), "What happens in the vortex stays in the vortex")
-    new BuildingUpgradeWithAchievement("His advent", new BuildingRequirement(Game.Objects.Portal, 450), "Objects in the mirror dimension are closer than they appear")
-    new BuildingUpgradeWithAchievement("Domestic rifts", new BuildingRequirement(Game.Objects.Portal, 500), "Your brain gets smart but your head gets dumb")
+    new FirstBuildingUpgrade("Embedded microportals", new BuildingRequirement(Game.Objects.Portal, 400), "What happens in the vortex stays in the vortex")
+    new FirstBuildingUpgrade("His advent", new BuildingRequirement(Game.Objects.Portal, 450), "Objects in the mirror dimension are closer than they appear")
+    new FirstBuildingUpgrade("Domestic rifts", new BuildingRequirement(Game.Objects.Portal, 500), "Your brain gets smart but your head gets dumb")
     //endregion
     //region Time machine
-    new BuildingUpgradeWithAchievement("Flux capacitors", new BuildingRequirement(Game.Objects["Time machine"], 1), "Time warp")
+    new FirstBuildingUpgrade("Flux capacitors", new BuildingRequirement(Game.Objects["Time machine"], 1), "Time warp")
     new BuildingUpgrade("Time paradox resolver", new BuildingRequirement(Game.Objects["Time machine"], 5))
     new BuildingUpgrade("Quantum conundrum", new BuildingRequirement(Game.Objects["Time machine"], 25))
-    new BuildingUpgradeWithAchievement("Causality enforcer", new BuildingRequirement(Game.Objects["Time machine"], 50), "Alternate timeline")
-    new BuildingUpgradeWithAchievement("Yestermorrow comparators", new BuildingRequirement(Game.Objects["Time machine"], 100), "Rewriting history")
-    new BuildingUpgradeWithAchievement("Far future enactment", new BuildingRequirement(Game.Objects["Time machine"], 150), "Time duke")
-    new BuildingUpgradeWithAchievement("Great loop hypothesis", new BuildingRequirement(Game.Objects["Time machine"], 200), "Forever and ever")
-    new BuildingUpgradeWithAchievement("Cookietopian moments of maybe", new BuildingRequirement(Game.Objects["Time machine"], 250), "Heat death")
-    new BuildingUpgradeWithAchievement("Second seconds", new BuildingRequirement(Game.Objects["Time machine"], 300), "cookie clicker forever and forever a hundred years cookie clicker," +
+    new FirstBuildingUpgrade("Causality enforcer", new BuildingRequirement(Game.Objects["Time machine"], 50), "Alternate timeline")
+    new FirstBuildingUpgrade("Yestermorrow comparators", new BuildingRequirement(Game.Objects["Time machine"], 100), "Rewriting history")
+    new FirstBuildingUpgrade("Far future enactment", new BuildingRequirement(Game.Objects["Time machine"], 150), "Time duke")
+    new FirstBuildingUpgrade("Great loop hypothesis", new BuildingRequirement(Game.Objects["Time machine"], 200), "Forever and ever")
+    new FirstBuildingUpgrade("Cookietopian moments of maybe", new BuildingRequirement(Game.Objects["Time machine"], 250), "Heat death")
+    new FirstBuildingUpgrade("Second seconds", new BuildingRequirement(Game.Objects["Time machine"], 300), "cookie clicker forever and forever a hundred years cookie clicker," +
       " all day long forever, forever a hundred times, over and over cookie clicker adventures dot com")
-    new BuildingUpgradeWithAchievement("Additional clock hands", new BuildingRequirement(Game.Objects["Time machine"], 350), "Way back then")
-    new BuildingUpgradeWithAchievement("Nostalgia", new BuildingRequirement(Game.Objects["Time machine"], 400), "Invited to yesterday's party")
-    new BuildingUpgradeWithAchievement("Split seconds", new BuildingRequirement(Game.Objects["Time machine"], 450), "Groundhog day")
-    new BuildingUpgradeWithAchievement("Patience abolished", new BuildingRequirement(Game.Objects["Time machine"], 500), "The years start coming")
+    new FirstBuildingUpgrade("Additional clock hands", new BuildingRequirement(Game.Objects["Time machine"], 350), "Way back then")
+    new FirstBuildingUpgrade("Nostalgia", new BuildingRequirement(Game.Objects["Time machine"], 400), "Invited to yesterday's party")
+    new FirstBuildingUpgrade("Split seconds", new BuildingRequirement(Game.Objects["Time machine"], 450), "Groundhog day")
+    new FirstBuildingUpgrade("Patience abolished", new BuildingRequirement(Game.Objects["Time machine"], 500), "The years start coming")
     //endregion
     //region Antimatter condensers
-    new BuildingUpgradeWithAchievement("Sugar bosons", new BuildingRequirement(Game.Objects["Antimatter condenser"], 1), "Antibatter")
+    new FirstBuildingUpgrade("Sugar bosons", new BuildingRequirement(Game.Objects["Antimatter condenser"], 1), "Antibatter")
     new BuildingUpgrade("String theory", new BuildingRequirement(Game.Objects["Antimatter condenser"], 5))
     new BuildingUpgrade("Large macaron collider", new BuildingRequirement(Game.Objects["Antimatter condenser"], 25))
-    new BuildingUpgradeWithAchievement("Big bang bake", new BuildingRequirement(Game.Objects["Antimatter condenser"], 50), "Quirky quarks")
-    new BuildingUpgradeWithAchievement("Reverse cyclotrons", new BuildingRequirement(Game.Objects["Antimatter condenser"], 100), "It does matter!")
-    new BuildingUpgradeWithAchievement("Nanocosmics", new BuildingRequirement(Game.Objects["Antimatter condenser"], 150), "Molecular maestro")
-    new BuildingUpgradeWithAchievement("The Pulse", new BuildingRequirement(Game.Objects["Antimatter condenser"], 200), "Walk the planck")
-    new BuildingUpgradeWithAchievement("Some other super-tiny fundamental particle? Probably?", new BuildingRequirement(Game.Objects["Antimatter condenser"], 250), "Microcosm")
-    new BuildingUpgradeWithAchievement("Quantum comb", new BuildingRequirement(Game.Objects["Antimatter condenser"], 300), "Scientists baffled everywhere")
-    new BuildingUpgradeWithAchievement("Baking Nobel prize", new BuildingRequirement(Game.Objects["Antimatter condenser"], 350), "Exotic matter")
-    new BuildingUpgradeWithAchievement("The definite molecule", new BuildingRequirement(Game.Objects["Antimatter condenser"], 400), "Downsizing")
-    new BuildingUpgradeWithAchievement("Flavor itself", new BuildingRequirement(Game.Objects["Antimatter condenser"], 450), "A matter of perspective")
-    new BuildingUpgradeWithAchievement("Delicious pull", new BuildingRequirement(Game.Objects["Antimatter condenser"], 500), "What a concept")
+    new FirstBuildingUpgrade("Big bang bake", new BuildingRequirement(Game.Objects["Antimatter condenser"], 50), "Quirky quarks")
+    new FirstBuildingUpgrade("Reverse cyclotrons", new BuildingRequirement(Game.Objects["Antimatter condenser"], 100), "It does matter!")
+    new FirstBuildingUpgrade("Nanocosmics", new BuildingRequirement(Game.Objects["Antimatter condenser"], 150), "Molecular maestro")
+    new FirstBuildingUpgrade("The Pulse", new BuildingRequirement(Game.Objects["Antimatter condenser"], 200), "Walk the planck")
+    new FirstBuildingUpgrade("Some other super-tiny fundamental particle? Probably?", new BuildingRequirement(Game.Objects["Antimatter condenser"], 250), "Microcosm")
+    new FirstBuildingUpgrade("Quantum comb", new BuildingRequirement(Game.Objects["Antimatter condenser"], 300), "Scientists baffled everywhere")
+    new FirstBuildingUpgrade("Baking Nobel prize", new BuildingRequirement(Game.Objects["Antimatter condenser"], 350), "Exotic matter")
+    new FirstBuildingUpgrade("The definite molecule", new BuildingRequirement(Game.Objects["Antimatter condenser"], 400), "Downsizing")
+    new FirstBuildingUpgrade("Flavor itself", new BuildingRequirement(Game.Objects["Antimatter condenser"], 450), "A matter of perspective")
+    new FirstBuildingUpgrade("Delicious pull", new BuildingRequirement(Game.Objects["Antimatter condenser"], 500), "What a concept")
     //endregion
     //region Prisms
-    new BuildingUpgradeWithAchievement("Gem polish", new BuildingRequirement(Game.Objects.Prism, 1), "Lone photon")
+    new FirstBuildingUpgrade("Gem polish", new BuildingRequirement(Game.Objects.Prism, 1), "Lone photon")
     new BuildingUpgrade("9th color", new BuildingRequirement(Game.Objects.Prism, 5))
     new BuildingUpgrade("Chocolate light", new BuildingRequirement(Game.Objects.Prism, 25))
-    new BuildingUpgradeWithAchievement("Grainbow", new BuildingRequirement(Game.Objects.Prism, 50), "Dazzling glimmer")
-    new BuildingUpgradeWithAchievement("Pure cosmic light", new BuildingRequirement(Game.Objects.Prism, 100), "Blinding flash")
-    new BuildingUpgradeWithAchievement("Glow-in-the-dark", new BuildingRequirement(Game.Objects.Prism, 150), "Unending glow")
-    new BuildingUpgradeWithAchievement("Lux sanctorum", new BuildingRequirement(Game.Objects.Prism, 200), "Rise and shine")
-    new BuildingUpgradeWithAchievement("Reverse shadows", new BuildingRequirement(Game.Objects.Prism, 250), "Bright future")
-    new BuildingUpgradeWithAchievement("Crystal mirrors", new BuildingRequirement(Game.Objects.Prism, 300), "Harmony of the spheres")
-    new BuildingUpgradeWithAchievement("Reverse theory of light", new BuildingRequirement(Game.Objects.Prism, 350), "At the end of the tunnel")
-    new BuildingUpgradeWithAchievement("Light capture measures", new BuildingRequirement(Game.Objects.Prism, 400), "My eyes")
-    new BuildingUpgradeWithAchievement("Light speed limit", new BuildingRequirement(Game.Objects.Prism, 450), "Optical illusion")
-    new BuildingUpgradeWithAchievement("Occam's laser", new BuildingRequirement(Game.Objects.Prism, 500), "You'll never shine if you don't glow")
+    new FirstBuildingUpgrade("Grainbow", new BuildingRequirement(Game.Objects.Prism, 50), "Dazzling glimmer")
+    new FirstBuildingUpgrade("Pure cosmic light", new BuildingRequirement(Game.Objects.Prism, 100), "Blinding flash")
+    new FirstBuildingUpgrade("Glow-in-the-dark", new BuildingRequirement(Game.Objects.Prism, 150), "Unending glow")
+    new FirstBuildingUpgrade("Lux sanctorum", new BuildingRequirement(Game.Objects.Prism, 200), "Rise and shine")
+    new FirstBuildingUpgrade("Reverse shadows", new BuildingRequirement(Game.Objects.Prism, 250), "Bright future")
+    new FirstBuildingUpgrade("Crystal mirrors", new BuildingRequirement(Game.Objects.Prism, 300), "Harmony of the spheres")
+    new FirstBuildingUpgrade("Reverse theory of light", new BuildingRequirement(Game.Objects.Prism, 350), "At the end of the tunnel")
+    new FirstBuildingUpgrade("Light capture measures", new BuildingRequirement(Game.Objects.Prism, 400), "My eyes")
+    new FirstBuildingUpgrade("Light speed limit", new BuildingRequirement(Game.Objects.Prism, 450), "Optical illusion")
+    new FirstBuildingUpgrade("Occam's laser", new BuildingRequirement(Game.Objects.Prism, 500), "You'll never shine if you don't glow")
     //endregion
     //region Chancemaker
-    new BuildingUpgradeWithAchievement("Your lucky cookie", new BuildingRequirement(Game.Objects.Chancemaker, 1), "Lucked out")
+    new FirstBuildingUpgrade("Your lucky cookie", new BuildingRequirement(Game.Objects.Chancemaker, 1), "Lucked out")
     new BuildingUpgrade("\"All Bets Are Off\" magic coin", new BuildingRequirement(Game.Objects.Chancemaker, 5))
     new BuildingUpgrade("Winning lottery ticket", new BuildingRequirement(Game.Objects.Chancemaker, 25))
-    new BuildingUpgradeWithAchievement("Four-leaf clover field", new BuildingRequirement(Game.Objects.Chancemaker, 50), "What are the odds")
-    new BuildingUpgradeWithAchievement("A recipe book about books", new BuildingRequirement(Game.Objects.Chancemaker, 100), "Grandma needs a new pair of shoes")
-    new BuildingUpgradeWithAchievement("Leprechaun village", new BuildingRequirement(Game.Objects.Chancemaker, 150), "Million to one shot, doc")
-    new BuildingUpgradeWithAchievement("Improbability drive", new BuildingRequirement(Game.Objects.Chancemaker, 200), "As luck would have it")
-    new BuildingUpgradeWithAchievement("Antisuperstistronics", new BuildingRequirement(Game.Objects.Chancemaker, 250), "Ever in your favor")
-    new BuildingUpgradeWithAchievement("Bunnypedes", new BuildingRequirement(Game.Objects.Chancemaker, 300), "Be a lady")
-    new BuildingUpgradeWithAchievement("Revised probabilistics", new BuildingRequirement(Game.Objects.Chancemaker, 350), "Dicey business")
-    new BuildingUpgradeWithAchievement("0-sided dice", new BuildingRequirement(Game.Objects.Chancemaker, 400), "Maybe a chance in hell, actually")
-    new BuildingUpgradeWithAchievement("A touch of determinism", new BuildingRequirement(Game.Objects.Chancemaker, 450), "Jackpot")
-    new BuildingUpgradeWithAchievement("On a streak", new BuildingRequirement(Game.Objects.Chancemaker, 500), "You'll never know if you don't go")
+    new FirstBuildingUpgrade("Four-leaf clover field", new BuildingRequirement(Game.Objects.Chancemaker, 50), "What are the odds")
+    new FirstBuildingUpgrade("A recipe book about books", new BuildingRequirement(Game.Objects.Chancemaker, 100), "Grandma needs a new pair of shoes")
+    new FirstBuildingUpgrade("Leprechaun village", new BuildingRequirement(Game.Objects.Chancemaker, 150), "Million to one shot, doc")
+    new FirstBuildingUpgrade("Improbability drive", new BuildingRequirement(Game.Objects.Chancemaker, 200), "As luck would have it")
+    new FirstBuildingUpgrade("Antisuperstistronics", new BuildingRequirement(Game.Objects.Chancemaker, 250), "Ever in your favor")
+    new FirstBuildingUpgrade("Bunnypedes", new BuildingRequirement(Game.Objects.Chancemaker, 300), "Be a lady")
+    new FirstBuildingUpgrade("Revised probabilistics", new BuildingRequirement(Game.Objects.Chancemaker, 350), "Dicey business")
+    new FirstBuildingUpgrade("0-sided dice", new BuildingRequirement(Game.Objects.Chancemaker, 400), "Maybe a chance in hell, actually")
+    new FirstBuildingUpgrade("A touch of determinism", new BuildingRequirement(Game.Objects.Chancemaker, 450), "Jackpot")
+    new FirstBuildingUpgrade("On a streak", new BuildingRequirement(Game.Objects.Chancemaker, 500), "You'll never know if you don't go")
     //endregion
     //region Fractal Engine
-    new BuildingUpgradeWithAchievement("Metabakeries", new BuildingRequirement(Game.Objects["Fractal engine"], 1), "Self-contained")
+    new FirstBuildingUpgrade("Metabakeries", new BuildingRequirement(Game.Objects["Fractal engine"], 1), "Self-contained")
     new BuildingUpgrade("Mandelbrown sugar", new BuildingRequirement(Game.Objects["Fractal engine"], 5))
     new BuildingUpgrade("Fractoids", new BuildingRequirement(Game.Objects["Fractal engine"], 25))
-    new BuildingUpgradeWithAchievement("Nested universe theory", new BuildingRequirement(Game.Objects["Fractal engine"], 50), "Threw you for a loop")
-    new BuildingUpgradeWithAchievement("Menger sponge cake", new BuildingRequirement(Game.Objects["Fractal engine"], 100), "The sum of its parts")
-    new BuildingUpgradeWithAchievement("One particularly good-humored cow", new BuildingRequirement(Game.Objects["Fractal engine"], 150), "Bears repeating")
-    new BuildingUpgradeWithAchievement("Chocolate ouroboros", new BuildingRequirement(Game.Objects["Fractal engine"], 200), "More of the same")
-    new BuildingUpgradeWithAchievement("Nested", new BuildingRequirement(Game.Objects["Fractal engine"], 250), "Last recurse")
-    new BuildingUpgradeWithAchievement("Space-filling fibers", new BuildingRequirement(Game.Objects["Fractal engine"], 300), "Out of one, many")
-    new BuildingUpgradeWithAchievement("Endless book of prose", new BuildingRequirement(Game.Objects["Fractal engine"], 350), "An example of recursion")
-    new BuildingUpgradeWithAchievement("The set of all sets", new BuildingRequirement(Game.Objects["Fractal engine"], 400), "For more information on this achievement, please refer to its title")
-    new BuildingUpgradeWithAchievement("This upgrade", new BuildingRequirement(Game.Objects["Fractal engine"], 450), "I'm so meta, even this achievement")
-    new BuildingUpgradeWithAchievement("A box", new BuildingRequirement(Game.Objects["Fractal engine"], 500), "Never get bored")
+    new FirstBuildingUpgrade("Nested universe theory", new BuildingRequirement(Game.Objects["Fractal engine"], 50), "Threw you for a loop")
+    new FirstBuildingUpgrade("Menger sponge cake", new BuildingRequirement(Game.Objects["Fractal engine"], 100), "The sum of its parts")
+    new FirstBuildingUpgrade("One particularly good-humored cow", new BuildingRequirement(Game.Objects["Fractal engine"], 150), "Bears repeating")
+    new FirstBuildingUpgrade("Chocolate ouroboros", new BuildingRequirement(Game.Objects["Fractal engine"], 200), "More of the same")
+    new FirstBuildingUpgrade("Nested", new BuildingRequirement(Game.Objects["Fractal engine"], 250), "Last recurse")
+    new FirstBuildingUpgrade("Space-filling fibers", new BuildingRequirement(Game.Objects["Fractal engine"], 300), "Out of one, many")
+    new FirstBuildingUpgrade("Endless book of prose", new BuildingRequirement(Game.Objects["Fractal engine"], 350), "An example of recursion")
+    new FirstBuildingUpgrade("The set of all sets", new BuildingRequirement(Game.Objects["Fractal engine"], 400), "For more information on this achievement, please refer to its title")
+    new FirstBuildingUpgrade("This upgrade", new BuildingRequirement(Game.Objects["Fractal engine"], 450), "I'm so meta, even this achievement")
+    new FirstBuildingUpgrade("A box", new BuildingRequirement(Game.Objects["Fractal engine"], 500), "Never get bored")
     //endregion
     //TODO: Heralds Upgrade
     //region Heavenly Chips Power
     new HeavenlyChipUpgrade("Heavenly chip secret", 5)
-    new HeavenlyChipUpgradeWithUpgradeRequirement("Heavenly cookie stand", 20, "Heavenly chip secret")
-    new HeavenlyChipUpgradeWithUpgradeRequirement("Heavenly bakery", 25, "Heavenly cookie stand")
-    new HeavenlyChipUpgradeWithUpgradeRequirement("Heavenly confectionery", 25, "Heavenly bakery")
-    new HeavenlyChipUpgradeWithUpgradeRequirement("Heavenly key", 25, "Heavenly confectionery")
+    new HeavenlyChipUpgradeWithSingleUpgradeRequired("Heavenly cookie stand", 20, "Heavenly chip secret")
+    new HeavenlyChipUpgradeWithSingleUpgradeRequired("Heavenly bakery", 25, "Heavenly cookie stand")
+    new HeavenlyChipUpgradeWithSingleUpgradeRequired("Heavenly confectionery", 25, "Heavenly bakery")
+    new HeavenlyChipUpgradeWithSingleUpgradeRequired("Heavenly key", 25, "Heavenly confectionery")
     //endregion
     //region Bingo Center
     new ResearchUpgrade("Bingo center/Research facility", [new BuildingRequirement(Game.Objects.Grandma, 7)])
@@ -2951,22 +3037,22 @@ class AutoCookie {
     new CookieUpgrade("Palets")
     new CookieUpgrade("Sabl&eacute;s")
 
-    new CookieUpgradeWithUpgradeRequirement("Caramoas", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Sagalongs", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Shortfoils", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Win mints", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Fig gluttons", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Loreols", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Jaffa cakes", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Grease's cups", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Digits", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Lombardia cookies", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Bastenaken cookies", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Festivity loops", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Havabreaks", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Zilla wafers", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Dim Dams", "Box of brand biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Pokey", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Caramoas", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Sagalongs", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Shortfoils", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Win mints", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Fig gluttons", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Loreols", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Jaffa cakes", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Grease's cups", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Digits", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Lombardia cookies", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Bastenaken cookies", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Festivity loops", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Havabreaks", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Zilla wafers", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Dim Dams", "Box of brand biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Pokey", "Box of brand biscuits")
 
     new CookieUpgrade("Gingerbread men")
     new CookieUpgrade("Gingerbread trees")
@@ -3066,55 +3152,55 @@ class AutoCookie {
     new CookieUpgrade("Matcha cookies")
 
     new CookieUpgrade("Empire biscuits")
-    new CookieUpgradeWithUpgradeRequirement("British tea biscuits", "Tin of british tea biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Chocolate british tea biscuits", "British tea biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Round british tea biscuits", "Chocolate british tea biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Round chocolate british tea biscuits", "Round british tea biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Round british tea biscuits with heart motif", "Round chocolate british tea biscuits")
-    new CookieUpgradeWithUpgradeRequirement("Round chocolate british tea biscuits with heart motif", "Round british tea biscuits with heart motif")
+    new CookieUpgradeWithSingleUpgradeRequired("British tea biscuits", "Tin of british tea biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Chocolate british tea biscuits", "British tea biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Round british tea biscuits", "Chocolate british tea biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Round chocolate british tea biscuits", "Round british tea biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Round british tea biscuits with heart motif", "Round chocolate british tea biscuits")
+    new CookieUpgradeWithSingleUpgradeRequired("Round chocolate british tea biscuits with heart motif", "Round british tea biscuits with heart motif")
 
-    new CookieUpgradeWithUpgradeRequirement("Butter horseshoes", "Tin of butter cookies")
-    new CookieUpgradeWithUpgradeRequirement("Butter pucks", "Tin of butter cookies")
-    new CookieUpgradeWithUpgradeRequirement("Butter knots", "Tin of butter cookies")
-    new CookieUpgradeWithUpgradeRequirement("Butter slabs", "Tin of butter cookies")
-    new CookieUpgradeWithUpgradeRequirement("Butter swirls", "Tin of butter cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Butter horseshoes", "Tin of butter cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Butter pucks", "Tin of butter cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Butter knots", "Tin of butter cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Butter slabs", "Tin of butter cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Butter swirls", "Tin of butter cookies")
 
-    new CookieUpgradeWithUpgradeRequirement("Rose macarons", "Box of macarons")
-    new CookieUpgradeWithUpgradeRequirement("Lemon macarons", "Box of macarons")
-    new CookieUpgradeWithUpgradeRequirement("Chocolate macarons", "Box of macarons")
-    new CookieUpgradeWithUpgradeRequirement("Pistachio macarons", "Box of macarons")
-    new CookieUpgradeWithUpgradeRequirement("Hazelnut macarons", "Box of macarons")
-    new CookieUpgradeWithUpgradeRequirement("Violet macarons", "Box of macarons")
-    new CookieUpgradeWithUpgradeRequirement("Caramel macarons", "Box of macarons")
-    new CookieUpgradeWithUpgradeRequirement("Licorice macarons", "Box of macarons")
-    new CookieUpgradeWithUpgradeRequirement("Earl Grey macarons", "Box of macarons")
+    new CookieUpgradeWithSingleUpgradeRequired("Rose macarons", "Box of macarons")
+    new CookieUpgradeWithSingleUpgradeRequired("Lemon macarons", "Box of macarons")
+    new CookieUpgradeWithSingleUpgradeRequired("Chocolate macarons", "Box of macarons")
+    new CookieUpgradeWithSingleUpgradeRequired("Pistachio macarons", "Box of macarons")
+    new CookieUpgradeWithSingleUpgradeRequired("Hazelnut macarons", "Box of macarons")
+    new CookieUpgradeWithSingleUpgradeRequired("Violet macarons", "Box of macarons")
+    new CookieUpgradeWithSingleUpgradeRequired("Caramel macarons", "Box of macarons")
+    new CookieUpgradeWithSingleUpgradeRequired("Licorice macarons", "Box of macarons")
+    new CookieUpgradeWithSingleUpgradeRequired("Earl Grey macarons", "Box of macarons")
 
-    new CookieUpgradeWithUpgradeRequirement("Cookie dough", "Box of maybe cookies")
-    new CookieUpgradeWithUpgradeRequirement("Burnt cookie", "Box of maybe cookies")
-    new CookieUpgradeWithUpgradeRequirement("A chocolate chip cookie but with the chips picked off for some reason", "Box of maybe cookies")
-    new CookieUpgradeWithUpgradeRequirement("Flavor text cookie", "Box of maybe cookies")
-    new CookieUpgradeWithUpgradeRequirement("High-definition cookie", "Box of maybe cookies")
-    new CookieUpgradeWithUpgradeRequirement("Crackers", "Box of maybe cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Cookie dough", "Box of maybe cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Burnt cookie", "Box of maybe cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("A chocolate chip cookie but with the chips picked off for some reason", "Box of maybe cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Flavor text cookie", "Box of maybe cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("High-definition cookie", "Box of maybe cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Crackers", "Box of maybe cookies")
 
-    new CookieUpgradeWithUpgradeRequirement("Toast", "Box of not cookies")
-    new CookieUpgradeWithUpgradeRequirement("Peanut butter & jelly", "Box of not cookies")
-    new CookieUpgradeWithUpgradeRequirement("Wookies", "Box of not cookies")
-    new CookieUpgradeWithUpgradeRequirement("Cheeseburger", "Box of not cookies")
-    new CookieUpgradeWithUpgradeRequirement("One lone chocolate chip", "Box of not cookies")
-    new CookieUpgradeWithUpgradeRequirement("Pizza", "Box of not cookies")
-    new CookieUpgradeWithUpgradeRequirement("Candy", "Box of not cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Toast", "Box of not cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Peanut butter & jelly", "Box of not cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Wookies", "Box of not cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Cheeseburger", "Box of not cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("One lone chocolate chip", "Box of not cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Pizza", "Box of not cookies")
+    new CookieUpgradeWithSingleUpgradeRequired("Candy", "Box of not cookies")
 
-    new CookieUpgradeWithUpgradeRequirement("Profiteroles", "Box of pastries")
-    new CookieUpgradeWithUpgradeRequirement("Jelly donut", "Box of pastries")
-    new CookieUpgradeWithUpgradeRequirement("Glazed donut", "Box of pastries")
-    new CookieUpgradeWithUpgradeRequirement("Chocolate cake", "Box of pastries")
-    new CookieUpgradeWithUpgradeRequirement("Strawberry cake", "Box of pastries")
-    new CookieUpgradeWithUpgradeRequirement("Apple pie", "Box of pastries")
-    new CookieUpgradeWithUpgradeRequirement("Lemon meringue pie", "Box of pastries")
-    new CookieUpgradeWithUpgradeRequirement("Butter croissant", "Box of pastries")
+    new CookieUpgradeWithSingleUpgradeRequired("Profiteroles", "Box of pastries")
+    new CookieUpgradeWithSingleUpgradeRequired("Jelly donut", "Box of pastries")
+    new CookieUpgradeWithSingleUpgradeRequired("Glazed donut", "Box of pastries")
+    new CookieUpgradeWithSingleUpgradeRequired("Chocolate cake", "Box of pastries")
+    new CookieUpgradeWithSingleUpgradeRequired("Strawberry cake", "Box of pastries")
+    new CookieUpgradeWithSingleUpgradeRequired("Apple pie", "Box of pastries")
+    new CookieUpgradeWithSingleUpgradeRequired("Lemon meringue pie", "Box of pastries")
+    new CookieUpgradeWithSingleUpgradeRequired("Butter croissant", "Box of pastries")
 
-    new CookieUpgradeWithUpgradeRequirement("Cookie crumbs", "Legacy")
-    new CookieUpgradeWithUpgradeRequirement("Chocolate chip cookie", "Legacy")
+    new CookieUpgradeWithSingleUpgradeRequired("Cookie crumbs", "Legacy")
+    new CookieUpgradeWithSingleUpgradeRequired("Chocolate chip cookie", "Legacy")
 
     new CookieUpgrade("Milk chocolate butter biscuit", BuildingRequirement.generateRequirementsForAllBuildings(100))
     new CookieUpgrade("Dark chocolate butter biscuit", BuildingRequirement.generateRequirementsForAllBuildings(150))
@@ -3129,36 +3215,36 @@ class AutoCookie {
     new CookieUpgrade("Butter biscuit (with butter)", BuildingRequirement.generateRequirementsForAllBuildings(600))
     //endregion
     //region Synergies
-    new BuildingUpgradeWithUpgradeRequirement("Extra physics funding", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Bank, 15), new BuildingRequirement(Game.Objects["Antimatter condenser"], 15))
-    new BuildingUpgradeWithUpgradeRequirement("Contracts from beyond", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Bank, 15), new BuildingRequirement(Game.Objects.Prism, 15))
-    new BuildingUpgradeWithUpgradeRequirement("Quantum electronics", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Factory, 15), new BuildingRequirement(Game.Objects["Antimatter condenser"], 15))
-    new BuildingUpgradeWithUpgradeRequirement("Infernal crops", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Farm, 15), new BuildingRequirement(Game.Objects.Portal, 15))
-    new BuildingUpgradeWithUpgradeRequirement("Future almanacs", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Farm, 15), new BuildingRequirement(Game.Objects["Time machine"], 15))
-    new BuildingUpgradeWithUpgradeRequirement("Primordial ores", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects["Alchemy lab"], 15))
-    new BuildingUpgradeWithUpgradeRequirement("Gemmed talismans", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects.Chancemaker, 15))
-    new BuildingUpgradeWithUpgradeRequirement("Fossil fuels", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects.Shipment, 15))
-    new BuildingUpgradeWithUpgradeRequirement("Seismic magic", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects["Wizard tower"], 15))
-    new BuildingUpgradeWithUpgradeRequirement("Recursive mirrors", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Prism, 15), new BuildingRequirement(Game.Objects["Fractal engine"], 15))
-    new BuildingUpgradeWithUpgradeRequirement("Relativistic parsec-skipping", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Shipment, 15), new BuildingRequirement(Game.Objects["Time machine"], 15))
-    new BuildingUpgradeWithUpgradeRequirement("Paganism", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Temple, 15), new BuildingRequirement(Game.Objects.Portal, 15))
-    new BuildingUpgradeWithUpgradeRequirement("Arcane knowledge", "Synergies Vol. I", new BuildingRequirement(Game.Objects["Wizard tower"], 15), new BuildingRequirement(Game.Objects["Alchemy lab"], 15))
-    new BuildingUpgradeWithUpgradeRequirement("Light magic", "Synergies Vol. I", new BuildingRequirement(Game.Objects["Wizard tower"], 15), new BuildingRequirement(Game.Objects.Prism, 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Extra physics funding", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Bank, 15), new BuildingRequirement(Game.Objects["Antimatter condenser"], 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Contracts from beyond", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Bank, 15), new BuildingRequirement(Game.Objects.Prism, 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Quantum electronics", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Factory, 15), new BuildingRequirement(Game.Objects["Antimatter condenser"], 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Infernal crops", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Farm, 15), new BuildingRequirement(Game.Objects.Portal, 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Future almanacs", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Farm, 15), new BuildingRequirement(Game.Objects["Time machine"], 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Primordial ores", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects["Alchemy lab"], 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Gemmed talismans", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects.Chancemaker, 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Fossil fuels", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects.Shipment, 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Seismic magic", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Mine, 15), new BuildingRequirement(Game.Objects["Wizard tower"], 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Recursive mirrors", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Prism, 15), new BuildingRequirement(Game.Objects["Fractal engine"], 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Relativistic parsec-skipping", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Shipment, 15), new BuildingRequirement(Game.Objects["Time machine"], 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Paganism", "Synergies Vol. I", new BuildingRequirement(Game.Objects.Temple, 15), new BuildingRequirement(Game.Objects.Portal, 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Arcane knowledge", "Synergies Vol. I", new BuildingRequirement(Game.Objects["Wizard tower"], 15), new BuildingRequirement(Game.Objects["Alchemy lab"], 15))
+    new BuildingUpgradeWithSingleUpgradeRequired("Light magic", "Synergies Vol. I", new BuildingRequirement(Game.Objects["Wizard tower"], 15), new BuildingRequirement(Game.Objects.Prism, 15))
 
 
-    new BuildingUpgradeWithUpgradeRequirement("Chemical proficiency", "Synergies Vol. II", new BuildingRequirement(Game.Objects["Alchemy lab"], 75), new BuildingRequirement(Game.Objects["Antimatter condenser"], 75))
-    new BuildingUpgradeWithUpgradeRequirement("Charm quarks", "Synergies Vol. II", new BuildingRequirement(Game.Objects["Antimatter condenser"], 75), new BuildingRequirement(Game.Objects.Chancemaker, 75))
-    new BuildingUpgradeWithUpgradeRequirement("Gold fund", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Bank, 75), new BuildingRequirement(Game.Objects["Alchemy lab"], 75))
-    new BuildingUpgradeWithUpgradeRequirement("Printing presses", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Bank, 75), new BuildingRequirement(Game.Objects.Factory, 75))
-    new BuildingUpgradeWithUpgradeRequirement("Mice clicking mice", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Cursor, 75), new BuildingRequirement(Game.Objects["Fractal engine"], 75))
-    new BuildingUpgradeWithUpgradeRequirement("Shipyards", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Factory, 75), new BuildingRequirement(Game.Objects.Shipment, 75))
-    new BuildingUpgradeWithUpgradeRequirement("Temporal overclocking", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Factory, 75), new BuildingRequirement(Game.Objects["Time machine"], 75))
-    new BuildingUpgradeWithUpgradeRequirement("Rain prayer", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Farm, 75), new BuildingRequirement(Game.Objects.Temple, 75))
-    new BuildingUpgradeWithUpgradeRequirement("Asteroid mining", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Mine, 75), new BuildingRequirement(Game.Objects.Shipment, 75))
-    new BuildingUpgradeWithUpgradeRequirement("Abysmal glimmer", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Prism, 75), new BuildingRequirement(Game.Objects.Portal, 75))
-    new BuildingUpgradeWithUpgradeRequirement("Primeval glow", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Prism, 75), new BuildingRequirement(Game.Objects["Time machine"], 75))
-    new BuildingUpgradeWithUpgradeRequirement("God particle", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Temple, 75), new BuildingRequirement(Game.Objects["Antimatter condenser"], 75))
-    new BuildingUpgradeWithUpgradeRequirement("Mystical energies", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Temple, 75), new BuildingRequirement(Game.Objects.Prism, 75))
-    new BuildingUpgradeWithUpgradeRequirement("Magical botany", "Synergies Vol. II", new BuildingRequirement(Game.Objects["Wizard tower"], 75), new BuildingRequirement(Game.Objects.Farm, 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Chemical proficiency", "Synergies Vol. II", new BuildingRequirement(Game.Objects["Alchemy lab"], 75), new BuildingRequirement(Game.Objects["Antimatter condenser"], 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Charm quarks", "Synergies Vol. II", new BuildingRequirement(Game.Objects["Antimatter condenser"], 75), new BuildingRequirement(Game.Objects.Chancemaker, 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Gold fund", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Bank, 75), new BuildingRequirement(Game.Objects["Alchemy lab"], 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Printing presses", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Bank, 75), new BuildingRequirement(Game.Objects.Factory, 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Mice clicking mice", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Cursor, 75), new BuildingRequirement(Game.Objects["Fractal engine"], 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Shipyards", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Factory, 75), new BuildingRequirement(Game.Objects.Shipment, 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Temporal overclocking", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Factory, 75), new BuildingRequirement(Game.Objects["Time machine"], 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Rain prayer", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Farm, 75), new BuildingRequirement(Game.Objects.Temple, 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Asteroid mining", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Mine, 75), new BuildingRequirement(Game.Objects.Shipment, 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Abysmal glimmer", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Prism, 75), new BuildingRequirement(Game.Objects.Portal, 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Primeval glow", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Prism, 75), new BuildingRequirement(Game.Objects["Time machine"], 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("God particle", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Temple, 75), new BuildingRequirement(Game.Objects["Antimatter condenser"], 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Mystical energies", "Synergies Vol. II", new BuildingRequirement(Game.Objects.Temple, 75), new BuildingRequirement(Game.Objects.Prism, 75))
+    new BuildingUpgradeWithSingleUpgradeRequired("Magical botany", "Synergies Vol. II", new BuildingRequirement(Game.Objects["Wizard tower"], 75), new BuildingRequirement(Game.Objects.Farm, 75))
     //endregion
   }
 
@@ -3419,9 +3505,9 @@ class AutoCookie {
   }
 
   updatedBuyables(): Array<Buyable<GameObject>> {
-    for (let buildingName in this.buildings) {
+    /*for (let buildingName in this.buildings) {
       this.buildings[buildingName].update()
-    }
+    }*/
     this.buyables.forEach(b => b.update())
     return this.buyables
   }
@@ -3491,7 +3577,9 @@ class AutoCookie {
     debug("Loop: " + message)
     if (this.stopped) return
     if (this.mainInterval) clearTimeout(this.mainInterval) //Prevent two or more timers from running this.
+    const start = Date.now()
     const bestBuyableTarget = minByPayback(this.updatedBuyables())
+    console.log(`Update took ${Date.now() - start} millis to run`)
     if (this.bestBuyable !== bestBuyableTarget) {
       this.bestBuyable = bestBuyableTarget
       this.bestBuyable.resetOriginalBuyMillis()
@@ -3501,13 +3589,33 @@ class AutoCookie {
     if (!this.buyLocked) {
       const nextMilestone = this.bestBuyable.nextMilestone
       if (nextMilestone.millisToBuy <= 0) {
-        let invested = nextMilestone.investment.invest()
+        let invested = 0
+        const estimatedReturns = nextMilestone.investment.estimatedReturns
+        let investedCookies = 0
+        if (estimatedReturns > 0) {
+          const currentCookies = Game.cookies
+          invested = nextMilestone.investment.invest()
+          investedCookies = currentCookies - Game.cookies
+          const estimatedReturnPercent = round((nextMilestone.investment.estimatedReturnPercent - 1) * 100, 2)
+          Game.Notify(`Invested ${Beautify(invested)}`, `Expected returns: ${Beautify(estimatedReturns)}(${estimatedReturnPercent}%) or ${timeString(estimatedReturns / Game.unbuffedCps)} of production`)
+          log(`${Beautify(invested * nextMilestone.investment.estimatedReturnPercent)}`)
+        }
         nextMilestone.buy()
         if (invested > 0) {
           //Sell investment on the next stock market price update since we can't sell in the same update we buy
           setTimeout(() => {
-            const profit = nextMilestone.investment.sellInvestment() - invested
-            log(`Investments earned ${Beautify(profit)} or ${timeString(profit / Game.unbuffedCps)} of production`)
+            const currentCookies = Game.cookies
+            const sellValue = nextMilestone.investment.sellInvestment()
+            const profit = sellValue - invested
+            const cookieProfit = Game.cookies - currentCookies
+            const message = `${Beautify(profit)} or ${timeString(profit / Game.unbuffedCps)} of production, or ${Beautify(cookieProfit)}`
+            const title = `Investment Returns for ${nextMilestone.name}`
+            Game.Notify(title, message)
+            log(title + message)
+            log(`investedCookies: ${Beautify(investedCookies)}`)
+            log(`cookieProfit: ${Beautify(cookieProfit)}`)
+            log(`sellValue: ${Beautify(sellValue)}`)
+            log(`profit via investment: ${Beautify(profit)}`)
             this.loop("Investment Sold")
           }, 50 + StockMarket.millisToNextTick)
         }
@@ -3516,7 +3624,7 @@ class AutoCookie {
           // Set timeout to the expected time we can purchase the target buyable
           let message = ""
           if (nextMilestone instanceof Building) {
-            message = `Buying the ${convertNumeral(nextMilestone.gameObject.amount + 1)} ${nextMilestone.name}`
+            message = `Buying the ${convertNumeral(nextMilestone.gameBuyable.amount + 1)} ${nextMilestone.name}`
           } else {
             message = `Buying ${nextMilestone.name}`
           }
@@ -3544,19 +3652,13 @@ class AutoCookie {
       }
       for (let upgradeName in this.upgrades) {
         const upgrade = this.upgrades[upgradeName]
-        if (upgrade.canEventuallyGet) {
+        if (upgrade.canEventuallyGet && !upgrade.owned) {
           this.buyables.push(upgrade)
         }
       }
-
-      let i = 0
-      for (let achievementName in AUTO_COOKIE.achievements) {
-        i += 1
-      }
-
       for (let achievementName in this.achievements) {
         const achievement = this.achievements[achievementName]
-        if (achievement.canEventuallyGet) {
+        if (achievement.canEventuallyGet && !achievement.won) {
           this.buyables.push(achievement)
         }
       }
@@ -3638,3 +3740,7 @@ class AutoCookie {
 const AUTO_COOKIE = new AutoCookie()
 
 Game.registerMod(MOD_ID, AUTO_COOKIE)
+
+/*document.addEventListener('DOMContentLoaded', (event) => {
+  Game.registerMod(MOD_ID, AUTO_COOKIE)
+})*/
