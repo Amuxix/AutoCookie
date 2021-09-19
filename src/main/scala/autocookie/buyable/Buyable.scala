@@ -7,8 +7,7 @@ import autocookie.buyable.{Building, BuildingRequirement}
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.buyable.traits.*
 import autocookie.buyable.Achievement
-import typings.cookieclicker.Game.{GameObject as GameBuilding, PseudoBoolean, Achievement as GameAchievement, Upgrade
-as GameUpgrade}
+import typings.cookieclicker.Game.{GameObject as GameBuilding, PseudoBoolean, Achievement as GameAchievement, Upgrade as GameUpgrade}
 import typings.cookieclicker.global.Game
 
 import scala.concurrent.duration.*
@@ -53,7 +52,7 @@ abstract class Buyable {
     val upgradesPrice = upgradeRequirements.sumBy(_.gameBuyable.getPrice())
     buildingsPrice + upgradesPrice
 
-  protected def calculateCpsIncrease(buildingRequirements: Set[BuildingRequirement], 
+  protected def calculateCpsIncrease(buildingRequirements: Set[BuildingRequirement],
     upgradeRequirements: Set[Upgrade], achievmentRequirements: Set[Achievement]): Double =
     val extraMilk = 0.04 * achievmentRequirements.size
     val multiplier = Game.globalCpsMult / Helpers.getKittenMultiplier(Game.milkProgress) * getKittenMultiplier(Game

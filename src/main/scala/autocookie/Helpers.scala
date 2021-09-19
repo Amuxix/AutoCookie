@@ -131,9 +131,9 @@ object Helpers:
     allKittensMultiplier * godMultiplier
   }
 
-  def profile(what: String)(f: () => Unit): Unit =
+  def profile(what: String)(f: => Unit): Unit =
     val start = Date.now()
-    f()
+    f
     Logger.debug(s"$what took ${Date.now() - start} millis to run")
 
   extension (gameAchievement: GameAchievement)

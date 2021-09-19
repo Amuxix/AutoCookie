@@ -14,8 +14,7 @@ import typings.cookieclicker.global.Beautify
 
 import scala.concurrent.duration.*
 import scala.scalajs.js.annotation.*
-import scala.scalajs.js.timers.{SetIntervalHandle, SetTimeoutHandle, clearInterval, clearTimeout, setInterval, 
-  setTimeout}
+import scala.scalajs.js.timers.{SetIntervalHandle, SetTimeoutHandle, clearInterval, clearTimeout, setInterval, setTimeout}
 import scala.scalajs.js
 
 object AutoCookie extends Named {
@@ -87,7 +86,7 @@ object AutoCookie extends Named {
     debug(s"Loop: $message")
     if stopped then return
       if mainTimeout.nonEmpty then mainTimeout.foreach(clearTimeout)
-    Helpers.profile("Update")(buyables.foreach(_.update()))
+    profile("Update")(buyables.foreach(_.update()))
     val newBestBuyable = buyables.minBy(_.payback)
     if bestBuyable != newBestBuyable then
       newBestBuyable.resetOriginalBuyTime()
@@ -102,15 +101,10 @@ object AutoCookie extends Named {
         if invested > 0 then
           setTimeout(StockMarket.timeToNextTick + 50.millis) {
             val profit = nextMilestone.investment.sellInvestment() - invested
-            log(s"Investments earned ${Beautify(profit)} or ${
-              (profit / Game.unbuffedCps)
-                .seconds
-                .prettyPrint
-            } of production"
-            )
+            log(s"Investments earned ${Beautify(profit)} or ${(profit / Game.unbuffedCps).seconds.prettyPrint} of production")
             loop("Investment Sold")
           }
-        else
+      else
         val message = nextMilestone match {
           case building: Building => s"Buying the ${convertNumeral(building.amount + 1)} ${building.name}"
           case _                  => s"Buying ${nextMilestone.name}"
