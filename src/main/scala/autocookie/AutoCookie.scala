@@ -33,7 +33,6 @@ object AutoCookie extends Named {
   var buyLocked = true
   var buying = false
 
-  val reserve: Reserve = new Reserve()
   var stockMarket: Option[StockMarket] = None
   var bestBuyable: Buyable = new Building("Cursor")
 
@@ -86,7 +85,7 @@ object AutoCookie extends Named {
     debug(s"Loop: $message")
     if stopped then return
     if mainTimeout.nonEmpty then mainTimeout.foreach(clearTimeout)
-    reserve.update()
+    Reserve.update()
     profile("Update")(buyables.foreach(_.update()))
     val newBestBuyable = buyables.minBy(_.payback)
     if bestBuyable != newBestBuyable then

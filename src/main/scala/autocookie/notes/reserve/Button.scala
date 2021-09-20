@@ -2,7 +2,7 @@ package autocookie.notes.reserve
 
 import autocookie.AutoCookie
 import autocookie.notes.Hideable
-import autocookie.reserve.{CookieEffect, ReserveGroup, ReserveLevel}
+import autocookie.reserve.{Reserve, ReserveGroup, ReserveLevel, CookieEffect}
 import org.scalajs.dom.raw.HTMLAnchorElement
 import org.scalajs.dom.document.createElement
 
@@ -31,7 +31,7 @@ class Button(group: ReserveGroup, index: Int = 0) extends Hideable {
     reserveLevelIndex = (reserveLevelIndex + 1) % unlockedReserveLevels.length
     val reserveLevel = unlockedReserveLevels(reserveLevelIndex)
     html.style.textShadow = Button.glow(reserveLevel)
-    AutoCookie.reserve.changeReserveLevels(oldReserveLevel, reserveLevel)
+    Reserve.changeReserveLevels(oldReserveLevel, reserveLevel)
 }
 
 object Button {

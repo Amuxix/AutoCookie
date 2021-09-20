@@ -6,6 +6,7 @@ import autocookie.buyable.{Building, BuildingRequirement}
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.buyable.traits.*
 import autocookie.buyable.Achievement
+import autocookie.reserve.Reserve
 import typings.cookieclicker.Game.{PseudoBoolean, Achievement as GameAchievement, GameObject as GameBuilding, Upgrade as GameUpgrade}
 import typings.cookieclicker.global.Game
 
@@ -18,7 +19,7 @@ object Buyable {
     if cpsIncrease == 0 || cps == 0 then
       Double.PositiveInfinity
     else
-      val payback = price / cpsIncrease + Math.max(0, price + AutoCookie.reserve.amount - Game.cookies) / cps
+      val payback = price / cpsIncrease + Math.max(0, price + Reserve.amount - Game.cookies) / cps
       payback.round(6)
 }
 
@@ -122,7 +123,7 @@ abstract class Buyable {
     if debug then println(s"payback: $payback")
 
   private def cookiesNeeded: Double =
-    AutoCookie.reserve.amount + price - Game.cookies - investment.estimatedReturns
+    Reserve.amount + price - Game.cookies - investment.estimatedReturns
 
   def percentCpsIncrease: Double = this.cpsIncrease / Game.cookiesPs
 

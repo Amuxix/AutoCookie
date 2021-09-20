@@ -3,7 +3,7 @@ package autocookie.notes.reserve
 import autocookie.AutoCookie
 import autocookie.notes.Note
 import autocookie.notes.reserve.ReserveNote.buttons
-import autocookie.reserve.{ReserveGroup, ReserveLevel}
+import autocookie.reserve.{Reserve, ReserveGroup, ReserveLevel}
 import org.scalajs.dom.document.createElement
 import org.scalajs.dom.raw.{HTMLAnchorElement, HTMLDivElement}
 import typings.cookieclicker.global.Beautify
@@ -29,9 +29,9 @@ class ReserveNote extends Note {
       if button.unlocked then button.show() else button.hide()
     }
 
-    val reserveLevel = AutoCookie.reserve.level
+    val reserveLevel = Reserve.level
     topRow.style.color = if reserveLevel == ReserveLevel.Disabled then "#F66" else "#6F6"
-    setDescription(Beautify(AutoCookie.reserve.amount))
+    setDescription(Beautify(Reserve.amount.toDouble))
       .setTitle(s"Reserve (${reserveLevel.title})")
 }
 

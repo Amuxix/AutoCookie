@@ -3,7 +3,7 @@ package autocookie.reserve
 import autocookie.AutoCookie
 import autocookie.reserve.ReserveLevel.Disabled
 
-class Reserve {
+object Reserve {
   private var possibleLevels = Set.empty[ReserveLevel]
 
   var level: ReserveLevel = Disabled
