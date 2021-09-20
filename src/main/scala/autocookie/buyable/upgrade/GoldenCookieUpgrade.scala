@@ -13,5 +13,5 @@ class GoldenCookieUpgrade(override val name: String) extends Upgrade {
     upgradeRequirements: Set[Upgrade],
     achievmentRequirements: Set[Achievement]
   ): Double =
-    if (gameBuyable.unlocked && AutoCookie.reserve.reserveAmount + this.price <= Game.cookies) then Double.PositiveInfinity else 0
+    if (gameBuyable.unlocked && AutoCookie.reserve.amount + this.price <= Game.cookies) then Double.PositiveInfinity else 0
 }

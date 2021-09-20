@@ -18,7 +18,7 @@ object Buyable {
     if cpsIncrease == 0 || cps == 0 then
       Double.PositiveInfinity
     else
-      val payback = price / cpsIncrease + Math.max(0, price + AutoCookie.reserve.reserveAmount - Game.cookies) / cps
+      val payback = price / cpsIncrease + Math.max(0, price + AutoCookie.reserve.amount - Game.cookies) / cps
       payback.round(6)
 }
 
@@ -122,7 +122,7 @@ abstract class Buyable {
     if debug then println(s"payback: $payback")
 
   private def cookiesNeeded: Double =
-    AutoCookie.reserve.reserveAmount + price - Game.cookies - investment.estimatedReturns
+    AutoCookie.reserve.amount + price - Game.cookies - investment.estimatedReturns
 
   def percentCpsIncrease: Double = this.cpsIncrease / Game.cookiesPs
 

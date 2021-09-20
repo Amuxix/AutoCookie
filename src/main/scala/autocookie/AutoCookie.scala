@@ -5,6 +5,7 @@ import autocookie.Helpers.*
 import autocookie.buyable.*
 import autocookie.buyable.Building.*
 import autocookie.buyable.upgrade.*
+import autocookie.notes.reserve.ReserveNote
 import autocookie.notes.{GoalNote, NextBuyNote, Note, NoteArea}
 import autocookie.reserve.Reserve
 import org.scalajs.dom.raw.HTMLElement
@@ -38,10 +39,10 @@ object AutoCookie extends Named {
 
   lazy val noteArea = new NoteArea
   //lazy val spawnWindowNote: GoldenCookieSpawnNote
-  //lazy val reserveNote: ReserveNote
+  lazy val reserveNote: ReserveNote = new ReserveNote
   lazy val goalNote: GoalNote = new GoalNote
   lazy val nextBuyNote: NextBuyNote = new NextBuyNote
-  lazy val notes: Seq[Note] = Seq(goalNote, nextBuyNote)
+  lazy val notes: Seq[Note] = Seq(goalNote, nextBuyNote, reserveNote)
   val buildings: Map[String, Building] = Buyables.createBuildings
   val upgrades: Map[String, Upgrade] = Buyables.createUpgrades
   val achievements: Map[String, Achievement] = Buyables.createAchievements
@@ -61,6 +62,7 @@ object AutoCookie extends Named {
     val notes = document.getElementById("notes")
     notes.parentNode.insertBefore(noteArea.html, notes)
 
+    noteArea.html.appendChild(reserveNote.html)
     noteArea.html.appendChild(goalNote.html)
     noteArea.html.appendChild(nextBuyNote.html)
     Logger.log("All notes created successfully.")
@@ -84,6 +86,7 @@ object AutoCookie extends Named {
     debug(s"Loop: $message")
     if stopped then return
     if mainTimeout.nonEmpty then mainTimeout.foreach(clearTimeout)
+    reserve.update()
     profile("Update")(buyables.foreach(_.update()))
     val newBestBuyable = buyables.minBy(_.payback)
     if bestBuyable != newBestBuyable then
@@ -108,6 +111,7 @@ object AutoCookie extends Named {
           case _                  => s"Buying ${nextMilestone.name}"
         }
         mainTimeout = Some(setTimeout(nextMilestone.timeToBuy)(loop(message)))
+    notes.foreach(_.update())
 
   def start(): Unit =
     if (stopped) {
@@ -115,7 +119,6 @@ object AutoCookie extends Named {
       val allBuyables = (buildings ++ upgrades ++ achievements).values.toSet
       buyables = allBuyables.filter(_.canEventuallyGet)
       //Update reserve note
-      //benchmark()
       loop("start")
       noteUpdateInterval = Some(setInterval(NOTE_UPDATE_FREQUENCY)(updateNotes()))
       engageHooks()
