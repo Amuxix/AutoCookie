@@ -19,7 +19,6 @@ object Note {
 }
 
 abstract class Note extends Hideable {
-
   html.style.width = "350px"
   html.style.display = "none"
   html.classList.add("framed")

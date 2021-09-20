@@ -12,9 +12,9 @@ import typings.cookieclicker.global.Game
 import scala.concurrent.duration.*
 import scala.scalajs.js.Date
 
-class NextBuyNote extends GoalNote {
+object NextBuyNote extends NoteWithExtras {
   show()
-  val button: HTMLAnchorElement =
+  lazy val button: HTMLAnchorElement =
     val button = createElement("a").asInstanceOf[HTMLAnchorElement]
     button.style.fontSize = "15px"
     button.style.cssFloat = "right"

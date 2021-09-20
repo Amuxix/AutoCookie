@@ -36,12 +36,8 @@ object AutoCookie extends Named {
   var stockMarket: Option[StockMarket] = None
   var bestBuyable: Buyable = new Building("Cursor")
 
-  lazy val noteArea = new NoteArea
   //lazy val spawnWindowNote: GoldenCookieSpawnNote
-  lazy val reserveNote: ReserveNote = new ReserveNote
-  lazy val goalNote: GoalNote = new GoalNote
-  lazy val nextBuyNote: NextBuyNote = new NextBuyNote
-  lazy val notes: Seq[Note] = Seq(goalNote, nextBuyNote, reserveNote)
+  lazy val notes: Seq[Note] = Seq(GoalNote, NextBuyNote, ReserveNote)
   val buildings: Map[String, Building] = Buyables.createBuildings
   val upgrades: Map[String, Upgrade] = Buyables.createUpgrades
   val achievements: Map[String, Achievement] = Buyables.createAchievements
@@ -59,11 +55,11 @@ object AutoCookie extends Named {
 
   def createNotes(): Unit =
     val notes = document.getElementById("notes")
-    notes.parentNode.insertBefore(noteArea.html, notes)
+    notes.parentNode.insertBefore(NoteArea.html, notes)
 
-    noteArea.html.appendChild(reserveNote.html)
-    noteArea.html.appendChild(goalNote.html)
-    noteArea.html.appendChild(nextBuyNote.html)
+    NoteArea.html.appendChild(ReserveNote.html)
+    NoteArea.html.appendChild(GoalNote.html)
+    NoteArea.html.appendChild(NextBuyNote.html)
     Logger.log("All notes created successfully.")
 
   def updateNotes(): Unit =
@@ -121,7 +117,7 @@ object AutoCookie extends Named {
       loop("start")
       noteUpdateInterval = Some(setInterval(NOTE_UPDATE_FREQUENCY)(updateNotes()))
       engageHooks()
-      noteArea.show()
+      NoteArea.show()
     }
 
   def load(save: String): Unit = ()

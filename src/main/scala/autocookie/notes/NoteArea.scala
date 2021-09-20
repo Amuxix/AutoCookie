@@ -2,7 +2,7 @@ package autocookie.notes
 
 import org.scalajs.dom.document
 
-class NoteArea extends Hideable {
+object NoteArea extends Hideable {
   html.style.position = "absolute"
   html.style.bottom = "0px"
   html.style.left = "auto"

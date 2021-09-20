@@ -14,24 +14,8 @@ import autocookie.buyable.{Achievement, Building}
 import scala.concurrent.duration.*
 import scala.language.implicitConversions
 
-class GoalNote extends Note {
+object GoalNote extends NoteWithExtras {
   html.onmouseout = (mouseEvent) => Game.tooltip.shouldHide = true
-
-  val extraTitle = createElement("span").asInstanceOf[HTMLSpanElement]
-  topRow.appendChild(extraTitle)
-
-  val extraDescription = createElement("span").asInstanceOf[HTMLSpanElement]
-  extraDescription.style.color = "#6F6"
-  bottomRow.appendChild(extraDescription)
-
-  def setExtraDescription(extra: String): this.type =
-    extraDescription.textContent = extra
-    this
-
-  def setExtraTitle(extra: String, color: String): this.type =
-    extraTitle.textContent = extra
-    extraTitle.style.color = color
-    this
 
   override def update(): Unit =
     val bestBuyable = AutoCookie.bestBuyable

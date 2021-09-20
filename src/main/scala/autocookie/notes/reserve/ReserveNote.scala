@@ -8,8 +8,10 @@ import org.scalajs.dom.document.createElement
 import org.scalajs.dom.raw.{HTMLAnchorElement, HTMLDivElement}
 import typings.cookieclicker.global.Beautify
 
-class ReserveNote extends Note {
-  val buttonDiv: HTMLDivElement =
+object ReserveNote extends Note {
+  lazy val buttons: Seq[Button] = ReserveGroup.values.toSeq.map(new Button(_))
+
+  lazy val buttonDiv: HTMLDivElement =
     val buttonDiv = createElement("div").asInstanceOf[HTMLDivElement]
     buttonDiv.style.fontSize = "15px"
     buttonDiv.style.cssFloat = "right"
@@ -33,8 +35,4 @@ class ReserveNote extends Note {
     topRow.style.color = if reserveLevel == ReserveLevel.Disabled then "#F66" else "#6F6"
     setDescription(Beautify(Reserve.amount.toDouble))
       .setTitle(s"Reserve (${reserveLevel.title})")
-}
-
-object ReserveNote {
-  lazy val buttons: Seq[Button] = ReserveGroup.values.toSeq.map(new Button(_))
 }
