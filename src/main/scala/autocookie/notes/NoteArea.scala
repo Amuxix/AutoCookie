@@ -7,6 +7,6 @@ object NoteArea extends Hideable {
   html.style.bottom = "0px"
   html.style.left = "auto"
   html.style.width = "350px"
-  html.style.zIndex = "100000001"
+  html.style.zIndex = "6"
   hide()
 }

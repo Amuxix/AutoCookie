@@ -386,6 +386,7 @@ object Buyables {
       new MouseUpgrade("Armythril mouse"),
       new MouseUpgrade("Technobsidian mouse"),
       new MouseUpgrade("Plasmarble mouse"),
+      new MouseUpgrade("Miraculite mouse"),
       //endregion,
       //region Golden Cookie,
       new GoldenCookieUpgrade("Lucky day"),

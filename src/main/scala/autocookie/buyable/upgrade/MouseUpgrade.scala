@@ -1,9 +1,9 @@
 package autocookie.buyable.upgrade
 
-import autocookie.{AutoCookie, EmptyInvestment, Helpers, Investment}
+import autocookie.{AutoCookie, CPSCalculator, EmptyInvestment, Helpers, Investment}
 import autocookie.Helpers.{amountOfNonCursors, hasOrIsChoice, toBoolean}
+import autocookie.buyable.upgrade.MouseUpgrade.{mouses, multipliers}
 import autocookie.buyable.{Achievement, BuildingRequirement}
-import org.scalajs.dom.console
 import cookieclicker.Buff
 import cookieclicker.Game
 
@@ -12,45 +12,7 @@ import scala.scalajs.js
 import scala.util.Try
 
 object MouseUpgrade {
-  def clickBuffs = Game.buffs.toArray.filter(_.multCpS.exists(_ > 0))
-}
-
-class MouseUpgrade(override val name: String) extends Upgrade {
-  override def estimatedReturnPercent(newBrokers: Int): Double = 1D
-  override protected def createInvestment: Investment = EmptyInvestment
-
-  override protected def calculateCpsIncrease(
-    buildingRequirements: Set[BuildingRequirement],
-    upgradeRequirements: Set[Upgrade],
-    achievmentRequirements: Set[Achievement]
-  ): Double =
-    0 //TODO fix this when I figgure out buffs or fix the ts definitions
-  /*val hasFrenzy = Try(Game.hasBuff("Click frenzy").asInstanceOf[cookieclickerNumbers.`0`]).fold(_ => true, _ => false)
-  println(s"Has Click frenzy $hasFrenzy")
-  if (!hasFrenzy) return Double.PositiveInfinity //Only consider these upgrades if we have a buff
-  println("fingerAdd")
-  lazy val fingerAdd: Map[String, Double] = Map(
-    //"Thousand" -> 0.1,
-    "Million fingers" -> 5,
-    "Billion fingers" -> 10,
-    "Trillion fingers" -> 20,
-    "Quadrillion fingers" -> 20,
-    "Quintillion fingers" -> 20,
-    "Sextillion fingers" -> 20,
-    "Septillion fingers" -> 20,
-    "Octillion fingers" -> 20,
-    "Nonillion fingers" -> 20,
-  )
-  println("fingersAdd")
-  val fingersAdd = if (Game.upgradeBought("Thousand fingers")) then
-    amountOfNonCursors * fingerAdd.foldLeft(0.1) {
-      case (totalAdd, (name, multiplier)) if Game.upgradeBought(name) => totalAdd * multiplier
-      case (totalAdd, _) => totalAdd
-    }
-  else
-    0
-
-  val mouses = List(
+  lazy val mouses = List(
     "Plastic mouse",
     "Iron mouse",
     "Titanium mouse",
@@ -63,18 +25,41 @@ class MouseUpgrade(override val name: String) extends Upgrade {
     "Armythril mouse",
     "Technobsidian mouse",
     "Plasmarble mouse",
+    "Miraculite mouse",
   )
-  println("mousesAdd")
-  val mousesAdd = mouses.count(mouse => hasOrIsChoice(mouse, Some(name))) * Game.cookiesPs * 0.01
-  val multipliers = List(
+
+  lazy val multipliers = List(
     "Reinforced index finger",
     "Carpal tunnel prevention cream",
     "Ambidextrous"
   )
-  println("clickMultiplier")
-  val clickMultiplier = math.pow(2, multipliers.count(Game.upgradeBought(_)))
-  println("buffMultipliers")
-  val buffMultipliers = MouseUpgrade.clickBuffs.foldLeft(1D)((total, buff) => total * buff.arg1.getOrElse(1D))
+}
 
-  (clickMultiplier + fingersAdd) * buffMultipliers - Game.mouseCps() * AutoCookie.CLICKS_PER_SEC*/
+class MouseUpgrade(override val name: String) extends Upgrade {
+  override def estimatedReturnPercent(newBrokers: Int): Double = 1D
+  override protected def createInvestment: Investment = EmptyInvestment
+
+  override protected def calculateCpsIncrease(
+    buildingRequirements: Set[BuildingRequirement],
+    upgradeRequirements: Set[Upgrade],
+    achievmentRequirements: Set[Achievement]
+  ): Double =
+    val clickBuffs = Helpers.buffs.filter(_.multClick.exists(_ > 0))
+    if clickBuffs.isEmpty then return 0 //Only consider these upgrades if we have a buff
+    val fingersAdd =
+      if (Game.upgradeBought("Thousand fingers")) then
+        amountOfNonCursors * CPSCalculator.fingerAdd.foldLeft(0.1) {
+          case (totalAdd, (upgrade, multiplier)) if upgrade.owned => totalAdd * multiplier
+          case (totalAdd, _)                                                    => totalAdd
+        }
+      else
+        0
+
+    val mousesAdd = mouses.count(mouse => hasOrIsChoice(mouse, Some(name))) * Game.cookiesPs * 0.01
+    val clickMultiplier = math.pow(2, multipliers.count(Game.upgradeBought(_)))
+    val buffMultipliers = clickBuffs.flatMap(_.multClick.toOption).foldLeft(1D)((total, buffPower) => total * buffPower)
+    val cookiesPerClick = (clickMultiplier + fingersAdd + mousesAdd) * buffMultipliers
+    val cpsIncrease = (cookiesPerClick - Game.mouseCps()) * AutoCookie.CLICKS_PER_SEC
+    val longestBuffRemainingSeconds = clickBuffs.maxBy(_.time).time / Game.fps
+    if cpsIncrease * longestBuffRemainingSeconds > price then cpsIncrease else 0
 }

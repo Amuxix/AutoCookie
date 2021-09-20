@@ -5,7 +5,7 @@ import autocookie.buyable.upgrade.Upgrade
 import autocookie.notes.Note
 import org.scalajs.dom.console
 import cookieclicker.buyables.*
-import cookieclicker.Game
+import cookieclicker.{Buff, Game}
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -205,6 +205,8 @@ object Helpers:
       val squared = seq.map(n => math.pow(n - mean, 2))
       math.sqrt(squared.sum / (squared.length - 1))
 
+
+  def buffs: Seq[Buff] = Game.buffs.toSeq
 /*
 
 

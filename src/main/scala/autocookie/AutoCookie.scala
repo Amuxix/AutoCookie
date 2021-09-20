@@ -7,7 +7,7 @@ import autocookie.buyable.*
 import autocookie.buyable.Building.*
 import autocookie.buyable.upgrade.*
 import autocookie.notes.reserve.ReserveNote
-import autocookie.notes.{GoalNote, NextBuyNote, Note, NoteArea}
+import autocookie.notes.{GoalNote, GoldenCookieSpawnNote, NextBuyNote, Note, NoteArea}
 import autocookie.reserve.Reserve
 import org.scalajs.dom.raw.HTMLElement
 import org.scalajs.dom.{console, document}
@@ -22,29 +22,32 @@ import scala.collection.mutable.Map
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
+@JSExportTopLevel("AutoCookie")
+@JSExportAll
 object AutoCookie extends Mod with AutoSaveable {
-  val version = 6
-
+  override val version = 6
   val CLICKS_PER_SEC = 3
-  val NOTE_UPDATE_FREQUENCY = 500.millis
+  val NOTE_UPDATE_FREQUENCY = 300.millis
 
+  //@JSExport
   var stopped = true
   var buyLocked = true
   var buying = false
 
   var bestBuyable: Buyable = new Building("Cursor")
 
-  //lazy val spawnWindowNote: GoldenCookieSpawnNote
-  lazy val notes: Seq[Note] = Seq(GoalNote, NextBuyNote, ReserveNote)
-  val buildings: Map[String, Building] = Buyables.createBuildings
-  val upgrades: Map[String, Upgrade] = Buyables.createUpgrades
-  val achievements: Map[String, Achievement] = Buyables.createAchievements
+  lazy val notes: Seq[Note] = Seq(GoldenCookieSpawnNote, GoalNote, NextBuyNote, ReserveNote)
+  lazy val buildings: Map[String, Building] = Buyables.createBuildings
+  lazy val upgrades: Map[String, Upgrade] = Buyables.createUpgrades
+  lazy val achievements: Map[String, Achievement] = Buyables.createAchievements
   var buyables: Set[Buyable] = Set.empty
 
   var mainTimeout: Option[SetTimeoutHandle] = None
   var noteUpdateInterval: Option[SetIntervalHandle] = None
 
   var lastCps: Double = 0
+  var lastNumberOfBuffs: Int = 0
+
   var notesShown: Int = 3
 
   def toggleBuyLock(): Unit =
@@ -55,6 +58,7 @@ object AutoCookie extends Mod with AutoSaveable {
     val notes = document.getElementById("notes")
     notes.parentNode.insertBefore(NoteArea.html, notes)
 
+    NoteArea.html.appendChild(GoldenCookieSpawnNote.html)
     NoteArea.html.appendChild(ReserveNote.html)
     NoteArea.html.appendChild(GoalNote.html)
     NoteArea.html.appendChild(NextBuyNote.html)
@@ -65,8 +69,15 @@ object AutoCookie extends Mod with AutoSaveable {
     if lastCps != cps then
       lastCps = cps
       setTimeout(0)(loop(CPSChanged))
+
+    val numberOfBuffs = Helpers.buffs.length
+    if lastNumberOfBuffs > numberOfBuffs then
+      setTimeout(0)(loop(BuffEnded))
+
+    lastNumberOfBuffs = numberOfBuffs
     notes.foreach(_.update())
-  //document.getElementById("specialPopup").style.bottom = `${25 + 37 * this.notesShown}px`
+    //Move krumblor egg dialog
+    document.getElementById("specialPopup").asInstanceOf[HTMLElement].style.bottom = s"${25 + 37 * notesShown}px"
 
   def engageHooks(): Unit =
     Game.registerHook("click", () => loop(BigCookieClicked))
@@ -79,15 +90,16 @@ object AutoCookie extends Mod with AutoSaveable {
     if stopped then return
     if mainTimeout.nonEmpty then mainTimeout.foreach(clearTimeout)
     reason match
-      case reason if reason.CPSChanged =>
+      case reason if reason.shouldUpdate =>
         Reserve.update()
         profile("Update")(buyables.foreach(_.update()))
+        lastCps = Helpers.cps
         val newBestBuyable = buyables.minBy(_.payback)
         if bestBuyable != newBestBuyable then
           newBestBuyable.resetOriginalBuyTime()
         bestBuyable = newBestBuyable
         bestBuyable.updateInvestmentAndBuyTime()
-      case `ReserveLevelChanged` =>
+      case `ReserveLevelChanged`         =>
         bestBuyable.resetOriginalBuyTime()
         bestBuyable.updateInvestmentAndBuyTime()
       case _ =>
@@ -95,15 +107,18 @@ object AutoCookie extends Mod with AutoSaveable {
 
     if !buyLocked then
       val nextMilestone = bestBuyable.nextMilestone
+      val investment = nextMilestone.investment
+
       if nextMilestone.timeToBuy <= 0.millis then
-        val invested = nextMilestone.investment.invest()
+        val invested = if investment.estimatedReturns > 0 then investment.invest() else 0
         nextMilestone.buy()
         if invested > 0 then
           setTimeout(StockMarket.timeToNextTick + 50.millis) {
-            val profit = nextMilestone.investment.sellInvestment() - invested
+            val profit = investment.sellInvestment() - invested
             log(s"Investments earned ${Beautify(profit)} or ${(profit / Game.unbuffedCps).seconds.prettyPrint} of production")
             loop(InvestmentSold)
           }
+        setTimeout(0)(loop(AfterBuy))
       else
         val message = nextMilestone match {
           case building: Building => s"Buying the ${convertNumeral(building.amount + 1)} ${building.name}"

@@ -74,7 +74,7 @@ object StockMarket {
     val avg = weightedPercentageDifferences.sum / weightedPercentageDifferences.length
 
     val isTrendingUp = percentageDifferences.count(_ >= 0) / percentageDifferences.length.toDouble > 0.8
-    val isStable = avg < STABILITY_THRESHOLD && stdDev < MAX_STD_DEV
+    val isStable = avg >= 0 && avg < STABILITY_THRESHOLD && stdDev < MAX_STD_DEV
     return isTrendingUp || isStable
 
   def stableActiveGoods: Seq[Good] = minigame.goods.filter { good =>

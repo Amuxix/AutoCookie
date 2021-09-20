@@ -3,6 +3,7 @@ package autocookie.notes
 import autocookie.Helpers.*
 import autocookie.buyable.Building
 import autocookie.buyable.upgrade.Upgrade
+import autocookie.notes.GoalNote.html
 import autocookie.{AutoCookie, Helpers}
 import org.scalajs.dom.raw.{HTMLAnchorElement, HTMLDivElement, HTMLElement}
 import org.scalajs.dom.document.createElement
@@ -14,6 +15,7 @@ import scala.scalajs.js.Date
 
 object NextBuyNote extends NoteWithExtras {
   show()
+  html.onmouseout = (mouseEvent) => Game.tooltip.shouldHide = true
   lazy val button: HTMLAnchorElement =
     val button = createElement("a").asInstanceOf[HTMLAnchorElement]
     button.style.fontSize = "15px"
@@ -57,8 +59,10 @@ object NextBuyNote extends NoteWithExtras {
       case upgrade: Upgrade => html.onmouseover = (m) => drawTooltip(upgrade)
       case _                => html.onmouseover = null
     }
+    if nextMilestone.cpsIncrease != Double.PositiveInfinity then
+      setExtraDescription(nextMilestone.cpsIncreasePercentText)
+
     setTitle(title)
       .setDescription(nextMilestone.name)
-      .setExtraDescription(nextMilestone.cpsIncreasePercentText)
       .updateLockedIcon()
 }

@@ -440,8 +440,7 @@ object CPSCalculator {
     val fingersAdd =
       if hasOrIsInChoices(Upgrade.getByName("Thousand fingers"), upgrades) then
         nonCursors * fingerAdd.foldLeft(0.1) {
-          case (totalAdd, (name, multiplier)) if hasOrIsInChoices(name, upgrades) =>
-            totalAdd * multiplier
+          case (totalAdd, (name, multiplier)) if hasOrIsInChoices(name, upgrades) => totalAdd * multiplier
           case (totalAdd, _)                                                      => totalAdd
         }
       else

@@ -148,20 +148,18 @@ abstract class Buyable {
     val cookiesNeeded = this.cookiesNeeded
     if (cookiesNeeded <= 0) return Date.now()
 
-    var buySeconds = (cookiesNeeded / cps).seconds
+    var buySeconds = cookiesNeeded / cps
 
-    /*val cpsBuffs = getBuffs().filter(buff => typeof buff.multCpS != "undefined" && buff.multCpS !== 0)
-    if (cpsBuffs.length > 0) {
+    val cpsBuffs = Helpers.buffs.filter(_.multCpS.exists(_ != 0))
+    if cpsBuffs.length > 0 then
       val buffedNextBuyTime = cookiesNeeded / cps
-      val shortBuffs = cpsBuffs.filter(buff => buff.time / Game.fps < buffedNextBuyTime)
-      if (shortBuffs.length > 0) {
+      val shortBuffs = cpsBuffs.filter(buff => (buff.time / Game.fps) < buffedNextBuyTime)
+      if shortBuffs.length > 0 then
         //Time the cpsBuffs will save us
-        val shortBuffsTime = shortBuffs.reduce((acc, buff) => acc + (buff.time / Game.fps), 0)
-        val shortBuffsPower = shortBuffs.reduce((acc, buff) => acc * buff.multCpS, 1)
+        val shortBuffsTime = shortBuffs.sumBy(_.time / Game.fps)
+        val shortBuffsPower = shortBuffs.foldLeft(1D)((acc, buff) => acc * buff.multCpS.getOrElse(1D))
         buySeconds = shortBuffsTime + (buySeconds - shortBuffsTime) * shortBuffsPower
-      }
-    }*/
-    Date.now() + buySeconds.toMillis
+    Date.now() + buySeconds * 1000
 
   def resetOriginalBuyTime(): Unit =
     originalBuyTime = 0

@@ -12,5 +12,5 @@ class MapLike[I, A] extends js.Object {
 
 object MapLike {
   extension [I, A](mapLike: MapLike[I, A])
-    def toArray: js.Array[A] = js.Object.entries(mapLike).map(_._2.asInstanceOf[A])
+    def toSeq: Seq[A] = js.Object.entries(mapLike).map(_._2.asInstanceOf[A]).toSeq
 }

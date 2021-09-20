@@ -1,8 +1,8 @@
 package autocookie
 
-import scala.concurrent.duration._
-
-import scala.scalajs.js.timers._
+import scala.concurrent.duration.*
+import scala.scalajs.js.annotation.{JSExportAll, JSExportTopLevel}
+import scala.scalajs.js.timers.*
 
 object Main {
   def main(args: Array[String]): Unit = setTimeout(1000) {

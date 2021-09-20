@@ -39,7 +39,7 @@ object Game extends js.Object {
   val elderWrath: Double = js.native
   val tooltip: Tooltip = js.native
   val shimmers: js.Array[Shimmer] = js.native
-  //val shimmerTypes: ShimmerTypes = js.native
+  val shimmerTypes: ShimmerTypes = js.native
   val buffs: MapLike[String, Buff] = js.native
   //val wrinklers: js.Array[Wrinkler]= js.native
   val BuildingsOwned: Double = js.native

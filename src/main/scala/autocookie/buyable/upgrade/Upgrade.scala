@@ -24,7 +24,8 @@ abstract class Upgrade extends Buyable {
    */
   override lazy val canEventuallyGet: Boolean =
     lazy val canGet = this match {
-      case legacyUpgrade: LegacyUpgrade if legacyUpgrade.upgradeRequirements.isEmpty => owned
+      //case legacyUpgrade: LegacyUpgrade if legacyUpgrade.upgradeRequirements.isEmpty => owned
+      case legacyUpgrade: LegacyUpgrade => false
       case upgrade: UpgradesRequired                                                 =>
         //All legacy upgrade dependencies must be owned
         upgrade.upgradeRequirements.forall {
