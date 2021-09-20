@@ -1,13 +1,12 @@
 package autocookie.buyable
 
-import autocookie.{AutoCookie, CPSCalculator, EmptyInvestment, Helpers, Investment, Logger, StockMarket}
+import autocookie.*
 import autocookie.Helpers.*
-import autocookie.Helpers.given
 import autocookie.buyable.{Building, BuildingRequirement}
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.buyable.traits.*
 import autocookie.buyable.Achievement
-import typings.cookieclicker.Game.{GameObject as GameBuilding, PseudoBoolean, Achievement as GameAchievement, Upgrade as GameUpgrade}
+import typings.cookieclicker.Game.{PseudoBoolean, Achievement as GameAchievement, GameObject as GameBuilding, Upgrade as GameUpgrade}
 import typings.cookieclicker.global.Game
 
 import scala.concurrent.duration.*
@@ -55,9 +54,7 @@ abstract class Buyable {
     achievmentRequirements: Set[Achievement]
   ): Double =
     val extraMilk = 0.04 * achievmentRequirements.size
-    val multiplier = Game.globalCpsMult / Helpers.getKittenMultiplier(Game.milkProgress) * getKittenMultiplier(Game
-      .milkProgress + extraMilk
-    )
+    val multiplier = Game.globalCpsMult / Helpers.getKittenMultiplier(Game.milkProgress) * getKittenMultiplier(Game.milkProgress + extraMilk)
     val cps = Helpers.cps
     val baseCps = cps / Game.globalCpsMult
     val achievmentCpsIncrease = ((baseCps * multiplier) - cps)
@@ -102,17 +99,18 @@ abstract class Buyable {
     }.flatten
     (thisAchievement ++ fromUpgrades).filter(!_.won)
 
+  lazy val semiFinalUpgradeRequirements: Set[Upgrade] = calculateUpgradeRequirements
+  lazy val semiFinalBuildingRequirements: Set[BuildingRequirement] = calculateBuildingRequirements(semiFinalUpgradeRequirements)
+  lazy val semiFinalAchievmentUnlocks: Set[Achievement] = calculateAchievmentUnlocks(semiFinalUpgradeRequirements)
+
   def update(debug: Boolean = false): Unit =
-    val upgradeRequirements: Set[Upgrade] = calculateUpgradeRequirements
-    if debug then println(s"upgradeRequirements: $upgradeRequirements")
-    val buildingRequirements: Set[BuildingRequirement] = calculateBuildingRequirements(upgradeRequirements)
-    if debug then println(s"buildingRequirements: $buildingRequirements")
-    val achievmentUnlocks: Set[Achievement] = calculateAchievmentUnlocks(upgradeRequirements)
-    if debug then println(s"achievmentUnlocks: $achievmentUnlocks")
+    val upgradeRequirements: Set[Upgrade] = semiFinalUpgradeRequirements.filter(!_.owned)
+    val buildingRequirements: Set[BuildingRequirement] = semiFinalBuildingRequirements.filter(req => req.gameBuyable.amount < req.amount)
+    val achievmentUnlocks: Set[Achievement] = semiFinalAchievmentUnlocks.filter(!_.won)
 
     val thisBuilding = this match {
       case building: Building => Set(BuildingRequirement(building.gameBuyable, building.amount + 1))
-      case _                  => Seq.empty
+      case _                  => Set.empty
     }
 
     requirements = upgradeRequirements ++ buildingRequirements ++ achievmentUnlocks

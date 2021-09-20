@@ -16,6 +16,8 @@ import scala.concurrent.duration.*
 import scala.scalajs.js.annotation.*
 import scala.scalajs.js.timers.{SetIntervalHandle, SetTimeoutHandle, clearInterval, clearTimeout, setInterval, setTimeout}
 import scala.scalajs.js
+import scala.collection.mutable.Map
+import scala.collection.mutable
 
 object AutoCookie extends Named {
   val CLICKS_PER_SEC = 3
@@ -107,13 +109,13 @@ object AutoCookie extends Named {
         }
         mainTimeout = Some(setTimeout(nextMilestone.timeToBuy)(loop(message)))
 
-
   def start(): Unit =
     if (stopped) {
       stopped = false
       val allBuyables = (buildings ++ upgrades ++ achievements).values.toSet
       buyables = allBuyables.filter(_.canEventuallyGet)
       //Update reserve note
+      //benchmark()
       loop("start")
       noteUpdateInterval = Some(setInterval(NOTE_UPDATE_FREQUENCY)(updateNotes()))
       engageHooks()

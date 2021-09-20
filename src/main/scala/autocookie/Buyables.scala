@@ -4,9 +4,11 @@ import autocookie.buyable.*
 import autocookie.buyable.Building.*
 import autocookie.buyable.upgrade.*
 
+import scala.collection.mutable.Map
+
 object Buyables {
   def createBuildings: Map[String, Building] =
-    Building.all.map(building => building.name -> new Building(building.name)).toMap
+    Building.all.map(building => building.name -> new Building(building.name)).to(Map)
 
   def createUpgrades: Map[String, Upgrade] =
     Seq(
@@ -629,7 +631,7 @@ object Buyables {
       new BuildingUpgradeWithSingleUpgradeRequired("Mystical energies", "Synergies Vol. II", new BuildingRequirement(Building.temple, 75), new BuildingRequirement(Building.prism, 75)),
       new BuildingUpgradeWithSingleUpgradeRequired("Magical botany", "Synergies Vol. II", new BuildingRequirement(Building.wizardTower, 75), new BuildingRequirement(Building.farm, 75)),
       //endregion
-    ).map(upgrade => upgrade.name -> upgrade).toMap
+    ).map(upgrade => upgrade.name -> upgrade).to(Map)
 
   def createAchievements: Map[String, Achievement] =
     Seq(
@@ -886,5 +888,5 @@ object Buyables {
       new Achievement("Base 10", Building.all.map(building => new BuildingRequirement(building, (Building.all.length - building.id.toInt) * 10)).toSeq: _*),
       new Achievement("Mathematician", Building.all.map(building => new BuildingRequirement(building, math.min(128, math.pow(2, Building.all.length - 1 - building.id).toInt))).toSeq: _*),
       //endregion
-    ).map(upgrade => upgrade.name -> upgrade).toMap
+    ).map(upgrade => upgrade.name -> upgrade).to(Map)
 }

@@ -4,8 +4,7 @@ import autocookie.buyable.{Achievement, Building, BuildingRequirement}
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.notes.Note
 import org.scalajs.dom.console
-import typings.cookieclicker.Game.{Buff, PseudoBoolean, Achievement as GameAchievement, GameObject as GameBuilding,
-  Upgrade as GameUpgrade}
+import typings.cookieclicker.Game.{Buff, PseudoBoolean, Achievement as GameAchievement, GameObject as GameBuilding, Upgrade as GameUpgrade}
 import typings.cookieclicker.cookieclickerBooleans.*
 import typings.cookieclicker.{cookieclickerNumbers, cookieclickerStrings}
 import typings.cookieclicker.global.Game
@@ -84,7 +83,7 @@ object Helpers:
     }
     numberString + termination
 
-  def amountOfNonCursors: Double = Game.ObjectsById.sumBy(_.amount) - Building.cursor.amount
+  def amountOfNonCursors: Int = (Game.ObjectsById.sumBy(_.amount) - Building.cursor.amount).toInt
 
   def hasOrIsChoice(upgradeName: String, choice: Option[String]): Boolean =
     val upgrade = Upgrade.getByName(upgradeName)
@@ -102,24 +101,28 @@ object Helpers:
         .getOrElse(0)
     }
 
-  def getKittenMultiplier(milk: Double, choice: Option[String] = None): Double = {
-    val kittenMultipliers: Map[String, Double] = Map(
-      "helpers" -> 0.1,
-      "workers" -> 0.125,
-      "engineers" -> 0.15,
-      "overseers" -> 0.175,
-      "managers" -> 0.2,
-      "accountants" -> 0.2,
-      "specialists" -> 0.2,
-      "experts" -> 0.2,
-      "consultants" -> 0.2,
-      "assistants to the regional manager" -> 0.175,
-      "marketeers" -> 0.15,
-      "analysts" -> 0.125,
-      "angels" -> 0.1,
-    )
+  def getGodMultiplier(godName: String)(multipliers: Seq[Double]): Double =
+    multipliers(getGodLevel(godName))
+
+  lazy val kittenMultipliers: Map[String, Double] = Map(
+    "Kitten helpers" -> 0.1,
+    "Kitten workers" -> 0.125,
+    "Kitten engineers" -> 0.15,
+    "Kitten overseers" -> 0.175,
+    "Kitten managers" -> 0.2,
+    "Kitten accountants" -> 0.2,
+    "Kitten specialists" -> 0.2,
+    "Kitten experts" -> 0.2,
+    "Kitten consultants" -> 0.2,
+    "Kitten assistants to the regional manager" -> 0.175,
+    "Kitten marketeers" -> 0.15,
+    "Kitten analysts" -> 0.125,
+    "Kitten angels" -> 0.1,
+  )
+
+  def getKittenMultiplier2(milk: Double, choice: Option[String] = None): Double = {
     val allKittensMultiplier = kittenMultipliers.foldLeft(1d) {
-      case (acc, (name, value)) if hasOrIsChoice(s"Kitten $name", choice) => acc * 1 + milk * value
+      case (acc, (name, value)) if hasOrIsChoice(name, choice) => acc * 1 + milk * value
       case (acc, _)                                                       => acc
     }
     val godMultiplier = getGodLevel("mother") match {
@@ -131,10 +134,41 @@ object Helpers:
     allKittensMultiplier * godMultiplier
   }
 
-  def profile(what: String)(f: => Unit): Unit =
+  //Implementing this with a map and a fold is twice as slow
+  def getKittenMultiplier(milk: Double, choice: Option[String] = None): Double =
+    var multiplier = 1D;
+    if hasOrIsChoice("Kitten helpers", choice) then multiplier *= 1 + milk * 0.1
+    if hasOrIsChoice("Kitten workers", choice) then multiplier *= 1 + milk * 0.125
+    if hasOrIsChoice("Kitten engineers", choice) then multiplier *= 1 + milk * 0.15
+    if hasOrIsChoice("Kitten overseers", choice) then multiplier *= 1 + milk * 0.175
+    if hasOrIsChoice("Kitten managers", choice) then multiplier *= 1 + milk * 0.2
+    if hasOrIsChoice("Kitten accountants", choice) then multiplier *= 1 + milk * 0.2
+    if hasOrIsChoice("Kitten specialists", choice) then multiplier *= 1 + milk * 0.2
+    if hasOrIsChoice("Kitten experts", choice) then multiplier *= 1 + milk * 0.2
+    if hasOrIsChoice("Kitten consultants", choice) then multiplier *= 1 + milk * 0.2
+    if hasOrIsChoice("Kitten assistants to the regional manager", choice) then multiplier *= 1 + milk * 0.175
+    if hasOrIsChoice("Kitten marketeers", choice) then multiplier *= 1 + milk * 0.15
+    if hasOrIsChoice("Kitten analysts", choice) then multiplier *= 1 + milk * 0.125
+    if hasOrIsChoice("Kitten angels", choice) then multiplier *= 1 + milk * 0.1
+
+    multiplier * getGodMultiplier("decadence")(Seq(1, 1.1, 1.05, 1.03))
+    /*val godLevel = getGodLevel("decadence")
+    if (godLevel == 1) multiplier *= 1.1
+    else if (godLevel == 2) multiplier *= 1.05
+    else if (godLevel == 3) multiplier *= 1.03
+    multiplier*/
+
+  def timedRunWithResult[A](f: => A): (A, Double) =
     val start = Date.now()
-    f
-    Logger.debug(s"$what took ${Date.now() - start} millis to run")
+    (f, Date.now() - start)
+
+  def timedRun(f: => Unit): Double =
+    timedRunWithResult(f)._2
+
+  def profile[A](what: String)(f: => A): A =
+    val (result, time) = timedRunWithResult(f)
+    Logger.debug(s"$what took $time millis to run")
+    result
 
   extension (gameAchievement: GameAchievement)
     def cloned: GameAchievement =
