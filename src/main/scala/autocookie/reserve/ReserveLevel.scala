@@ -6,7 +6,7 @@ import autocookie.buyable.Building
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.reserve.CookieEffect
 import autocookie.reserve.ReserveLevel.*
-import typings.cookieclicker.global.Game
+import cookieclicker.Game
 
 object ReserveLevel {
   def goldenCookieMultiplier: Double = {
@@ -19,8 +19,8 @@ object ReserveLevel {
     }
     if (Game.Has("Green yeast digestives")) mult *= 1.01
     if (Game.Has("Dragon fang")) mult *= 1.03
-    if (Game.elderWrath == 0) mult *= Game.eff("goldenCookieGain", 0)
-    else if (Game.elderWrath == 3) mult *= Game.eff("wrathCookieGain", 0)
+    if (Game.elderWrath == 0) mult *= Game.eff("goldenCookieGain")
+    else if (Game.elderWrath == 3) mult *= Game.eff("wrathCookieGain")
     //If elderwrath is between 1 and 3 we don't apply bonus because it depends on the cookie we get.
     mult
   }

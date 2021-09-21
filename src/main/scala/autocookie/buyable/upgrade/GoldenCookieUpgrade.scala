@@ -4,7 +4,7 @@ import autocookie.AutoCookie
 import autocookie.Helpers.toBoolean
 import autocookie.buyable.{Achievement, BuildingRequirement}
 import autocookie.reserve.Reserve
-import typings.cookieclicker.global.Game
+import cookieclicker.Game
 
 class GoldenCookieUpgrade(override val name: String) extends Upgrade {
   override def estimatedReturnPercent(newBrokers: Int): Double = 1D

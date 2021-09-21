@@ -4,8 +4,8 @@ import autocookie.Helpers.*
 import autocookie.buyable.traits.CookiePower
 import autocookie.buyable.upgrade.{CookieUpgrade, Upgrade}
 import autocookie.buyable.{Building, BuildingRequirement}
-import typings.cookieclicker.Game.GameObject as GameBuilding
-import typings.cookieclicker.global.Game
+import cookieclicker.buyables.GameBuilding
+import cookieclicker.Game
 
 import scala.collection.mutable
 

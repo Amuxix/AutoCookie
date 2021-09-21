@@ -1,12 +1,12 @@
 package autocookie.buyable
 
 import autocookie.Helpers
-import typings.cookieclicker.global.Game
-import typings.cookieclicker.Game.GameObject as GameBuilding
+import cookieclicker.Game
+import cookieclicker.buyables.GameBuilding
 
 object BuildingRequirement {
   def generateRequirementsForAllBuildings(amount: Int): Seq[BuildingRequirement] =
-    Game.ObjectsById.map(building => new BuildingRequirement(building, amount)).toSeq
+    Game.buildings.map(building => new BuildingRequirement(building, amount)).toSeq
 }
 
 case class BuildingRequirement(buyable: GameBuilding, override val amount: Int) extends Building(buyable.name) {

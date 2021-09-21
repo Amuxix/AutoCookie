@@ -2,8 +2,8 @@ package autocookie.buyable
 
 import autocookie.Helpers.{convertNumeral, unlockRequirements}
 import autocookie.{AutoCookie, Helpers, Logger}
-import typings.cookieclicker.Game.GameObject as GameBuilding
-import typings.cookieclicker.global.Game
+import cookieclicker.buyables.GameBuilding
+import cookieclicker.Game
 
 import scala.scalajs.js
 
@@ -12,30 +12,30 @@ object Building {
     AutoCookie.buildings.get(name)
 
   def getGameBuildingByName(name: String): GameBuilding =
-    Game.ObjectsById
+    Game.buildings
       .find(_.name == name)
       .getOrElse(throw new Exception(s"Unable to find Game Building named \"$name\""))
 
-  lazy val cursor = Game.Objects("Cursor")
-  lazy val grandma = Game.Objects("Grandma")
-  lazy val farm = Game.Objects("Farm")
-  lazy val mine = Game.Objects("Mine")
-  lazy val factory = Game.Objects("Factory")
-  lazy val bank = Game.Objects("Bank")
-  lazy val temple = Game.Objects("Temple")
-  lazy val wizardTower = Game.Objects("Wizard tower")
-  lazy val shipment = Game.Objects("Shipment")
-  lazy val alchemyLab = Game.Objects("Alchemy lab")
-  lazy val portal = Game.Objects("Portal")
-  lazy val timeMachine = Game.Objects("Time machine")
-  lazy val antimatterCondenser = Game.Objects("Antimatter condenser")
-  lazy val prism = Game.Objects("Prism")
-  lazy val chancemaker = Game.Objects("Chancemaker")
-  lazy val fractalEngine = Game.Objects("Fractal engine")
-  lazy val javascriptConsole = Game.Objects("Javascript console")
-  lazy val idleverse = Game.Objects("Idleverse")
+  lazy val cursor = Game.buildingsByName("Cursor")
+  lazy val grandma = Game.buildingsByName("Grandma")
+  lazy val farm = Game.buildingsByName("Farm")
+  lazy val mine = Game.buildingsByName("Mine")
+  lazy val factory = Game.buildingsByName("Factory")
+  lazy val bank = Game.buildingsByName("Bank")
+  lazy val temple = Game.buildingsByName("Temple")
+  lazy val wizardTower = Game.buildingsByName("Wizard tower")
+  lazy val shipment = Game.buildingsByName("Shipment")
+  lazy val alchemyLab = Game.buildingsByName("Alchemy lab")
+  lazy val portal = Game.buildingsByName("Portal")
+  lazy val timeMachine = Game.buildingsByName("Time machine")
+  lazy val antimatterCondenser = Game.buildingsByName("Antimatter condenser")
+  lazy val prism = Game.buildingsByName("Prism")
+  lazy val chancemaker = Game.buildingsByName("Chancemaker")
+  lazy val fractalEngine = Game.buildingsByName("Fractal engine")
+  lazy val javascriptConsole = Game.buildingsByName("Javascript console")
+  lazy val idleverse = Game.buildingsByName("Idleverse")
 
-  lazy val all: Seq[GameBuilding] = Game.ObjectsById.toSeq
+  lazy val all: Seq[GameBuilding] = Game.buildings.toSeq
 }
 
 class Building(val name: String) extends Buyable {
@@ -50,6 +50,6 @@ class Building(val name: String) extends Buyable {
     val text = s"Bought the ${convertNumeral(amount + 1)} ${name}"
     Logger.log(text)
     Game.Notify(text, "")
-    gameBuyable.buy(1D)
+    gameBuyable.buy(1)
     Game.buyMode = oldBuyMode
 }

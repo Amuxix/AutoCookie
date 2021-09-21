@@ -6,7 +6,7 @@ import autocookie.notes.reserve.ReserveNote.buttons
 import autocookie.reserve.{Reserve, ReserveGroup, ReserveLevel}
 import org.scalajs.dom.document.createElement
 import org.scalajs.dom.raw.{HTMLAnchorElement, HTMLDivElement}
-import typings.cookieclicker.global.Beautify
+import cookieclicker.global.Beautify
 
 object ReserveNote extends Note {
   lazy val buttons: Seq[Button] = ReserveGroup.values.toSeq.map(new Button(_))

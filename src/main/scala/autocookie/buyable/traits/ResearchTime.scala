@@ -1,7 +1,7 @@
 package autocookie.buyable.traits
 
 import autocookie.buyable.{Achievement, BuildingRequirement, Buyable}
-import typings.cookieclicker.global.Game
+import cookieclicker.Game
 import autocookie.Helpers.toBoolean
 import autocookie.buyable.upgrade.Upgrade
 
@@ -15,7 +15,7 @@ object ResearchTime {
 
   def nextResearch: Option[Upgrade] =
     val nextResearchId = Game.nextResearch.toInt
-    Option.when(nextResearchId > 0)(Upgrade.getByName(Game.UpgradesById(nextResearchId).name))
+    Option.when(nextResearchId > 0)(Upgrade.getByName(Game.upgrades(nextResearchId).name))
 }
 
 trait ResearchTime {

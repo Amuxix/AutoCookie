@@ -2,7 +2,7 @@ package autocookie
 
 import autocookie.buyable.Buyable
 import autocookie.Helpers.sumBy
-import typings.cookieclicker.global.Game
+import cookieclicker.Game
 
 object Investment {
   def apply(buyable: Buyable, cookies: Double): Investment =
@@ -40,7 +40,7 @@ object EmptyInvestment extends Investment {
 
 object RealInvestment {
   def apply(buyable: Buyable, cookies: Double): RealInvestment = {
-    val goods = StockMarket.stableActiveGoods.sortBy(_.`val`)(Ordering[Double].reverse)
+    val goods = StockMarket.stableActiveGoods.sortBy(_.value)(Ordering[Double].reverse)
     val fullStockPrice = goods.foldLeft(0D) { case (total, good) =>
       val price = StockMarket.price(good)
       val stockToFillWarehouse = StockMarket.maxStock(good) - good.stock

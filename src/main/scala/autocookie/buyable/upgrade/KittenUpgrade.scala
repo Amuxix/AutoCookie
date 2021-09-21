@@ -3,7 +3,7 @@ package autocookie.buyable.upgrade
 import autocookie.Helpers
 import autocookie.Helpers.getKittenMultiplier
 import autocookie.buyable.{Achievement, BuildingRequirement}
-import typings.cookieclicker.global.Game
+import cookieclicker.Game
 
 class KittenUpgrade(override val name: String, milkRequired: Double) extends Upgrade {
   override protected def calculateCpsIncrease(

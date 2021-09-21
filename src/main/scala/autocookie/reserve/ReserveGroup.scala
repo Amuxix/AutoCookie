@@ -1,7 +1,7 @@
 package autocookie.reserve
 
 import autocookie.Helpers
-import typings.cookieclicker.global.Game
+import cookieclicker.Game
 import ReserveLevel.*
 
 object ReserveGroup:

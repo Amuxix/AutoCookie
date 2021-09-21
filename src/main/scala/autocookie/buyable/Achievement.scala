@@ -1,8 +1,8 @@
 package autocookie.buyable
 
 import autocookie.{AutoCookie, Helpers, Logger}
-import typings.cookieclicker.Game.{AchievementPool, PseudoBoolean, Achievement as GameAchievement}
-import typings.cookieclicker.global.Game
+import cookieclicker.buyables.GameAchievement
+import cookieclicker.Game
 import autocookie.Helpers.*
 import org.scalajs.dom.console
 import autocookie.buyable.traits.{BuildingsRequired, UnlocksAchievment}
@@ -12,9 +12,8 @@ object Achievement {
     .getOrElse(name, throw new Exception(s"Unable to find Achievement named \"$name\""))
 
   def getGameAchievementByName(name: String): GameAchievement =
-    Game.AchievementsById
-      .find(_.name.equalsIgnoreCase(name))
-      .getOrElse(throw new Exception(s"Unable to find Game Achievement named \"$name\""))
+    Game.achievementsByName(name)
+      //.getOrElse(throw new Exception(s"Unable to find Game Achievement named \"$name\""))
 }
 
 class Achievement(

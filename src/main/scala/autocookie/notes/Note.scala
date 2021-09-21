@@ -7,9 +7,8 @@ import autocookie.Helpers.*
 import autocookie.Helpers.given
 import org.scalajs.dom.raw.{HTMLDivElement, HTMLElement}
 import org.scalajs.dom.document.createElement
-import typings.cookieclicker.cookieclickerStrings
-import typings.cookieclicker.global.Game
-import typings.cookieclicker.Game.{Achievement as GameAchievement}
+import cookieclicker.Game
+import cookieclicker.buyables.GameAchievement
 
 import scala.language.implicitConversions
 
@@ -49,14 +48,14 @@ abstract class Note extends Hideable {
     this
 
   def drawTooltip(buyable: Upgrade | Achievement) =
-    val origin = "this".asInstanceOf[typings.cookieclicker.Game.TooltipOrigins]
     buyable match {
       case upgrade: Upgrade         =>
-        Game.tooltip.draw(html, Game.crateTooltip(upgrade.gameBuyable, cookieclickerStrings.stats), origin)
+        Game.tooltip.draw(html, Game.crateTooltip(upgrade.gameBuyable, "stats"), "this")
       case achievement: Achievement =>
-        val gameAchievement: GameAchievement = achievement.gameBuyable.cloned
-        gameAchievement.won = true
-        Game.tooltip.draw(html, Game.crateTooltip(gameAchievement, cookieclickerStrings.stats), origin)
+        /*val gameAchievement: GameAchievement = achievement.gameBuyable.cloned
+        gameAchievement.won = true*/
+        val gameAchievement: GameAchievement = achievement.gameBuyable
+        Game.tooltip.draw(html, Game.crateTooltip(gameAchievement, "stats"), "this")
     }
 
   def update(): Unit

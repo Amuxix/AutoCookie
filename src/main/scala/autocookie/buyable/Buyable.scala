@@ -7,8 +7,8 @@ import autocookie.buyable.upgrade.Upgrade
 import autocookie.buyable.traits.*
 import autocookie.buyable.Achievement
 import autocookie.reserve.Reserve
-import typings.cookieclicker.Game.{PseudoBoolean, Achievement as GameAchievement, GameObject as GameBuilding, Upgrade as GameUpgrade}
-import typings.cookieclicker.global.Game
+import cookieclicker.buyables.*
+import cookieclicker.Game
 
 import scala.concurrent.duration.*
 import scala.scalajs.js.{Date, undefined}

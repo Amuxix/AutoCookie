@@ -6,17 +6,15 @@ import autocookie.Helpers
 import autocookie.Helpers.{amountOfNonCursors, hasOrIsChoice, toBoolean}
 import autocookie.buyable.{Achievement, BuildingRequirement}
 import org.scalajs.dom.console
-import typings.cookieclicker.Game.{Buff, PseudoBoolean}
-import typings.cookieclicker.cookieclickerNumbers
-import typings.cookieclicker.global.Game
+import cookieclicker.Buff
+import cookieclicker.Game
 
 import scala.language.implicitConversions
 import scala.scalajs.js
 import scala.util.Try
 
 object MouseUpgrade {
-  def clickBuffs =
-    Game.buffs.filter(_.multCpS.exists(_ > 0))
+  def clickBuffs = Game.buffs.toArray.filter(_.multCpS.exists(_ > 0))
 }
 
 class MouseUpgrade(override val name: String) extends Upgrade {

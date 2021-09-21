@@ -1,7 +1,7 @@
 package autocookie.buyable.traits
 
 import autocookie.buyable.upgrade.Upgrade
-import typings.cookieclicker.Game.Upgrade as GameUpgrade
+import cookieclicker.buyables.GameUpgrade
 
 import scala.scalajs.js
 

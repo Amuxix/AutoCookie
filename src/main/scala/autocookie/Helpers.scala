@@ -4,10 +4,8 @@ import autocookie.buyable.{Achievement, Building, BuildingRequirement}
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.notes.Note
 import org.scalajs.dom.console
-import typings.cookieclicker.Game.{Buff, PseudoBoolean, Achievement as GameAchievement, GameObject as GameBuilding, Upgrade as GameUpgrade}
-import typings.cookieclicker.cookieclickerBooleans.*
-import typings.cookieclicker.{cookieclickerNumbers, cookieclickerStrings}
-import typings.cookieclicker.global.Game
+import cookieclicker.buyables.*
+import cookieclicker.Game
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -19,17 +17,22 @@ import scala.scalajs.js.JSConverters.*
 import scala.util.{Random, Try}
 
 object Helpers:
-  type GameBuyable = GameBuilding | GameUpgrade | GameAchievement
+  //type GameBuyable = GameBuilding | GameUpgrade | GameAchievement
 
-  given pseudoToBoolean: Conversion[PseudoBoolean, Boolean] = _.eq(PseudoBoolean.`1`)
+  //given pseudoToBoolean: Conversion[PseudoBoolean, Boolean] = _.eq(PseudoBoolean.`1`)
 
-  given Conversion[Boolean, PseudoBoolean] = b => if b then PseudoBoolean.`1` else PseudoBoolean.`0`
+  //given Conversion[Boolean, PseudoBoolean] = b => if b then PseudoBoolean.`1` else PseudoBoolean.`0`
 
-  implicit def toBoolean(b: Boolean | PseudoBoolean): Boolean =
+  /*implicit def toBoolean(b: Boolean | PseudoBoolean): Boolean =
     if b.isInstanceOf[Boolean] then
       b
     else
-      pseudoToBoolean(b.asInstanceOf[PseudoBoolean])
+      pseudoToBoolean(b.asInstanceOf[PseudoBoolean])*/
+
+  implicit def toBoolean(b: 0 | 1): Boolean = b match {
+    case 0 => false
+    case 1 => true
+  }
 
   extension (number: Double)
     def round(precision: Int = 2): Double =
@@ -83,7 +86,7 @@ object Helpers:
     }
     numberString + termination
 
-  def amountOfNonCursors: Int = (Game.ObjectsById.sumBy(_.amount) - Building.cursor.amount).toInt
+  def amountOfNonCursors: Int = (Game.buildings.sumBy(_.amount) - Building.cursor.amount).toInt
 
   def hasOrIsChoice(upgradeName: String, choice: Option[String]): Boolean =
     val upgrade = Upgrade.getByName(upgradeName)
@@ -91,7 +94,7 @@ object Helpers:
 
   def cps: Double = Game.cookiesPs * (1 - Game.cpsSucked)
 
-  def getGodLevel(godName: String): Int =
+/*  def getGodLevel(godName: String): Int =
     import cookieclickerNumbers._
     Game.hasGod.fold(0) { level =>
       Try(level.asInstanceOf[`false`]).map(_ => 0)
@@ -99,6 +102,14 @@ object Helpers:
         .orElse(Try(level.asInstanceOf[`2`]).map(_ => 2))
         .orElse(Try(level.asInstanceOf[`3`]).map(_ => 3))
         .getOrElse(0)
+    }*/
+
+  def getGodLevel(godName: String): Int =
+    Game.hasGod(godName) match {
+      case false => 0
+      case 1 => 1
+      case 2 => 2
+      case 3 => 3
     }
 
   def getGodMultiplier(godName: String)(multipliers: Seq[Double]): Double =
@@ -171,8 +182,8 @@ object Helpers:
     result
 
   extension (gameAchievement: GameAchievement)
-    def cloned: GameAchievement =
-      GameAchievement(
+    def cloned: GameAchievement = ???
+      /*GameAchievement(
         gameAchievement.baseDesc,
         gameAchievement.click,
         gameAchievement.desc,
@@ -185,7 +196,7 @@ object Helpers:
         gameAchievement.toggle,
         gameAchievement.vanilla,
         gameAchievement.won,
-      )
+      )*/
 
 /*
 implicit class StatisticalOps(seq: Seq[Double]) {

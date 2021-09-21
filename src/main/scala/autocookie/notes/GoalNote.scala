@@ -3,9 +3,8 @@ package autocookie.notes
 import autocookie.AutoCookie
 import org.scalajs.dom.raw.HTMLSpanElement
 import org.scalajs.dom.document.createElement
-import typings.cookieclicker.global.Game
-import typings.cookieclicker.Game.{AchievementPool, PseudoBoolean, Achievement as GameAchievement}
-import typings.cookieclicker.cookieclickerStrings
+import cookieclicker.Game
+import cookieclicker.buyables.GameAchievement
 import autocookie.Helpers.*
 import autocookie.Helpers.given
 import autocookie.buyable.upgrade.Upgrade

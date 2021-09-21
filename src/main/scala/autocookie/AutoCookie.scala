@@ -10,8 +10,9 @@ import autocookie.notes.{GoalNote, NextBuyNote, Note, NoteArea}
 import autocookie.reserve.Reserve
 import org.scalajs.dom.raw.HTMLElement
 import org.scalajs.dom.{console, document}
-import typings.cookieclicker.global.Game
-import typings.cookieclicker.global.Beautify
+import cookieclicker.Game
+import cookieclicker.Mod
+import cookieclicker.global.Beautify
 
 import scala.concurrent.duration.*
 import scala.scalajs.js.annotation.*
@@ -20,7 +21,7 @@ import scala.scalajs.js
 import scala.collection.mutable.Map
 import scala.collection.mutable
 
-object AutoCookie extends Named {
+object AutoCookie extends Mod {
   val CLICKS_PER_SEC = 3
   val NOTE_UPDATE_FREQUENCY = 500.millis
 
@@ -125,7 +126,7 @@ object AutoCookie extends Named {
   def save(): String = ""
 
   def init(): Unit =
-    Game.Notify("Auto Cookie started!", "", (), 5)
+    Game.Notify("Auto Cookie started!", "")
     document.getElementById("versionNumber").asInstanceOf[HTMLElement].style.display = "none"
     createNotes()
     start()

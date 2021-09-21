@@ -7,7 +7,7 @@ import autocookie.{AutoCookie, Helpers}
 import org.scalajs.dom.raw.{HTMLAnchorElement, HTMLDivElement, HTMLElement}
 import org.scalajs.dom.document.createElement
 import org.scalajs.dom.console
-import typings.cookieclicker.global.Game
+import cookieclicker.Game
 
 import scala.concurrent.duration.*
 import scala.scalajs.js.Date

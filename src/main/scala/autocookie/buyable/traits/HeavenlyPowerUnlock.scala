@@ -3,7 +3,7 @@ package autocookie.buyable.traits
 import autocookie.Helpers.cps
 import autocookie.buyable.{Achievement, BuildingRequirement}
 import autocookie.buyable.upgrade.Upgrade
-import typings.cookieclicker.global.Game
+import cookieclicker.Game
 
 trait HeavenlyPowerUnlock {
   this: Upgrade =>

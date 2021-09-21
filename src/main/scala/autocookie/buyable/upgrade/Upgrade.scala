@@ -4,14 +4,14 @@ import autocookie.{AutoCookie, Helpers, Logger}
 import autocookie.buyable.*
 import autocookie.Helpers.*
 import autocookie.buyable.traits.UpgradesRequired
-import typings.cookieclicker.Game.Upgrade as GameUpgrade
-import typings.cookieclicker.global.Game
+import cookieclicker.buyables.GameUpgrade
+import cookieclicker.Game
 
 object Upgrade {
   def getByName(name: String): Upgrade = AutoCookie.upgrades.getOrElse(name, throw new Exception(s"Unable to find Upgrade named \"$name\""))
 
   def getGameUpgradeByName(name: String): GameUpgrade =
-    Game.UpgradesById.find(_.name == name).getOrElse(throw new Exception(s"Unable to find Game Upgrade named \"$name\""))
+    Game.upgradesByName(name)//.find(_.name == name).getOrElse(throw new Exception(s"Unable to find Game Upgrade named \"$name\""))
 }
 
 abstract class Upgrade extends Buyable {

@@ -2,7 +2,7 @@ package autocookie.buyable.traits
 
 import autocookie.buyable.*
 import autocookie.buyable.upgrade.Upgrade
-import typings.cookieclicker.Game.GameObject as GameBuilding
+import cookieclicker.buyables.GameBuilding
 
 object BuildingsRequired {
   extension (buildingRequirements: Set[BuildingRequirement])
