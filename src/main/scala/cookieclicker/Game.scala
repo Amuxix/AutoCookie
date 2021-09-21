@@ -63,8 +63,8 @@ object Game extends js.Object {
   def crateTooltip(`object`: GameBuyable, context: String): String = js.native
   def hasAura(name: String): Boolean = js.native
 
-  def registerHook(hookId: String, f: () => Unit): Unit = js.native
+  def registerHook(hookId: String, f: js.Function): Unit = js.native
   def registerMod(id: String, mod: GameMod): Unit = js.native
 
-  def removeHook(hookId: String, f: () => Unit): Unit = js.native
+  def removeHook(hookId: String, f: js.Function): Unit = js.native
 }

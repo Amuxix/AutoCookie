@@ -11,8 +11,7 @@ import autocookie.notes.{GoalNote, NextBuyNote, Note, NoteArea}
 import autocookie.reserve.Reserve
 import org.scalajs.dom.raw.HTMLElement
 import org.scalajs.dom.{console, document}
-import cookieclicker.Game
-import cookieclicker.Mod
+import cookieclicker.{Game, Mod}
 import cookieclicker.global.Beautify
 
 import scala.concurrent.duration.*
@@ -21,8 +20,11 @@ import scala.scalajs.js.timers.{SetIntervalHandle, SetTimeoutHandle, clearInterv
 import scala.scalajs.js
 import scala.collection.mutable.Map
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
-object AutoCookie extends Mod {
+object AutoCookie extends Mod with AutoSaveable {
+  val version = 6
+
   val CLICKS_PER_SEC = 3
   val NOTE_UPDATE_FREQUENCY = 500.millis
 
@@ -123,9 +125,41 @@ object AutoCookie extends Mod {
       NoteArea.show()
     }
 
-  def load(save: String): Unit = ()
+  override def autoLoad(save: String, version: Float): Unit =
+    def load() =
+      val split = save.split("\\|")
+      for {
+        reserveSave <- Try(split(0))
+        buyLockedText <- Try(split(1))
+        buyLocked <- buyLockedText match {
+          case "false" => Success(false)
+          case "true" => Success(true)
+          case _ => Failure(new Exception("Failed to parse buy locked state"))
+        }
+        _ = ReserveNote.load(reserveSave)
+        _ = this.buyLocked = buyLocked
+        _ = log("Load Successful")
+      } yield ()
 
-  def save(): String = ""
+    var interval: Option[SetIntervalHandle] = None
+    //At this points buildings have already loaded but cookies per second has not
+    if Game.BuildingsOwned == 0 then //We have no buildings, we are ready to go
+      debug("Loading with no buildings")
+      load()
+    else
+      interval = Some(
+        setInterval(50.millis) {
+          if Game.unbuffedCps > 0 then
+            load() //Wait for Game.unbuffedCps to be updated
+            interval.foreach(clearInterval)
+        }
+      )
+
+  override def autoSave: String =
+    Seq(
+      ReserveNote.save,
+      buyLocked,
+    ).mkString("|")
 
   def init(): Unit =
     Game.Notify("Auto Cookie started!", "")

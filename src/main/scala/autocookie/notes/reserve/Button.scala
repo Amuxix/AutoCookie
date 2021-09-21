@@ -6,7 +6,7 @@ import autocookie.reserve.{Reserve, ReserveGroup, ReserveLevel, CookieEffect}
 import org.scalajs.dom.raw.HTMLAnchorElement
 import org.scalajs.dom.document.createElement
 
-class Button(group: ReserveGroup, index: Int = 0) extends Hideable {
+class Button(group: ReserveGroup) extends Hideable {
   override val html: HTMLAnchorElement =
     val button = createElement("a").asInstanceOf[HTMLAnchorElement]
     button.textContent = group.icon
@@ -16,7 +16,7 @@ class Button(group: ReserveGroup, index: Int = 0) extends Hideable {
 
   override val displayType: String = "inline-block"
 
-  var reserveLevelIndex = index
+  var reserveLevelIndex = 0
 
   def unlocked: Boolean = group.reserveLevels.count(_.isUnlocked()) > 1
 
@@ -25,13 +25,18 @@ class Button(group: ReserveGroup, index: Int = 0) extends Hideable {
     index % unlockedReserveLevels.length
     unlockedReserveLevels(index)
 
-  def click() =
-    val unlockedReserveLevels = group.reserveLevels.filter(_.isUnlocked())
+  private def unlockedReserveLevels = group.reserveLevels.filter(_.isUnlocked())
+
+  def setReverseLevelId(id: Int): Unit =
+    val unlockedReserveLevels = this.unlockedReserveLevels
     val oldReserveLevel = unlockedReserveLevels(reserveLevelIndex)
-    reserveLevelIndex = (reserveLevelIndex + 1) % unlockedReserveLevels.length
+    reserveLevelIndex = id % unlockedReserveLevels.length
     val reserveLevel = unlockedReserveLevels(reserveLevelIndex)
     html.style.textShadow = Button.glow(reserveLevel)
     Reserve.changeReserveLevels(oldReserveLevel, reserveLevel)
+
+
+  def click() = setReverseLevelId(reserveLevelIndex + 1)
 }
 
 object Button {
