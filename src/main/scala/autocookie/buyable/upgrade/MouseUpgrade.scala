@@ -1,8 +1,6 @@
 package autocookie.buyable.upgrade
 
-import autocookie.AutoCookie
-import autocookie.Helpers
-import autocookie.Helpers
+import autocookie.{AutoCookie, EmptyInvestment, Helpers, Investment}
 import autocookie.Helpers.{amountOfNonCursors, hasOrIsChoice, toBoolean}
 import autocookie.buyable.{Achievement, BuildingRequirement}
 import org.scalajs.dom.console
@@ -18,6 +16,9 @@ object MouseUpgrade {
 }
 
 class MouseUpgrade(override val name: String) extends Upgrade {
+  override def estimatedReturnPercent(newBrokers: Int): Double = 1D
+  override protected def createInvestment: Investment = EmptyInvestment
+
   override protected def calculateCpsIncrease(
     buildingRequirements: Set[BuildingRequirement],
     upgradeRequirements: Set[Upgrade],
@@ -41,9 +42,9 @@ class MouseUpgrade(override val name: String) extends Upgrade {
     "Nonillion fingers" -> 20,
   )
   println("fingersAdd")
-  val fingersAdd = if (Game.Has("Thousand fingers")) then
+  val fingersAdd = if (Game.upgradeBought("Thousand fingers")) then
     amountOfNonCursors * fingerAdd.foldLeft(0.1) {
-      case (totalAdd, (name, multiplier)) if Game.Has(name) => totalAdd * multiplier
+      case (totalAdd, (name, multiplier)) if Game.upgradeBought(name) => totalAdd * multiplier
       case (totalAdd, _) => totalAdd
     }
   else
@@ -71,7 +72,7 @@ class MouseUpgrade(override val name: String) extends Upgrade {
     "Ambidextrous"
   )
   println("clickMultiplier")
-  val clickMultiplier = math.pow(2, multipliers.count(Game.Has(_)))
+  val clickMultiplier = math.pow(2, multipliers.count(Game.upgradeBought(_)))
   println("buffMultipliers")
   val buffMultipliers = MouseUpgrade.clickBuffs.foldLeft(1D)((total, buff) => total * buff.arg1.getOrElse(1D))
 

@@ -44,8 +44,10 @@ object Game extends js.Object {
   //val wrinklers: js.Array[Wrinkler]= js.native
   val BuildingsOwned: Double = js.native
 
-  def Has(what: String): Boolean = js.native
-  def HasAchiev(what: String): Boolean = js.native
+  @JSName("Has")
+  def upgradeBought(upgradeName: String): 0 | 1 = js.native
+  @JSName("HasAchiev")
+  def achievementWon(what: String): 0 | 1 = js.native
   def Win(what: String | js.Array[String]): Boolean = js.native
   def Unlock(what: String | js.Array[String]): Boolean = js.native
   def ComputeCps(base: Double, mult: Double, bonus: Double): Double = js.native

@@ -2487,7 +2487,7 @@ class StockMarket {
   }
 
   static get activeGoods(): Array<Good> {
-    return StockMarket.game.goodsById.flatMap(good => good.active ? [good] : [])
+    return StockMarket.game.goodsById.filter(good => good.active)
   }
 
   private static isGoodStableOrTrendingUp(good: Good): boolean {

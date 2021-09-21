@@ -1,7 +1,6 @@
 package autocookie.reserve
 
 import autocookie.Helpers
-import autocookie.Helpers
 import autocookie.buyable.Building
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.reserve.CookieEffect
@@ -17,8 +16,8 @@ object ReserveLevel {
     } else if (Game.elderWrath == 0) {
       mult *= 1 + Game.auraMult("Ancestral Metamorphosis") * 0.1
     }
-    if (Game.Has("Green yeast digestives")) mult *= 1.01
-    if (Game.Has("Dragon fang")) mult *= 1.03
+    if (Game.upgradeBought("Green yeast digestives")) mult *= 1.01
+    if (Game.upgradeBought("Dragon fang")) mult *= 1.03
     if (Game.elderWrath == 0) mult *= Game.eff("goldenCookieGain")
     else if (Game.elderWrath == 3) mult *= Game.eff("wrathCookieGain")
     //If elderwrath is between 1 and 3 we don't apply bonus because it depends on the cookie we get.
@@ -52,7 +51,7 @@ object ReserveLevel {
   lazy val goldenCookieUpgrades = Seq("Lucky day", "Serendipity", "Get lucky").map(Upgrade.getByName)
 
   def chainIsUnlocked() = Game.cookiesEarned >= 100000
-  def bakedGoodsIsUnlocked() = Building.wizardTower.level > 0
+  def bakedGoodsIsUnlocked() = Building.wizardTower.level > 0 && Building.wizardTower.amount > 0
   def frenzyIsUnlocked() = Game.elderWrath < 3
   def dragonHarvestIsUnlocked() = Game.hasAura("Reaper of Fields")
   def allGoldenCookieUpgradesOwned() = goldenCookieUpgrades.forall(_.owned)

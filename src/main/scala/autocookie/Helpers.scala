@@ -44,7 +44,7 @@ object Helpers:
 
   def unlockRequirements(): Unit = Game.UnlockAt.foreach { unlock =>
     val enoughCookies = Game.cookiesEarned >= unlock.cookies
-    val notOwned = !unlock.require.fold(false)(req => !Game.Has(req) && !Game.HasAchiev(req))
+    val notOwned = !unlock.require.fold(false)(req => !Game.upgradeBought(req) && !Game.achievementWon(req))
     val inSeason = !unlock.season.fold(false)(Game.season != _)
     if (enoughCookies && notOwned && inSeason) {
       Game.Unlock(unlock.name)
@@ -198,15 +198,15 @@ object Helpers:
         gameAchievement.won,
       )*/
 
-/*
-implicit class StatisticalOps(seq: Seq[Double]) {
 
-  def stdDev: Double = {
-    val mean = seq.sum / seq.length
-    val squared = seq.map(n => Math.pow(n - mean, 2))
-    Math.sqrt(squared.sum / (squared.length - 1))
-  }
-}
+  extension (seq: Seq[Double])
+    def stdDev: Double =
+      val mean = seq.sum / seq.length
+      val squared = seq.map(n => math.pow(n - mean, 2))
+      math.sqrt(squared.sum / (squared.length - 1))
+
+/*
+
 
 def logMissingAchievements(): Unit = Game.AchievementsById.foreach(achievement => if (Achievement.findByName
 (achievement.name).isEmpty) { console.log(achievement) })

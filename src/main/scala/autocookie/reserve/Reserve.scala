@@ -1,6 +1,7 @@
 package autocookie.reserve
 
-import autocookie.AutoCookie
+import autocookie.LoopReason.ReserveLevelChanged
+import autocookie.{AutoCookie, LoopReason}
 import autocookie.reserve.ReserveLevel.Disabled
 
 object Reserve {
@@ -22,5 +23,5 @@ object Reserve {
   def changeReserveLevels(remove: ReserveLevel, add: ReserveLevel): Unit =
     possibleLevels = possibleLevels - remove + add
     update()
-    AutoCookie.loop("Reserve levels changed")
+    AutoCookie.loop(ReserveLevelChanged)
 }

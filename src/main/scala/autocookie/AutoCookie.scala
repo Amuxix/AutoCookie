@@ -2,6 +2,7 @@ package autocookie
 
 import autocookie.Logger.*
 import autocookie.Helpers.*
+import autocookie.LoopReason.*
 import autocookie.buyable.*
 import autocookie.buyable.Building.*
 import autocookie.buyable.upgrade.*
@@ -25,11 +26,6 @@ object AutoCookie extends Mod {
   val CLICKS_PER_SEC = 3
   val NOTE_UPDATE_FREQUENCY = 500.millis
 
-  val STOCK_MARKET_MAX_STD_DEV = 0.01
-  val STOCK_MARKET_STABILITY_THRESHOLD = 0.03
-  val STOCK_MARKET_STABILITY_MIN_PRICES = 5
-  val STOCK_MARKET_STABILITY_MAX_PRICES = 10
-
   var stopped = true
   var buyLocked = true
   var buying = false
@@ -52,7 +48,7 @@ object AutoCookie extends Mod {
 
   def toggleBuyLock(): Unit =
     buyLocked = !buyLocked
-    loop(s"Set buy lock to $buyLocked")
+    loop(BuyLockToggle(buyLocked))
 
   def createNotes(): Unit =
     val notes = document.getElementById("notes")
@@ -67,28 +63,34 @@ object AutoCookie extends Mod {
     val cps = Helpers.cps
     if lastCps != cps then
       lastCps = cps
-      setTimeout(0)(loop("Cookies per second changed"))
+      setTimeout(0)(loop(CPSChanged))
     notes.foreach(_.update())
   //document.getElementById("specialPopup").style.bottom = `${25 + 37 * this.notesShown}px`
 
   def engageHooks(): Unit =
-    Game.registerHook("click", () => loop("Big Cookie clicked"))
-    document.getElementById("store")
-      .addEventListener("click", (e) => loop("Store clicked")) //Hook store items and buildings
+    Game.registerHook("click", () => loop(BigCookieClicked))
+    //document.getElementById("store").addEventListener("click", (e) => loop("Store clicked")) //Hook store items and buildings
     document.getElementById("shimmers")
-      .addEventListener("click", (e) => setTimeout(50.millis)(loop("Golden Cookie clicked"))) //Hook golden cookie clicks
+      .addEventListener("click", (e) => setTimeout(50.millis)(loop(GoldenCookieClicked))) //Hook golden cookie clicks
 
-  def loop(message: String): Unit =
-    debug(s"Loop: $message")
+  def loop(reason: LoopReason): Unit =
+    debug(s"Loop: ${reason.message}")
     if stopped then return
     if mainTimeout.nonEmpty then mainTimeout.foreach(clearTimeout)
-    Reserve.update()
-    profile("Update")(buyables.foreach(_.update()))
-    val newBestBuyable = buyables.minBy(_.payback)
-    if bestBuyable != newBestBuyable then
-      newBestBuyable.resetOriginalBuyTime()
-      bestBuyable = newBestBuyable
-    bestBuyable.updateInvestmentAndBuyTime()
+    reason match
+      case reason if reason.CPSChanged =>
+        Reserve.update()
+        profile("Update")(buyables.foreach(_.update()))
+        val newBestBuyable = buyables.minBy(_.payback)
+        if bestBuyable != newBestBuyable then
+          newBestBuyable.resetOriginalBuyTime()
+        bestBuyable = newBestBuyable
+        bestBuyable.updateInvestmentAndBuyTime()
+      case `ReserveLevelChanged` =>
+        bestBuyable.resetOriginalBuyTime()
+        bestBuyable.updateInvestmentAndBuyTime()
+      case _ =>
+        bestBuyable.updateInvestmentAndBuyTime()
 
     if !buyLocked then
       val nextMilestone = bestBuyable.nextMilestone
@@ -99,14 +101,14 @@ object AutoCookie extends Mod {
           setTimeout(StockMarket.timeToNextTick + 50.millis) {
             val profit = nextMilestone.investment.sellInvestment() - invested
             log(s"Investments earned ${Beautify(profit)} or ${(profit / Game.unbuffedCps).seconds.prettyPrint} of production")
-            loop("Investment Sold")
+            loop(InvestmentSold)
           }
       else
         val message = nextMilestone match {
           case building: Building => s"Buying the ${convertNumeral(building.amount + 1)} ${building.name}"
           case _                  => s"Buying ${nextMilestone.name}"
         }
-        mainTimeout = Some(setTimeout(nextMilestone.timeToBuy)(loop(message)))
+        mainTimeout = Some(setTimeout(nextMilestone.timeToBuy)(loop(Buying(message))))
     notes.foreach(_.update())
 
   def start(): Unit =
@@ -115,7 +117,7 @@ object AutoCookie extends Mod {
       val allBuyables = (buildings ++ upgrades ++ achievements).values.toSet
       buyables = allBuyables.filter(_.canEventuallyGet)
       //Update reserve note
-      loop("start")
+      loop(Start)
       noteUpdateInterval = Some(setInterval(NOTE_UPDATE_FREQUENCY)(updateNotes()))
       engageHooks()
       NoteArea.show()

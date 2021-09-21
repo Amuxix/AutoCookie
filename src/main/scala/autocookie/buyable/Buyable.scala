@@ -37,7 +37,9 @@ abstract class Buyable {
   var originalBuyTime: Double = 0
   var requirements: Set[Buyable] = Set.empty
 
-  def estimatedReturnPercent(newBrokers: Int): Double = ???
+  def estimatedReturnPercent(newBrokers: Int): Double =
+    val overhead = StockMarket.overhead * math.pow(0.95, newBrokers)
+    1 + (1 - StockMarket.STABILITY_THRESHOLD - 2 * StockMarket.MAX_STD_DEV) * (percentCpsIncrease - overhead)
 
   /**
    * Calculates the price to buy this and all its requirements if any.
@@ -123,7 +125,7 @@ abstract class Buyable {
     if debug then println(s"payback: $payback")
 
   private def cookiesNeeded: Double =
-    Reserve.amount + price - Game.cookies - investment.estimatedReturns
+    Reserve.amount + price - Game.cookies - (investment.estimatedReturns max 0)
 
   def percentCpsIncrease: Double = this.cpsIncrease / Game.cookiesPs
 
@@ -167,8 +169,10 @@ abstract class Buyable {
       nextMilestone.resetOriginalBuyTime()
     }
 
+  protected def createInvestment: Investment = StockMarket.createInvestment(this, Game.cookies - price)
+
   def updateInvestmentAndBuyTime(): Unit =
-    investment = StockMarket.createInvestment(this, Game.cookies - price)
+    investment = createInvestment
     buyTime = calculateBuyTime
     if originalBuyTime == 0 then originalBuyTime = buyTime
     if nextMilestone != this then nextMilestone.updateInvestmentAndBuyTime()

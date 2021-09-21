@@ -53,13 +53,13 @@ object RealInvestment {
 
     val zero = (money, Seq(() => StockMarket.buyBrokers(brokersToBuy)), Seq.empty[() => Double])
     val (remainingMoney, buyFunctions, sellFunctions) = goods.foldLeft(zero) {
-      case (acc@(remainingMoney, buyFunctions, sellFunctions), good) =>
+      case (acc @ (remainingMoney, buyFunctions, sellFunctions), good) =>
         val price = StockMarket.price(good)
         val stockToFillWarehouse = StockMarket.maxStock(good) - good.stock.toInt
         val stockToBuy = stockToFillWarehouse min Math.floor(remainingMoney / price).toInt
         if (stockToBuy > 0) {
-          val buyFunction = () => StockMarket.buy(good, stockToBuy)
-          val sellFunction = () => StockMarket.sell(good, stockToBuy)
+          def buyFunction(): Unit = StockMarket.buy(good, stockToBuy)
+          def sellFunction(): Double = StockMarket.sell(good, stockToBuy)
           (remainingMoney - stockToBuy * price, buyFunctions :+ buyFunction, sellFunctions :+ sellFunction)
         } else {
           acc
