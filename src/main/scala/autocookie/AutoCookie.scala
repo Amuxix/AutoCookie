@@ -32,7 +32,6 @@ object AutoCookie extends Mod with AutoSaveable {
   var buyLocked = true
   var buying = false
 
-  var stockMarket: Option[StockMarket] = None
   var bestBuyable: Buyable = new Building("Cursor")
 
   //lazy val spawnWindowNote: GoldenCookieSpawnNote

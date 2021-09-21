@@ -14,7 +14,7 @@ trait StockMarket extends Minigame {
 
   def getMaxBrokers(): Int
   def getGoodMaxStock(good: Good): Int
-  def getGoodPrice(good: Good): Int
+  def getGoodPrice(good: Good): Double
   def buyGood(goodID: Int, amount: Int): Boolean
   def sellGood(goodID: Int, amount: Int): Boolean
 
