@@ -60,6 +60,6 @@ class MouseUpgrade(override val name: String) extends Upgrade {
     val buffMultipliers = clickBuffs.flatMap(_.multClick.toOption).foldLeft(1D)((total, buffPower) => total * buffPower)
     val cookiesPerClick = (clickMultiplier + fingersAdd + mousesAdd) * buffMultipliers
     val cpsIncrease = (cookiesPerClick - Game.mouseCps()) * AutoCookie.CLICKS_PER_SEC
-    val longestBuffRemainingSeconds = clickBuffs.maxBy(_.time).time / Game.fps
+    val longestBuffRemainingSeconds = clickBuffs.maxBy(_.remainingTicks).remainingTicks / Game.ticksPerSec
     if cpsIncrease * longestBuffRemainingSeconds > price then cpsIncrease else 0
 }

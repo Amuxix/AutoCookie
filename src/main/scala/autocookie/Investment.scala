@@ -84,8 +84,8 @@ case class RealInvestment private(
   buyFunctions: Seq[() => Unit],
   sellFunctions: Seq[() => Double],
 ) extends Investment {
-  lazy val totalInvestment: Double = moneyInvestedInStocks + moneyInvestedInBrokers
-  lazy val cookieInvestment: Double = StockMarket.moneyToCookies(totalInvestment)
+  lazy val totalMoneyInvestment: Double = moneyInvestedInStocks + moneyInvestedInBrokers
+  lazy val totalCookieInvestment: Double = StockMarket.moneyToCookies(totalMoneyInvestment)
 
   /** Estimates the profit we would make if we ran this investment
    */
@@ -93,14 +93,14 @@ case class RealInvestment private(
     val estimatedReturnPercent = buyable.estimatedReturnPercent(newBrokers)
     val cpsAfterBuying = Game.unbuffedCps * buyable.percentCpsIncrease
     val returns = StockMarket.moneyToCookies(moneyInvestedInStocks, cpsAfterBuying) * estimatedReturnPercent
-    returns - this.cookieInvestment
+    returns - this.totalCookieInvestment
   }
 
   /** @returns {number} The total cookies invested
    */
   def invest(): Double = {
     buyFunctions.foreach(_ ())
-    cookieInvestment
+    totalCookieInvestment
   }
 
   /** @returns {number} The total cookies gotten from selling this investment

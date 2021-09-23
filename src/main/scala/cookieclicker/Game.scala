@@ -18,7 +18,8 @@ object Game extends js.Object {
   @JSName("AchievementsById")
   val achievements: js.Array[GameAchievement] = js.native
   val globalCpsMult: Double = js.native
-  val fps: Double = js.native
+  @JSName("fps")
+  val ticksPerSec: Double = js.native
   val cookies: Double = js.native
   val cookiesPs: Double = js.native
   val unbuffedCps: Double = js.native

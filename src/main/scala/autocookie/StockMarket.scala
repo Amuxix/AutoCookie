@@ -85,7 +85,7 @@ object StockMarket {
 
   def moneyToCookies(money: Double, cps: Double = Game.cookiesPsRawHighest): Double = money * cps
 
-  def timeToNextTick: FiniteDuration = 60.seconds - (StockMarket.minigame.tickT / Game.fps).seconds
+  def timeToNextTick: FiniteDuration = 60.seconds - (StockMarket.minigame.tickT / Game.ticksPerSec).seconds
 
   def createInvestment(buyable: Buyable, cookies: Double): Investment =
     if StockMarket.isActive && cookies > 0 then RealInvestment(buyable, cookies) else EmptyInvestment

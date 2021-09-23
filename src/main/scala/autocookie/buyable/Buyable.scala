@@ -148,17 +148,24 @@ abstract class Buyable {
     val cookiesNeeded = this.cookiesNeeded
     if (cookiesNeeded <= 0) return Date.now()
 
-    var buySeconds = cookiesNeeded / cps
-
     val cpsBuffs = Helpers.buffs.filter(_.multCpS.exists(_ != 0))
-    if cpsBuffs.length > 0 then
-      val buffedNextBuyTime = cookiesNeeded / cps
-      val shortBuffs = cpsBuffs.filter(buff => (buff.time / Game.fps) < buffedNextBuyTime)
-      if shortBuffs.length > 0 then
-        //Time the cpsBuffs will save us
-        val shortBuffsTime = shortBuffs.sumBy(_.time / Game.fps)
-        val shortBuffsPower = shortBuffs.foldLeft(1D)((acc, buff) => acc * buff.multCpS.getOrElse(1D))
-        buySeconds = shortBuffsTime + (buySeconds - shortBuffsTime) * shortBuffsPower
+    val buySeconds = if cpsBuffs.length > 0 then
+      val sortedBuffs = cpsBuffs.map(buff => (buff.remainingTicks / Game.ticksPerSec, buff.multCpS.get)).sortBy(_._1)
+      val (unbuffedCPS, remainingCookiesNeeded, currentBuySeconds) = sortedBuffs.foldLeft((cps, cookiesNeeded, 0D)) {
+        case ((currentCPS, cookiesNeeded, buySeconds), (remainingBuffSeconds, buffPower)) if cookiesNeeded > 0 =>
+          val CPSwithoutThisBuff = currentCPS / buffPower
+          val remainingCookiesNeeded = cookiesNeeded - remainingBuffSeconds * currentCPS
+          if remainingCookiesNeeded < 0 then
+            val remainingBuySeconds = buySeconds + cookiesNeeded / currentCPS
+            (currentCPS, 0, remainingBuySeconds)
+          else
+            (CPSwithoutThisBuff, remainingCookiesNeeded, buySeconds + remainingBuffSeconds)
+        case (t, _) => t
+      }
+      currentBuySeconds + remainingCookiesNeeded / unbuffedCPS
+    else
+      cookiesNeeded / cps
+
     Date.now() + buySeconds * 1000
 
   def resetOriginalBuyTime(): Unit =
@@ -176,7 +183,7 @@ abstract class Buyable {
     if nextMilestone != this then nextMilestone.updateInvestmentAndBuyTime()
 
   def cpsIncreasePercentText =
-    if this.percentCpsIncrease > 0 then s"(+${math.round(this.percentCpsIncrease * 100)}%)" else ""
+    if this.percentCpsIncrease > 0 then s" (+${(this.percentCpsIncrease * 100).round(2)}%)" else ""
 
   private def buyTimeDifference: Double = originalBuyTime - buyTime
 
@@ -187,10 +194,10 @@ abstract class Buyable {
       return ""
     else
       val symbol = if millisChange >= 0 then "" else "-"
-      s"($symbol${absMillisChange.millis.prettyPrint})"
+      s" ($symbol${absMillisChange.millis.prettyPrint})"
 
   def timeSavedTextColour: String =
-    if math.abs(buyTimeDifference) >= 0 then "#6F6" else "#F66"
+    if buyTimeDifference >= 0 then "#6F6" else "#F66"
 
   /*
   def estimatedReturnPercent(additionalBrokers: Double): Double = {

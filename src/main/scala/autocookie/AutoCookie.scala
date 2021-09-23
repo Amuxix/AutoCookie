@@ -93,7 +93,6 @@ object AutoCookie extends Mod with AutoSaveable {
       case reason if reason.shouldUpdate =>
         Reserve.update()
         profile("Update")(buyables.foreach(_.update()))
-        lastCps = Helpers.cps
         val newBestBuyable = buyables.minBy(_.payback)
         if bestBuyable != newBestBuyable then
           newBestBuyable.resetOriginalBuyTime()
@@ -115,9 +114,13 @@ object AutoCookie extends Mod with AutoSaveable {
         if invested > 0 then
           setTimeout(StockMarket.timeToNextTick + 50.millis) {
             val profit = investment.sellInvestment() - invested
-            log(s"Investments earned ${Beautify(profit)} or ${(profit / Game.unbuffedCps).seconds.prettyPrint} of production")
+            val title = s"Investment Returns for ${nextMilestone.name}"
+            val message = s"${Beautify(profit)} or ${(profit / Game.unbuffedCps).seconds.prettyPrint} of production"
+            log(title + message)
+            Game.Notify(title, message)
             loop(InvestmentSold)
           }
+        lastCps = Helpers.cps
         setTimeout(0)(loop(AfterBuy))
       else
         val message = nextMilestone match {
@@ -137,6 +140,7 @@ object AutoCookie extends Mod with AutoSaveable {
       noteUpdateInterval = Some(setInterval(NOTE_UPDATE_FREQUENCY)(updateNotes()))
       engageHooks()
       NoteArea.show()
+      CPSCalculator(debug = true)
     }
 
   override def autoLoad(save: String, version: Float): Unit =

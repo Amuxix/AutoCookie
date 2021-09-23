@@ -24,7 +24,7 @@ object GoldenCookieSpawnNote extends Note:
 
     if Game.shimmers.nonEmpty then
       setGolden()
-      val description = (Game.shimmers.head.life / Game.fps).seconds.prettyPrint
+      val description = (Game.shimmers.head.life / Game.ticksPerSec).seconds.prettyPrint
       setTitle("Cookie despawning in")
       setDescription(description)
       document.title = description + " until cookie despawn" //Set page name
@@ -32,7 +32,7 @@ object GoldenCookieSpawnNote extends Note:
       clearGolden()
       if Game.shimmerTypes.golden.minTime > Game.shimmerTypes.golden.time then
         setTitle("Next cookie spawn window in")
-        setDescription(((Game.shimmerTypes.golden.minTime - Game.shimmerTypes.golden.time) / Game.fps).seconds.prettyPrint)
+        setDescription(((Game.shimmerTypes.golden.minTime - Game.shimmerTypes.golden.time) / Game.ticksPerSec).seconds.prettyPrint)
       else
         setTitle("Cookie spawn window ends in")
-        setDescription(((Game.shimmerTypes.golden.maxTime - Game.shimmerTypes.golden.time) / Game.fps).seconds.prettyPrint)
+        setDescription(((Game.shimmerTypes.golden.maxTime - Game.shimmerTypes.golden.time) / Game.ticksPerSec).seconds.prettyPrint)

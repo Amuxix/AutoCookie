@@ -99,6 +99,7 @@ object CPSCalculator {
     "Rainbow grandmas",
     "Lucky grandmas",
     "Metagrandmas",
+    //"Binary grandmas",
     "Bingo center/Research facility",
     "Bingo center/Research facility", //This is duplicated on purpose as bingo center increases grandma cps by 4x
     "Ritual rolling pins",
@@ -451,7 +452,7 @@ object CPSCalculator {
 
   def calculateGrandmasCps(upgrades: Set[Upgrade]): Double =
     if extraGrandmas == 0  && extraFractalEngines == 0 then
-      return Building.cursor.storedTotalCps
+      return Building.grandma.storedTotalCps
     val baseCps = grandmaBaseIncreases.foldLeft(Building.grandma.baseCps) {
       case (baseIncrease, (upgrade, increaseF)) if hasOrIsInChoices(upgrade, upgrades) => baseIncrease + increaseF()
       case (baseIncrease, _)                                                           => baseIncrease
@@ -528,7 +529,7 @@ object CPSCalculator {
       return Building.fractalEngine.storedTotalCps
     calculateBuildingCPS(upgrades, Building.fractalEngine.level.toInt, Building.fractalEngine.baseCps, fractalEngines, fractalSynergyMap, fractalExponentialUpgrades)
 
-  def apply(buildingRequirements: Set[BuildingRequirement] = Set.empty, upgrades: Set[Upgrade] = Set.empty): Double =
+  def apply(buildingRequirements: Set[BuildingRequirement] = Set.empty, upgrades: Set[Upgrade] = Set.empty, debug: Boolean = false): Double =
     val buildMult = godBuildingCpsMultiplier
     val requirementMap = buildingRequirements.map(req => req.gameBuyable -> req.missingAmount).toMap
     
@@ -592,6 +593,24 @@ object CPSCalculator {
     val prismsCps = calculatePrismsCps(upgrades)
     val chancemakersCps = calculateChancemakersCps(upgrades)
     val fractalCps = calculateFractalEnginesCps(upgrades)
+
+    if debug then
+      Logger.debug(s"Cursors ${calculateCursorsCps(upgrades, nonCursors) - Building.cursor.storedTotalCps}")
+      Logger.debug(s"Grandmas ${calculateGrandmasCps(upgrades) - Building.grandma.storedTotalCps}")
+      Logger.debug(s"Farms ${calculateFarmsCps(upgrades) - Building.farm.storedTotalCps}")
+      Logger.debug(s"Mines ${calculateMinesCps(upgrades) - Building.mine.storedTotalCps}")
+      Logger.debug(s"Factories ${calculateFactoriesCps(upgrades) - Building.factory.storedTotalCps}")
+      Logger.debug(s"Banks ${calculateBanksCps(upgrades) - Building.bank.storedTotalCps}")
+      Logger.debug(s"Temples ${calculateTemplesCps(upgrades) - Building.temple.storedTotalCps}")
+      Logger.debug(s"WizardTowers ${calculateWizardTowersCps(upgrades) - Building.wizardTower.storedTotalCps}")
+      Logger.debug(s"Shipments ${calculateShipmentsCps(upgrades) - Building.shipment.storedTotalCps}")
+      Logger.debug(s"AlchemyLabs ${calculateAlchemyLabsCps(upgrades) - Building.alchemyLab.storedTotalCps}")
+      Logger.debug(s"Portals ${calculatePortalsCps(upgrades) - Building.portal.storedTotalCps}")
+      Logger.debug(s"TimeMachines ${calculateTimeMachinesCps(upgrades) - Building.timeMachine.storedTotalCps}")
+      Logger.debug(s"AntimatterCondensers ${calculateAntimatterCondensersCps(upgrades) - Building.antimatterCondenser.storedTotalCps}")
+      Logger.debug(s"Prisms ${calculatePrismsCps(upgrades) - Building.prism.storedTotalCps}")
+      Logger.debug(s"Chancemakers ${calculateChancemakersCps(upgrades) - Building.chancemaker.storedTotalCps}")
+      Logger.debug(s"FractalEngines ${calculateFractalEnginesCps(upgrades) - Building.fractalEngine.storedTotalCps}")
 
     val increase = cursorsCps + grandmasCps + farmsCps + minesCps + factoriesCps + banksCps + templesCps + wizardCps + shipmentsCps + alchemyCps + portalsCps + timeCps + antimatterCps + prismsCps + chancemakersCps + fractalCps
 
