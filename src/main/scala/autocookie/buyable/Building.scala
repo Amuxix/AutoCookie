@@ -8,8 +8,8 @@ import cookieclicker.Game
 import scala.scalajs.js
 
 object Building {
-  def findByName(name: String): Option[Building] =
-    AutoCookie.buildings.get(name)
+  def getByName(name: String): Building =
+    AutoCookie.buildings.getOrElse(name, throw new Exception(s"Unable to find Building named \"$name\""))
 
   def getGameBuildingByName(name: String): GameBuilding =
     Game.buildings

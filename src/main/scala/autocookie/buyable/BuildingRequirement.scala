@@ -15,5 +15,7 @@ case class BuildingRequirement(buyable: GameBuilding, override val amount: Int) 
 
   def missingAmount: Int = 0 max amount - gameBuyable.amount.toInt
 
+  lazy val building: Building = Building.getByName(name)
+
   override def update(debug: Boolean = false): Unit = throw new Exception("Trying to update BuildingRequirement")
 }

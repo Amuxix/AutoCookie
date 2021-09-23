@@ -123,8 +123,10 @@ object AutoCookie extends Mod with AutoSaveable {
         lastCps = Helpers.cps
         setTimeout(0)(loop(AfterBuy))
       else
+        def buildingBuyMessage(building: Building) = s"Buying the ${convertNumeral(building.amount + 1)} ${building.name}"
         val message = nextMilestone match {
-          case building: Building => s"Buying the ${convertNumeral(building.amount + 1)} ${building.name}"
+          case requirement: BuildingRequirement => buildingBuyMessage(requirement.building)
+          case building: Building               => buildingBuyMessage(building)
           case _                  => s"Buying ${nextMilestone.name}"
         }
         mainTimeout = Some(setTimeout(nextMilestone.timeToBuy)(loop(Buying(message))))
