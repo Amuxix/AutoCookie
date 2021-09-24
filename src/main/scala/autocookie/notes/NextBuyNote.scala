@@ -13,9 +13,8 @@ import cookieclicker.Game
 import scala.concurrent.duration.*
 import scala.scalajs.js.Date
 
-object NextBuyNote extends NoteWithExtras {
+object NextBuyNote extends NoteWithExtras with HideOnMouseout{
   show()
-  html.onmouseout = (mouseEvent) => Game.tooltip.shouldHide = true
   lazy val button: HTMLAnchorElement =
     val button = createElement("a").asInstanceOf[HTMLAnchorElement]
     button.style.fontSize = "15px"

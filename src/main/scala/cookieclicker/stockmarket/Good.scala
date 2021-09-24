@@ -12,4 +12,5 @@ trait Good extends js.Object {
   val vals: js.Array[Double]
   val stock: Double
   val active: Boolean
+  val icon: js.Array[Int]
 }

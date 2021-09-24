@@ -13,9 +13,7 @@ import autocookie.buyable.{Achievement, Building}
 import scala.concurrent.duration.*
 import scala.language.implicitConversions
 
-object GoalNote extends NoteWithExtras {
-  html.onmouseout = (mouseEvent) => Game.tooltip.shouldHide = true
-
+object GoalNote extends NoteWithExtras with HideOnMouseout {
   override def update(): Unit =
     val bestBuyable = AutoCookie.bestBuyable
     if bestBuyable == bestBuyable.nextMilestone then
@@ -42,5 +40,4 @@ object GoalNote extends NoteWithExtras {
         html.onmouseover = null
     }
     setTitle(title).setExtraDescription(bestBuyable.cpsIncreasePercentText)
-
 }

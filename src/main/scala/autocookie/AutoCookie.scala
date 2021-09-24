@@ -7,7 +7,7 @@ import autocookie.buyable.*
 import autocookie.buyable.Building.*
 import autocookie.buyable.upgrade.*
 import autocookie.notes.reserve.ReserveNote
-import autocookie.notes.{GoalNote, GoldenCookieSpawnNote, NextBuyNote, Note, NoteArea}
+import autocookie.notes.*
 import autocookie.reserve.Reserve
 import org.scalajs.dom.raw.HTMLElement
 import org.scalajs.dom.{console, document}
@@ -36,7 +36,7 @@ object AutoCookie extends Mod with AutoSaveable {
 
   var bestBuyable: Buyable = new Building("Cursor")
 
-  lazy val notes: Seq[Note] = Seq(GoldenCookieSpawnNote, GoalNote, NextBuyNote, ReserveNote)
+  lazy val notes: Seq[Note] = Seq(GoldenCookieSpawnNote, ReserveNote, InvestmentNote, GoalNote, NextBuyNote)
   lazy val buildings: Map[String, Building] = Buyables.createBuildings
   lazy val upgrades: Map[String, Upgrade] = Buyables.createUpgrades
   lazy val achievements: Map[String, Achievement] = Buyables.createAchievements
@@ -58,10 +58,7 @@ object AutoCookie extends Mod with AutoSaveable {
     val notes = document.getElementById("notes")
     notes.parentNode.insertBefore(NoteArea.html, notes)
 
-    NoteArea.html.appendChild(GoldenCookieSpawnNote.html)
-    NoteArea.html.appendChild(ReserveNote.html)
-    NoteArea.html.appendChild(GoalNote.html)
-    NoteArea.html.appendChild(NextBuyNote.html)
+    this.notes.foreach(note => NoteArea.html.appendChild(note.html))
     Logger.log("All notes created successfully.")
 
   def updateNotes(): Unit =

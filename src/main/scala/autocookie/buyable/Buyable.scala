@@ -39,7 +39,7 @@ abstract class Buyable {
 
   def estimatedReturnPercent(newBrokers: Int): Double =
     val overhead = StockMarket.overhead * math.pow(0.95, newBrokers)
-    1 + (1 - StockMarket.STABILITY_THRESHOLD - 2 * StockMarket.MAX_STD_DEV) * (percentCpsIncrease - overhead)
+    1 + (1 - StockMarket.MAX_ABS_AVG - 2 * StockMarket.MAX_STD_DEV) * (percentCpsIncrease - overhead)
 
   /**
    * Calculates the price to buy this and all its requirements if any.
@@ -202,7 +202,7 @@ abstract class Buyable {
   /*
   def estimatedReturnPercent(additionalBrokers: Double): Double = {
     val overhead = StockMarket.overhead * Math.pow(0.95, additionalBrokers)
-    1 + (1 - STOCK_MARKET_STABILITY_THRESHOLD) * (this.percentCpsIncrease - overhead)
+    1 + (1 - STOCK_MARKET_MAX_ABS_AVG) * (this.percentCpsIncrease - overhead)
   }
   */
 }

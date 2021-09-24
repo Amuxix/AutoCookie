@@ -3,6 +3,7 @@ package autocookie
 import autocookie.buyable.Buyable
 import autocookie.Helpers.sumBy
 import cookieclicker.Game
+import cookieclicker.stockmarket.Good
 
 object Investment {
   def apply(buyable: Buyable, cookies: Double): Investment =
@@ -11,6 +12,7 @@ object Investment {
 }
 
 sealed trait Investment {
+  def estimatedReturnPercent: Double
   /** Estimates the profit we would make if we ran this investment
    */
   def estimatedReturns: Double
@@ -25,17 +27,24 @@ sealed trait Investment {
 }
 
 object EmptyInvestment extends Investment {
+
+  override def estimatedReturnPercent: Double = 1
+
   /** Estimates the profit we would make if we ran this investment
    */
-  def estimatedReturns: Double = 0
+  override def estimatedReturns: Double = 0
 
   /** @returns {Double} The total cookies invested
    */
-  def invest(): Double = 0
+  override def invest(): Double = 0
 
   /** @returns {Double =} The total cookies gotten from selling this investment
    */
-  def sellInvestment(): Double = 0
+  override def sellInvestment(): Double = 0
+}
+
+case class GoodInvestment(good: Good, amount: Int, cost: Double) {
+  lazy val icon = (good.icon(0), good.icon(1))
 }
 
 object RealInvestment {
@@ -51,16 +60,18 @@ object RealInvestment {
     val brokersCost = brokersToBuy * 1200
     val money = startingMoney - brokersCost
 
-    val zero = (money, Seq(() => StockMarket.buyBrokers(brokersToBuy)), Seq.empty[() => Double])
-    val (remainingMoney, buyFunctions, sellFunctions) = goods.foldLeft(zero) {
-      case (acc @ (remainingMoney, buyFunctions, sellFunctions), good) =>
+    val zero = (money, Seq(() => StockMarket.buyBrokers(brokersToBuy)), Seq.empty[() => Double], Seq.empty[GoodInvestment])
+    val (remainingMoney, buyFunctions, sellFunctions, goodsInvested) = goods.foldLeft(zero) {
+      case (acc @ (remainingMoney, buyFunctions, sellFunctions, goodsInvested), good) =>
         val price = StockMarket.price(good)
         val stockToFillWarehouse = StockMarket.maxStock(good) - good.stock.toInt
         val stockToBuy = stockToFillWarehouse min Math.floor(remainingMoney / price).toInt
         if (stockToBuy > 0) {
           def buyFunction(): Unit = StockMarket.buy(good, stockToBuy)
           def sellFunction(): Double = StockMarket.sell(good, stockToBuy)
-          (remainingMoney - stockToBuy * price, buyFunctions :+ buyFunction, sellFunctions :+ sellFunction)
+          val totalPrice = stockToBuy * price
+          val goodInvestment = GoodInvestment(good, stockToBuy, totalPrice)
+          (remainingMoney - totalPrice, buyFunctions :+ buyFunction, sellFunctions :+ sellFunction, goodsInvested :+ goodInvestment)
         } else {
           acc
         }
@@ -72,6 +83,7 @@ object RealInvestment {
       brokersToBuy,
       buyFunctions,
       sellFunctions,
+      goodsInvested
     )
   }
 }
@@ -83,28 +95,25 @@ case class RealInvestment private(
   newBrokers: Int,
   buyFunctions: Seq[() => Unit],
   sellFunctions: Seq[() => Double],
+  goodsInvested: Seq[GoodInvestment]
 ) extends Investment {
   lazy val totalMoneyInvestment: Double = moneyInvestedInStocks + moneyInvestedInBrokers
   lazy val totalCookieInvestment: Double = StockMarket.moneyToCookies(totalMoneyInvestment)
 
+  override def estimatedReturnPercent: Double = buyable.estimatedReturnPercent(newBrokers)
+
   /** Estimates the profit we would make if we ran this investment
    */
-  def estimatedReturns: Double = {
-    val estimatedReturnPercent = buyable.estimatedReturnPercent(newBrokers)
-    val cpsAfterBuying = Game.unbuffedCps * buyable.percentCpsIncrease
-    val returns = StockMarket.moneyToCookies(moneyInvestedInStocks, cpsAfterBuying) * estimatedReturnPercent
-    returns - this.totalCookieInvestment
-  }
+  override def estimatedReturns: Double = StockMarket.moneyToCookies(moneyInvestedInStocks) * estimatedReturnPercent - totalCookieInvestment
 
   /** @returns {number} The total cookies invested
    */
-  def invest(): Double = {
-    buyFunctions.foreach(_ ())
+  override def invest(): Double =
+    buyFunctions.foreach(_())
     totalCookieInvestment
-  }
 
   /** @returns {number} The total cookies gotten from selling this investment
    */
-  def sellInvestment(): Double =
+  override def sellInvestment(): Double =
     StockMarket.moneyToCookies(sellFunctions.sumBy(_ ()))
 }
