@@ -44,13 +44,18 @@ object InvestmentNote extends Note with HideOnMouseout {
     Tooltip(s"Investing ${Beautify(investment.totalCookieInvestment)}", body).ref.outerHTML
 
   override def update(): Unit =
+    val estimatedReturns = AutoCookie.bestBuyable.investment.estimatedReturns
     AutoCookie.bestBuyable.investment match {
-      case EmptyInvestment => hide()
+      case EmptyInvestment =>
+        hideNote()
+      case _ if estimatedReturns <= 0 =>
+        hideNote()
       case investment: RealInvestment       =>
         setTitle("Expected investment proffit")
         //setDescription(s"$$${investment.totalMoneyInvestment.round(2)}")
         setDescription(s"${Beautify(investment.estimatedReturns)}")
         html.onmouseover = (m) => Game.tooltip.draw(html, tooltip(investment), "this")
-        show()
+
+        showNote()
     }
 }

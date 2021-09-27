@@ -23,7 +23,7 @@ object ReserveNote extends Note with AutoSaveable {
     buttonDiv.appendChild(button.html)
     if button.unlocked then button.show() else button.hide()
   }
-  show()
+  showNote()
 
   override def autoSave: String =
     buttons.map(_.reserveLevelIndex).mkString(", ")

@@ -4,7 +4,7 @@ import autocookie.buyable.Achievement
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.notes.Note.newDiv
 import autocookie.Helpers.*
-import autocookie.Helpers.given
+import autocookie.{AutoCookie, Helpers}
 import org.scalajs.dom.raw.{HTMLDivElement, HTMLElement}
 import org.scalajs.dom.document.createElement
 import cookieclicker.Game
@@ -57,6 +57,14 @@ abstract class Note extends Hideable {
         val gameAchievement: GameAchievement = achievement.gameBuyable
         Game.tooltip.draw(html, Game.crateTooltip(gameAchievement, "stats"), "this")
     }
+
+  def showNote(): Unit =
+    AutoCookie.notesShown += 1
+    show()
+
+  def hideNote(): Unit =
+    AutoCookie.notesShown -= 1
+    hide()
 
   def update(): Unit
 }

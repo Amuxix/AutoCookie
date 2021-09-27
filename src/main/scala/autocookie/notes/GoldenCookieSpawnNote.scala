@@ -17,10 +17,10 @@ object GoldenCookieSpawnNote extends Note:
 
   override def update(): Unit =
     if Reserve.level == Disabled then
-      hide()
+      hideNote()
       return
     else
-      show()
+      showNote()
 
     if Game.shimmers.nonEmpty then
       setGolden()

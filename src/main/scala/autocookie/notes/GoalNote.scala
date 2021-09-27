@@ -17,12 +17,11 @@ object GoalNote extends NoteWithExtras with HideOnMouseout {
   override def update(): Unit =
     val bestBuyable = AutoCookie.bestBuyable
     if bestBuyable == bestBuyable.nextMilestone then
-      AutoCookie.notesShown = 3
-      hide()
+      hideNote()
       return
     else
-      AutoCookie.notesShown = 4
-      setDescription(bestBuyable.name).show()
+      setDescription(bestBuyable.name)
+      showNote()
 
     val unlock = bestBuyable match {
       case _: Achievement => "Achieving"

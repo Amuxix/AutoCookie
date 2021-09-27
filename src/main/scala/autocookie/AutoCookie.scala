@@ -48,7 +48,7 @@ object AutoCookie extends Mod with AutoSaveable {
   var lastCps: Double = 0
   var lastNumberOfBuffs: Int = 0
 
-  var notesShown: Int = 3
+  var notesShown: Int = 0
 
   def toggleBuyLock(): Unit =
     buyLocked = !buyLocked

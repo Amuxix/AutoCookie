@@ -14,7 +14,7 @@ import scala.concurrent.duration.*
 import scala.scalajs.js.Date
 
 object NextBuyNote extends NoteWithExtras with HideOnMouseout{
-  show()
+  showNote()
   lazy val button: HTMLAnchorElement =
     val button = createElement("a").asInstanceOf[HTMLAnchorElement]
     button.style.fontSize = "15px"
