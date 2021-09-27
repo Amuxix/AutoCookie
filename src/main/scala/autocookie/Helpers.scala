@@ -35,7 +35,7 @@ object Helpers:
   }
 
   extension (number: Double)
-    def round(precision: Int = 2): Double =
+    def round(precision: Int): Double =
       val d = Math.pow(10, precision)
       Math.round(number * d) / d
 

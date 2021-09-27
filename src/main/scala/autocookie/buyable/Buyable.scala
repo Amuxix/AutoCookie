@@ -11,6 +11,7 @@ import cookieclicker.buyables.*
 import cookieclicker.Game
 
 import scala.concurrent.duration.*
+import scala.scalajs.js.annotation.JSExportAll
 import scala.scalajs.js.{Date, undefined}
 
 object Buyable {
@@ -20,9 +21,10 @@ object Buyable {
       Double.PositiveInfinity
     else
       val payback = price / cpsIncrease + Math.max(0, price + Reserve.amount - Game.cookies) / cps
-      payback.round(6)
+      payback.round(4)
 }
 
+@JSExportAll
 abstract class Buyable {
   type T <: GameBuyable
   def gameBuyable: T
@@ -60,8 +62,8 @@ abstract class Buyable {
     val multiplier = Game.globalCpsMult / Helpers.getKittenMultiplier(Game.milkProgress) * getKittenMultiplier(Game.milkProgress + extraMilk)
     val cps = Helpers.cps
     val baseCps = cps / Game.globalCpsMult
-    val achievmentCpsIncrease = ((baseCps * multiplier) - cps)
-    (CPSCalculator(buildingRequirements, upgradeRequirements) + achievmentCpsIncrease).round(6)
+    val achievmentCpsIncrease = ((baseCps * multiplier) - cps).round(4)
+    CPSCalculator(buildingRequirements, upgradeRequirements) + achievmentCpsIncrease
 
   protected def calculatePayback(price: Double, cpsIncrease: Double): Double =
     Buyable.calculatePayback(price, cpsIncrease)

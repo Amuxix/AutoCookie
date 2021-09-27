@@ -15,6 +15,6 @@ class KittenUpgrade(override val name: String, milkRequired: Double) extends Upg
       0D
     else
       val base_cps = Helpers.cps
-      val multiplier = Game.globalCpsMult / getKittenMultiplier(Game.milkProgress) * getKittenMultiplier(Game.milkProgress, Some(name))
+      val multiplier = getKittenMultiplier(Game.milkProgress, Some(name)) / Game.cookiesMultByType("kittens")
       return (base_cps * multiplier) - base_cps
 }

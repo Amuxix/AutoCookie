@@ -1,6 +1,6 @@
 package autocookie
 
-import autocookie.Logger.error
+import autocookie.Logger.{error, debug}
 import cookieclicker.Saveable
 import cookieclicker.global.{decode, encode}
 
@@ -22,6 +22,8 @@ trait AutoSaveable extends Saveable {
     val split = decode(string).split("\\|")
     split.headOption.flatMap(_.toFloatOption).fold(error("Failed to load: Could not find version")) {
       case version if version > this.version => error("Trying to load code from future version")
-      case version => autoLoad(split.slice(1, split.size - 1).mkString("|"), version) //Join again with same seperator
+      case version =>
+        debug(s"Loading $name v$version")
+        autoLoad(split.slice(1, split.size - 1).mkString("|"), version) //Join again with same seperator
     }
 }

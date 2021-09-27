@@ -44,6 +44,7 @@ object Game extends js.Object {
   val buffs: MapLike[String, Buff] = js.native
   //val wrinklers: js.Array[Wrinkler]= js.native
   val BuildingsOwned: Double = js.native
+  val cookiesMultByType: MapLike[String, Double] = js.native
 
   @JSName("Has")
   def upgradeBought(upgradeName: String): 0 | 1 = js.native

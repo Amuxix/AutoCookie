@@ -47,7 +47,7 @@ object InvestmentNote extends Note with HideOnMouseout {
     AutoCookie.bestBuyable.investment match {
       case EmptyInvestment => hide()
       case investment: RealInvestment       =>
-        setTitle("Expected investment returns")
+        setTitle("Expected investment proffit")
         //setDescription(s"$$${investment.totalMoneyInvestment.round(2)}")
         setDescription(s"${Beautify(investment.estimatedReturns)}")
         html.onmouseover = (m) => Game.tooltip.draw(html, tooltip(investment), "this")

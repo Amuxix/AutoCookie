@@ -23,7 +23,7 @@ sealed trait Investment {
 
   /** @returns {number} The total cookies gotten from selling this investment
    */
-  def sellInvestment(): Double
+  def liquidateInvestment(): Double
 }
 
 object EmptyInvestment extends Investment {
@@ -40,7 +40,7 @@ object EmptyInvestment extends Investment {
 
   /** @returns {Double =} The total cookies gotten from selling this investment
    */
-  override def sellInvestment(): Double = 0
+  override def liquidateInvestment(): Double = 0
 }
 
 case class GoodInvestment(good: Good, amount: Int, cost: Double) {
@@ -49,9 +49,9 @@ case class GoodInvestment(good: Good, amount: Int, cost: Double) {
 
 object RealInvestment {
   def apply(buyable: Buyable, cookies: Double): RealInvestment = {
-    val goods = StockMarket.stableActiveGoods.sortBy(_.value)(Ordering[Double].reverse)
+    val goods = StockMarket.stableActiveGoods.sortBy(_.price)(Ordering[Double].reverse)
     val fullStockPrice = goods.foldLeft(0D) { case (total, good) =>
-      val price = StockMarket.price(good)
+      val price = good.price
       val stockToFillWarehouse = StockMarket.maxStock(good) - good.stock
       total + price * stockToFillWarehouse
     }
@@ -63,7 +63,7 @@ object RealInvestment {
     val zero = (money, Seq(() => StockMarket.buyBrokers(brokersToBuy)), Seq.empty[() => Double], Seq.empty[GoodInvestment])
     val (remainingMoney, buyFunctions, sellFunctions, goodsInvested) = goods.foldLeft(zero) {
       case (acc @ (remainingMoney, buyFunctions, sellFunctions, goodsInvested), good) =>
-        val price = StockMarket.price(good)
+        val price = good.price
         val stockToFillWarehouse = StockMarket.maxStock(good) - good.stock.toInt
         val stockToBuy = stockToFillWarehouse min Math.floor(remainingMoney / price).toInt
         if (stockToBuy > 0) {
@@ -114,6 +114,6 @@ case class RealInvestment private(
 
   /** @returns {number} The total cookies gotten from selling this investment
    */
-  override def sellInvestment(): Double =
+  override def liquidateInvestment(): Double =
     StockMarket.moneyToCookies(sellFunctions.sumBy(_ ()))
 }

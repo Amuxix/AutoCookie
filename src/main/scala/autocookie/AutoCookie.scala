@@ -84,8 +84,8 @@ object AutoCookie extends Mod with AutoSaveable {
 
   def loop(reason: LoopReason): Unit =
     debug(s"Loop: ${reason.message}")
-    if stopped then return
     if mainTimeout.nonEmpty then mainTimeout.foreach(clearTimeout)
+    if stopped then return
     reason match
       case reason if reason.shouldUpdate =>
         Reserve.update()
@@ -106,14 +106,19 @@ object AutoCookie extends Mod with AutoSaveable {
       val investment = nextMilestone.investment
 
       if nextMilestone.timeToBuy <= 0.millis then
-        val invested = if investment.estimatedReturns > 0 then investment.invest() else 0
+        val invested = if investment.estimatedReturns > 0 then
+          println(s"Highest CPS at investment ${Beautify(Game.cookiesPsRawHighest)}")
+          investment.invest()
+        else
+          0
         nextMilestone.buy()
         if invested > 0 then
           setTimeout(StockMarket.timeToNextTick + 50.millis) {
-            val profit = investment.sellInvestment() - invested
+            println(s"Highest CPS at liquidation ${Beautify(Game.cookiesPsRawHighest)}")
+            val profit = investment.liquidateInvestment() - invested
             val title = s"Investment Returns for ${nextMilestone.name}"
             val message = s"${Beautify(profit)} or ${(profit / Game.unbuffedCps).seconds.prettyPrint} of production"
-            log(title + message)
+            log(title + " " + message)
             Game.Notify(title, message)
             loop(InvestmentSold)
           }
@@ -130,7 +135,7 @@ object AutoCookie extends Mod with AutoSaveable {
     notes.foreach(_.update())
 
   def start(): Unit =
-    if (stopped) {
+    if stopped then
       stopped = false
       val allBuyables = (buildings ++ upgrades ++ achievements).values.toSet
       buyables = allBuyables.filter(_.canEventuallyGet)
@@ -139,21 +144,27 @@ object AutoCookie extends Mod with AutoSaveable {
       noteUpdateInterval = Some(setInterval(NOTE_UPDATE_FREQUENCY)(updateNotes()))
       engageHooks()
       NoteArea.show()
-      CPSCalculator(debug = true)
-    }
+      //CPSCalculator(debug = true)
+
+  def stop(): Unit =
+    if !stopped then
+      stopped = true
+      noteUpdateInterval.foreach(clearInterval)
+      noteUpdateInterval = None
+      NoteArea.hide()
+      //diesngageHooks()
+
+  def emptyCalc() = CPSCalculator(debug = true)
 
   override def autoLoad(save: String, version: Float): Unit =
     def load() =
       val split = save.split("\\|")
       for {
         reserveSave <- Try(split(0))
-        buyLockedText <- Try(split(1))
-        buyLocked <- buyLockedText match {
-          case "false" => Success(false)
-          case "true" => Success(true)
-          case _ => Failure(new Exception("Failed to parse buy locked state"))
-        }
+        stockMarketSave <- Try(split(1))
+        buyLocked <- Try(split(2)).map(_.toBoolean)
         _ = ReserveNote.load(reserveSave)
+        _ = StockMarket.load(stockMarketSave)
         _ = this.buyLocked = buyLocked
         _ = log("Load Successful")
       } yield ()
@@ -175,6 +186,7 @@ object AutoCookie extends Mod with AutoSaveable {
   override def autoSave: String =
     Seq(
       ReserveNote.save,
+      StockMarket.save,
       buyLocked,
     ).mkString("|")
 
