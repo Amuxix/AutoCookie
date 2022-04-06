@@ -151,17 +151,17 @@ abstract class Buyable {
     if (cookiesNeeded <= 0) return Date.now()
 
     val cpsBuffs = Helpers.buffs.filter(_.multCpS.exists(_ != 0))
-    val buySeconds = if cpsBuffs.length > 0 then
+    val buySeconds = if cpsBuffs.nonEmpty then
       val sortedBuffs = cpsBuffs.map(buff => (buff.remainingTicks / Game.ticksPerSec, buff.multCpS.get)).sortBy(_._1)
       val (unbuffedCPS, remainingCookiesNeeded, currentBuySeconds) = sortedBuffs.foldLeft((cps, cookiesNeeded, 0D)) {
         case ((currentCPS, cookiesNeeded, buySeconds), (remainingBuffSeconds, buffPower)) if cookiesNeeded > 0 =>
-          val CPSwithoutThisBuff = currentCPS / buffPower
+          val CPSWithoutThisBuff = currentCPS / buffPower
           val remainingCookiesNeeded = cookiesNeeded - remainingBuffSeconds * currentCPS
           if remainingCookiesNeeded < 0 then
             val remainingBuySeconds = buySeconds + cookiesNeeded / currentCPS
-            (currentCPS, 0, remainingBuySeconds)
+            (CPSWithoutThisBuff, 0, remainingBuySeconds)
           else
-            (CPSwithoutThisBuff, remainingCookiesNeeded, buySeconds + remainingBuffSeconds)
+            (CPSWithoutThisBuff, remainingCookiesNeeded, buySeconds + remainingBuffSeconds)
         case (t, _) => t
       }
       currentBuySeconds + remainingCookiesNeeded / unbuffedCPS

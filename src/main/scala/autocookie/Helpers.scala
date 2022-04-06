@@ -90,7 +90,7 @@ object Helpers:
 
   def hasOrIsChoice(upgradeName: String, choice: Option[String]): Boolean =
     val upgrade = Upgrade.getByName(upgradeName)
-    upgrade.owned || choice.exists(_ == upgrade.name)
+    upgrade.owned || choice.contains(upgrade.name)
 
   def cps: Double = Game.cookiesPs * (1 - Game.cpsSucked)
 

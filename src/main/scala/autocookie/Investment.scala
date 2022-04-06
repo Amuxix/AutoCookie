@@ -49,7 +49,7 @@ case class GoodInvestment(good: Good, amount: Int, cost: Double) {
 
 object RealInvestment {
   def apply(buyable: Buyable, cookies: Double): RealInvestment = {
-    val goods = StockMarket.stableActiveGoods.sortBy(_.price)(Ordering[Double].reverse)
+    val goods = StockMarket.investableGoods(buyable).sortBy(_.price)(Ordering[Double].reverse)
     val fullStockPrice = goods.foldLeft(0D) { case (total, good) =>
       val price = good.price
       val stockToFillWarehouse = StockMarket.maxStock(good) - good.stock
@@ -66,15 +66,14 @@ object RealInvestment {
         val price = good.price
         val stockToFillWarehouse = StockMarket.maxStock(good) - good.stock.toInt
         val stockToBuy = stockToFillWarehouse min Math.floor(remainingMoney / price).toInt
-        if (stockToBuy > 0) {
+        if stockToBuy > 0 then
           def buyFunction(): Unit = StockMarket.buy(good, stockToBuy)
           def sellFunction(): Double = StockMarket.sell(good, stockToBuy)
           val totalPrice = stockToBuy * price
           val goodInvestment = GoodInvestment(good, stockToBuy, totalPrice)
           (remainingMoney - totalPrice, buyFunctions :+ buyFunction, sellFunctions :+ sellFunction, goodsInvested :+ goodInvestment)
-        } else {
+        else
           acc
-        }
     }
     new RealInvestment(
       buyable,

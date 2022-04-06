@@ -65,8 +65,8 @@ object StockMarket extends AutoSaveable {
 
   def maxStock(good: Good): Int = minigame.getGoodMaxStock(good)
 
-  private def isGoodStableOrTrendingUp(good: Good): Boolean =
-    val prices = good.prices.toSeq//.slice(0, STABILITY_MAX_PRICES)
+  private def isProfitable(good: Good, percentIncrease: Double): Boolean =
+    val prices = good.prices.toSeq.slice(0, STABILITY_MAX_PRICES)
     val percentageDifferences = prices.sliding(2).collect {
       case Seq(newest, oldest) => newest / oldest - 1
     }.toSeq
@@ -74,12 +74,12 @@ object StockMarket extends AutoSaveable {
     val stdDev = weightedPercentageDifferences.stdDev
     val avg = weightedPercentageDifferences.sum / weightedPercentageDifferences.length
 
-    val isTrendingUp = percentageDifferences.count(_ >= 0) / percentageDifferences.length.toDouble > 0.8
-    val isStable = math.abs(avg) <= MAX_ABS_AVG && stdDev <= MAX_STD_DEV
-    return isTrendingUp || isStable
+    val isTrendingUp = percentageDifferences.count(_ >= 0) / percentageDifferences.length.toDouble > 0.65 && avg > 0
+    val isTrendingDownSlowlyAdnSteady = math.abs(avg) <= percentIncrease / 3 && stdDev <= MAX_STD_DEV
+    isTrendingUp || isTrendingDownSlowlyAdnSteady
 
-  def stableActiveGoods: Seq[Good] = minigame.goods.filter { good =>
-    good.active && good.prices.length >= STABILITY_MIN_PRICES && isGoodStableOrTrendingUp(good)
+  def investableGoods(buyable: Buyable): Seq[Good] = minigame.goods.filter { good =>
+    good.active && good.prices.length >= STABILITY_MIN_PRICES && isProfitable(good, buyable.percentCpsIncrease)
   }.toSeq
 
   def isActive: Boolean = Building.bank.amount > 0 && Building.bank.level > 0 && Building.bank.minigameLoaded
@@ -93,7 +93,7 @@ object StockMarket extends AutoSaveable {
   def timeToNextTick: FiniteDuration = 60.seconds - (StockMarket.minigame.tickT / Game.ticksPerSec).seconds
 
   def createInvestment(buyable: Buyable, cookies: Double): Investment =
-    if StockMarket.isActive && stableActiveGoods.nonEmpty && cookies > 0 then RealInvestment(buyable, cookies) else EmptyInvestment
+    if StockMarket.isActive && investableGoods(buyable).nonEmpty && cookies > 0 then RealInvestment(buyable, cookies) else EmptyInvestment
 
 
   override val version: Float = 1
