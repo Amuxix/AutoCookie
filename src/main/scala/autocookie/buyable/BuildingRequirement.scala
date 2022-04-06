@@ -9,11 +9,11 @@ object BuildingRequirement {
     Game.buildings.map(building => new BuildingRequirement(building, amount)).toSeq
 }
 
-case class BuildingRequirement(buyable: GameBuilding, override val amount: Int) extends Building(buyable.name) {
+case class BuildingRequirement(buyable: GameBuilding, requiredAmount: Int) extends Building(buyable.name) {
 
   override lazy val gameBuyable: GameBuilding = buyable
 
-  def missingAmount: Int = 0 max amount - gameBuyable.amount.toInt
+  def missingAmount: Int = 0 max requiredAmount - gameBuyable.amount.toInt
 
   lazy val building: Building = Building.getByName(name)
 

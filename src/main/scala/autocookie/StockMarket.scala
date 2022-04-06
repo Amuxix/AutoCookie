@@ -75,7 +75,8 @@ object StockMarket extends AutoSaveable {
     val avg = weightedPercentageDifferences.sum / weightedPercentageDifferences.length
 
     val isTrendingUp = percentageDifferences.count(_ >= 0) / percentageDifferences.length.toDouble > 0.65 && avg > 0
-    val isTrendingDownSlowlyAdnSteady = math.abs(avg) <= percentIncrease / 3 && stdDev <= MAX_STD_DEV
+    val maxAverage = math.max(MAX_ABS_AVG, (percentIncrease - overhead) / 2)
+    val isTrendingDownSlowlyAdnSteady = math.abs(avg) <= maxAverage && stdDev <= MAX_STD_DEV
     isTrendingUp || isTrendingDownSlowlyAdnSteady
 
   def investableGoods(buyable: Buyable): Seq[Good] = minigame.goods.filter { good =>

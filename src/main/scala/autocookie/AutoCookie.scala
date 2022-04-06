@@ -18,7 +18,6 @@ import scala.concurrent.duration.*
 import scala.scalajs.js.annotation.*
 import scala.scalajs.js.timers.{SetIntervalHandle, SetTimeoutHandle, clearInterval, clearTimeout, setInterval, setTimeout}
 import scala.scalajs.js
-import scala.collection.mutable.Map
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
@@ -89,17 +88,17 @@ object AutoCookie extends Mod with AutoSaveable {
     reason match
       case reason if reason.shouldUpdate =>
         Reserve.update()
-        profile("Update")(buyables.foreach(_.update()))
+        //profile("Update")(buyables.foreach(_.update()))
+        buyables.foreach(_.update())
         val newBestBuyable = buyables.minBy(_.payback)
         if bestBuyable != newBestBuyable then
           newBestBuyable.resetOriginalBuyTime()
         bestBuyable = newBestBuyable
-        bestBuyable.updateInvestmentAndBuyTime()
       case `ReserveLevelChanged`         =>
         bestBuyable.resetOriginalBuyTime()
-        bestBuyable.updateInvestmentAndBuyTime()
       case _ =>
-        bestBuyable.updateInvestmentAndBuyTime()
+        ()
+    bestBuyable.updateInvestmentAndBuyTime()
 
     if !buyLocked then
       val nextMilestone = bestBuyable.nextMilestone

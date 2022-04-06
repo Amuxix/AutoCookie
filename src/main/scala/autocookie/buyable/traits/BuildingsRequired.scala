@@ -7,7 +7,7 @@ import cookieclicker.buyables.GameBuilding
 object BuildingsRequired {
   extension (buildingRequirements: Set[BuildingRequirement])
     def toRequirementsMap: Map[GameBuilding, Int] = buildingRequirements
-      .map(buildingRequirement => buildingRequirement.gameBuyable -> buildingRequirement.amount)
+      .map(buildingRequirement => buildingRequirement.gameBuyable -> buildingRequirement.requiredAmount)
       .toMap
 
   extension (requirements: Map[GameBuilding, Int])
@@ -34,14 +34,14 @@ trait BuildingsRequired {
    * The original requirements of this
    */
   lazy val originalBuildingRequirements: Set[BuildingRequirement] = buildingRequirementsSeq.toSet
+
+  /**
+   * Contains all building requirements of this buyable and any requirements it might have
+   */
   lazy val buildingRequirements: Set[BuildingRequirement] =
     val upgradeRequirements = this match {
       case upgradesRequired: UpgradesRequired => upgradesRequired.upgradeRequirements
       case _                                  => Set.empty
     }
     BuildingsRequired.flattenedBuildingRequirements(upgradeRequirements, originalBuildingRequirements)
-
-  /**
-   * Contains all building requirements of this buyable and any requirements it might have
-   */
 }

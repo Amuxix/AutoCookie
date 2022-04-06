@@ -91,7 +91,7 @@ abstract class Buyable {
     val fromUpgrades: Set[BuildingRequirement] = upgradeRequirements.collect {
       case buildingsRequired: BuildingsRequired => buildingsRequired.buildingRequirements
     }.flatten
-    (thisRequirements ++ fromUpgrades).filter(req => req.gameBuyable.amount < req.amount)
+    (thisRequirements ++ fromUpgrades).filter(req => req.gameBuyable.amount < req.requiredAmount)
 
   private def calculateAchievmentUnlocks(upgradeRequirements: Set[Upgrade]): Set[Achievement] =
     val thisAchievement: Set[Achievement] = this match {
@@ -110,7 +110,7 @@ abstract class Buyable {
 
   def update(debug: Boolean = false): Unit =
     val upgradeRequirements: Set[Upgrade] = semiFinalUpgradeRequirements.filter(!_.owned)
-    val buildingRequirements: Set[BuildingRequirement] = semiFinalBuildingRequirements.filter(req => req.gameBuyable.amount < req.amount)
+    val buildingRequirements: Set[BuildingRequirement] = semiFinalBuildingRequirements.filter(req => req.gameBuyable.amount < req.requiredAmount)
     val achievmentUnlocks: Set[Achievement] = semiFinalAchievmentUnlocks.filter(!_.won)
 
     val thisBuilding = this match {
@@ -193,7 +193,7 @@ abstract class Buyable {
     val millisChange = buyTimeDifference
     val absMillisChange = math.abs(millisChange)
     if absMillisChange < 1000 then
-      return ""
+      ""
     else
       val symbol = if millisChange >= 0 then "" else "-"
       s" ($symbol${absMillisChange.millis.prettyPrint})"
