@@ -38,6 +38,6 @@ object ReserveNote extends Note with AutoSaveable {
 
     val reserveLevel = Reserve.level
     topRow.style.color = if reserveLevel == ReserveLevel.Disabled then "#F66" else "#6F6"
-    setDescription(Beautify(Reserve.amount.toDouble))
+    setDescription(Beautify(Reserve.amount))
       .setTitle(s"Reserve (${reserveLevel.title})")
 }

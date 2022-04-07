@@ -11,7 +11,7 @@ class Button(group: ReserveGroup) extends Hideable {
     val button = createElement("a").asInstanceOf[HTMLAnchorElement]
     button.textContent = group.icon
     button.style.textDecoration = "none"
-    button.onclick = (e) => click()
+    button.onclick = e => click()
     button
 
   override val displayType: String = "inline-block"
@@ -39,12 +39,13 @@ class Button(group: ReserveGroup) extends Hideable {
   def click() = setReverseLevelId(reserveLevelIndex + 1)
 }
 
-object Button {
+object Button:
   def glow(reserveLevel: ReserveLevel) =
-    reserveLevel.effects match {
-      case Seq() => ""
+    reserveLevel.effects match
+      case effects if effects.isEmpty => ""
+      case effects if Set(CookieEffect.Frenzy, CookieEffect.BuildingSpecial).subsetOf(effects) => "0px 0px 5px #bf0000" //Red glow
+      case effects if Set(CookieEffect.Frenzy, CookieEffect.DragonHarvest).subsetOf(effects) => "0px 0px 5px #36a300" //Green glow
+      case effects if effects.contains(CookieEffect.BuildingSpecial) => "0px 0px 5px #f54295" //Pinkish glow
       case effects if effects.contains(CookieEffect.Frenzy) => "0px 0px 5px #ffb340" //Orange glow
       case effects if effects.contains(CookieEffect.DragonHarvest) => "0px 0px 5px #68f" //Blueish glow
-      case effects => "0px 0px 5px #fff" //White glow
-    }
-}
+      case effects => "0px 0px 5px #aaa" //White glow

@@ -8,10 +8,10 @@ object Reserve {
   private var possibleLevels = Set.empty[ReserveLevel]
 
   var level: ReserveLevel = Disabled
-  var amount: Long = 0
+  var amount: Double = 0
 
   def update(): Unit =
-    val (activeLevel, amount) = possibleLevels.foldLeft((Disabled, 0L)) {
+    val (activeLevel, amount) = possibleLevels.foldLeft((Disabled, 0D)) {
       case (old @ (maxlevel, max), level) =>
         val amount = level.calculateAmount()
         if amount > max then (level, amount) else old

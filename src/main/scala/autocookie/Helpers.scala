@@ -17,18 +17,6 @@ import scala.scalajs.js.JSConverters.*
 import scala.util.{Random, Try}
 
 object Helpers:
-  //type GameBuyable = GameBuilding | GameUpgrade | GameAchievement
-
-  //given pseudoToBoolean: Conversion[PseudoBoolean, Boolean] = _.eq(PseudoBoolean.`1`)
-
-  //given Conversion[Boolean, PseudoBoolean] = b => if b then PseudoBoolean.`1` else PseudoBoolean.`0`
-
-  /*implicit def toBoolean(b: Boolean | PseudoBoolean): Boolean =
-    if b.isInstanceOf[Boolean] then
-      b
-    else
-      pseudoToBoolean(b.asInstanceOf[PseudoBoolean])*/
-
   implicit def toBoolean(b: 0 | 1): Boolean = b match {
     case 0 => false
     case 1 => true
@@ -94,16 +82,6 @@ object Helpers:
 
   def cps: Double = Game.cookiesPs * (1 - Game.cpsSucked)
 
-/*  def getGodLevel(godName: String): Int =
-    import cookieclickerNumbers._
-    Game.hasGod.fold(0) { level =>
-      Try(level.asInstanceOf[`false`]).map(_ => 0)
-        .orElse(Try(level.asInstanceOf[`1`]).map(_ => 1))
-        .orElse(Try(level.asInstanceOf[`2`]).map(_ => 2))
-        .orElse(Try(level.asInstanceOf[`3`]).map(_ => 3))
-        .getOrElse(0)
-    }*/
-
   def getGodLevel(godName: String): Int =
     Game.hasGod(godName) match {
       case false => 0
@@ -163,11 +141,6 @@ object Helpers:
     if hasOrIsChoice("Kitten angels", choice) then multiplier *= 1 + milk * 0.1
 
     multiplier * getGodMultiplier("decadence")(Seq(1, 1.1, 1.05, 1.03))
-    /*val godLevel = getGodLevel("decadence")
-    if (godLevel == 1) multiplier *= 1.1
-    else if (godLevel == 2) multiplier *= 1.05
-    else if (godLevel == 3) multiplier *= 1.03
-    multiplier*/
 
   def timedRunWithResult[A](f: => A): (A, Double) =
     val start = Date.now()
@@ -181,24 +154,6 @@ object Helpers:
     Logger.debug(s"$what took $time millis to run")
     result
 
-  extension (gameAchievement: GameAchievement)
-    def cloned: GameAchievement = ???
-      /*GameAchievement(
-        gameAchievement.baseDesc,
-        gameAchievement.click,
-        gameAchievement.desc,
-        gameAchievement.disabled,
-        gameAchievement.icon,
-        gameAchievement.id,
-        gameAchievement.name,
-        gameAchievement.order,
-        gameAchievement.pool,
-        gameAchievement.toggle,
-        gameAchievement.vanilla,
-        gameAchievement.won,
-      )*/
-
-
   extension (seq: Seq[Double])
     def stdDev: Double =
       val mean = seq.sum / seq.length
@@ -207,12 +162,3 @@ object Helpers:
 
 
   def buffs: Seq[Buff] = Game.buffs.toSeq
-/*
-
-
-def logMissingAchievements(): Unit = Game.AchievementsById.foreach(achievement => if (Achievement.findByName
-(achievement.name).isEmpty) { console.log(achievement) })
-
-def logMissingUpgrades(): Unit = Game.UpgradesById.foreach(upgrade => if (Upgrade.findByName(upgrade.name).isEmpty) {
- console.log(upgrade) })
-*/

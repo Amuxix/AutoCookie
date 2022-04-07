@@ -13,4 +13,4 @@ object ReserveGroup:
 enum ReserveGroup(val icon: String, val reserveLevels: Array[ReserveLevel]):
   case LuckyGroup extends ReserveGroup("🍀", Array(Disabled, Lucky, FrenzyLucky, DragonHarvestLucky))
   case ChainGroup extends ReserveGroup("🔗", Array(Disabled, Chain, FrenzyChain, DragonHarvestChain))
-  case BakedGoodsGroup extends ReserveGroup("🍪", Array(Disabled, BakedGoods, FrenzyBakedGoods, DragonHarvestBakedGoods))
+  case BakedGoodsGroup extends ReserveGroup("🍪", Array(Disabled, BakedGoods, FrenzyBakedGoods, BuildingSpecialChain, DragonHarvestBakedGoods, FrenzyBuildingSpecialBakedGoods, FrenzyDragonHarvestBakedGoods))
