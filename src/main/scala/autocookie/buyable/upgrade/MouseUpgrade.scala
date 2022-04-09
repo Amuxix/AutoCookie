@@ -39,11 +39,7 @@ class MouseUpgrade(override val name: String) extends Upgrade {
   override def estimatedReturnPercent(newBrokers: Int): Double = 1D
   override protected def createInvestment: Investment = EmptyInvestment
 
-  override protected def calculateCpsIncrease(
-    buildingRequirements: Set[BuildingRequirement],
-    upgradeRequirements: Set[Upgrade],
-    achievmentRequirements: Set[Achievement]
-  ): Double =
+  override protected def calculateCpsIncrease(buildingRequirements: Set[BuildingRequirement], upgradeRequirements: Set[Upgrade], achievmentRequirements: Set[Achievement], debug: Boolean): Double =
     val clickBuffs = Helpers.buffs.filter(_.multClick.exists(_ > 0))
     if clickBuffs.isEmpty then return 0 //Only consider these upgrades if we have a buff
     val fingersAdd =

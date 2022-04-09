@@ -53,17 +53,13 @@ abstract class Buyable {
     val upgradesPrice = upgradeRequirements.sumBy(_.gameBuyable.getPrice())
     buildingsPrice + upgradesPrice
 
-  protected def calculateCpsIncrease(
-    buildingRequirements: Set[BuildingRequirement],
-    upgradeRequirements: Set[Upgrade],
-    achievmentRequirements: Set[Achievement]
-  ): Double =
+  protected def calculateCpsIncrease(buildingRequirements: Set[BuildingRequirement], upgradeRequirements: Set[Upgrade], achievmentRequirements: Set[Achievement], debug: Boolean): Double =
     val extraMilk = 0.04 * achievmentRequirements.size
     val multiplier = Game.globalCpsMult / Helpers.getKittenMultiplier(Game.milkProgress) * getKittenMultiplier(Game.milkProgress + extraMilk)
     val cps = Helpers.cps
     val baseCps = cps / Game.globalCpsMult
     val achievmentCpsIncrease = ((baseCps * multiplier) - cps).round(4)
-    CPSCalculator(buildingRequirements, upgradeRequirements) + achievmentCpsIncrease
+    CPSCalculator(buildingRequirements, upgradeRequirements, debug) + achievmentCpsIncrease
 
   protected def calculatePayback(price: Double, cpsIncrease: Double): Double =
     Buyable.calculatePayback(price, cpsIncrease)
@@ -120,11 +116,11 @@ abstract class Buyable {
 
     requirements = upgradeRequirements ++ buildingRequirements ++ achievmentUnlocks
     price = calculatePrice(buildingRequirements ++ thisBuilding, upgradeRequirements)
-    if debug then println(s"price: $price")
-    cpsIncrease = calculateCpsIncrease(buildingRequirements ++ thisBuilding, upgradeRequirements, achievmentUnlocks)
-    if debug then println(s"cpsIncrease: $cpsIncrease")
+    if debug then Logger.debug(s"price: $price")
+    cpsIncrease = calculateCpsIncrease(buildingRequirements ++ thisBuilding, upgradeRequirements, achievmentUnlocks, debug)
+    if debug then Logger.debug(s"cpsIncrease: $cpsIncrease")
     payback = calculatePayback(price, cpsIncrease)
-    if debug then println(s"payback: $payback")
+    if debug then Logger.debug(s"payback: $payback")
 
   private def cookiesNeeded: Double =
     Reserve.amount + price - Game.cookies - (investment.estimatedReturns max 0)

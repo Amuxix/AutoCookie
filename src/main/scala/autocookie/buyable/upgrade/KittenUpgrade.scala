@@ -6,11 +6,7 @@ import autocookie.buyable.{Achievement, BuildingRequirement}
 import cookieclicker.Game
 
 class KittenUpgrade(override val name: String, milkRequired: Double) extends Upgrade {
-  override protected def calculateCpsIncrease(
-    buildingRequirements: Set[BuildingRequirement],
-    upgradeRequirements: Set[Upgrade],
-    achievmentRequirements: Set[Achievement]
-  ): Double =
+  override protected def calculateCpsIncrease(buildingRequirements: Set[BuildingRequirement], upgradeRequirements: Set[Upgrade], achievmentRequirements: Set[Achievement], debug: Boolean): Double =
     if Game.milkProgress < milkRequired then
       0D
     else
