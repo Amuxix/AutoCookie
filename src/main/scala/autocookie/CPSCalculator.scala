@@ -28,6 +28,8 @@ object CPSCalculator {
   var prisms = 0
   var chancemakers = 0
   var fractalEngines = 0
+  var javascriptConsoles = 0
+  var idleverses = 0
 
   var extraCursors = 0
   var extraGrandmas = 0
@@ -45,6 +47,8 @@ object CPSCalculator {
   var extraPrisms = 0
   var extraChancemakers = 0
   var extraFractalEngines = 0
+  var extraJavascriptConsoles = 0
+  var extraIdleverses = 0
 
   def totalExtra = extraCursors + extraGrandmas + extraFarms + extraMines + extraFactories + extraBanks + extraTemples +
     extraWizardTowers + extraShipments + extraAlchemyLabs + extraPortals + extraTimeMachines +
@@ -99,7 +103,8 @@ object CPSCalculator {
     "Rainbow grandmas",
     "Lucky grandmas",
     "Metagrandmas",
-    //"Binary grandmas",
+    "Binary grandmas",
+    "Alternate grandmas",
     "Bingo center/Research facility",
     "Bingo center/Research facility", //This is duplicated on purpose as bingo center increases grandma cps by 4x
     "Ritual rolling pins",
@@ -108,6 +113,9 @@ object CPSCalculator {
     "One mind" -> (() => grandmas * 0.02),
     "Communal brainsweep" -> (() => grandmas * 0.02),
     "Elder Pact" -> (() => portals * 0.05),
+  ).map(toUpgrade)
+  lazy val grandmaSynergyMap: Map[Upgrade, () => Double] = Map(
+    "Script grannies" -> (() => javascriptConsoles * .05),
   ).map(toUpgrade)
 
   lazy val farmExponentialUpgrades = List(
@@ -298,6 +306,7 @@ object CPSCalculator {
     "Paganism" -> (() => temples * .001),
     "Infernal crops" -> (() => farms * .001),
     "Abysmal glimmer" -> (() => prisms * .05),
+    "Perforated mille-feuille cosmos" -> (() => idleverses * .05),
   ).map(toUpgrade)
 
   lazy val timeMachineExponentialUpgrades = List(
@@ -382,6 +391,7 @@ object CPSCalculator {
     "Lucky grandmas" -> (() => grandmas / 13D * .01),
     "Gemmed talismans" -> (() => mines * .001),
     "Charm quarks" -> (() => antimatterCondensers * .001),
+    "Tombola computing" -> (() => javascriptConsoles * .05),
   ).map(toUpgrade)
 
   lazy val fractalExponentialUpgrades = List(
@@ -401,6 +411,49 @@ object CPSCalculator {
     "Metagrandmas" -> (() => grandmas / 14D * .01),
     "Recursive mirrors" -> (() => prisms * .001),
     "Mice clicking mice" -> (() => cursors * .001),
+    "Infraverses and superverses" -> (() => fractalEngines * .05),
+  ).map(toUpgrade)
+
+  lazy val javascriptConsoleExponentialUpgrades = List(
+    "The JavaScript console for dummies",
+    "64bit arrays",
+    "Stack overflow",
+    "Enterprise compiler",
+    "Syntactic sugar",
+    "A nice cup of coffee",
+    "Just-in-time baking",
+    "cookies++",
+    "Software updates",
+    "Game.Loop",
+    "eval()",
+    "Your biggest fans",
+    "Hacker shades",
+  ).map(Upgrade.getByName)
+  lazy val javascriptConsoleSynergyMap: Map[Upgrade, () => Double] = Map(
+    "Binary grandmas" -> (() => grandmas / 15D * .01),
+    "Script grannies" -> (() => grandmas * .001),
+    "Tombola computing" -> (() => chancemakers * .001),
+  ).map(toUpgrade)
+
+  lazy val idleverseExponentialUpgrades = List(
+    "Manifest destiny",
+    "The multiverse in a nutshell",
+    "All-conversion",
+    "Multiverse agents",
+    "Escape plan",
+    "Game design",
+    "Sandbox universes",
+    "Multiverse wars",
+    "Mobile ports",
+    "Encapsulated realities",
+    "Extrinsic clicking",
+    "Universal idling",
+    "Break the fifth wall",
+  ).map(Upgrade.getByName)
+  lazy val idleverseSynergyMap: Map[Upgrade, () => Double] = Map(
+    "Alternate grandmas" -> (() => grandmas / 16D * .01),
+    "Perforated mille-feuille cosmos" -> (() => portals * .001),
+    "Infraverses and superverses" -> (() => fractalEngines * .001),
   ).map(toUpgrade)
 
 
@@ -457,7 +510,7 @@ object CPSCalculator {
       case (baseIncrease, (upgrade, increaseF)) if hasOrIsInChoices(upgrade, upgrades) => baseIncrease + increaseF()
       case (baseIncrease, _)                                                           => baseIncrease
     }
-    calculateBuildingCPS(upgrades, Building.grandma.level.toInt, baseCps, grandmas, Map.empty, grandmaExponentialUpgrades)
+    calculateBuildingCPS(upgrades, Building.grandma.level.toInt, baseCps, grandmas, grandmaSynergyMap, grandmaExponentialUpgrades)
 
   def calculateFarmsCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraFarms == 0 && extraGrandmas == 0 && extraTimeMachines == 0 && extraTemples == 0 && extraWizardTowers == 0 && extraPortals == 0 then
@@ -529,6 +582,16 @@ object CPSCalculator {
       return Building.fractalEngine.storedTotalCps
     calculateBuildingCPS(upgrades, Building.fractalEngine.level.toInt, Building.fractalEngine.baseCps, fractalEngines, fractalSynergyMap, fractalExponentialUpgrades)
 
+  def calculateJavascriptConsolesCps(upgrades: Set[Upgrade]): Double =
+    if upgrades.isEmpty && extraJavascriptConsoles == 0 && extraGrandmas == 0 && extraChancemakers == 0 then
+      return Building.javascriptConsole.storedTotalCps
+    calculateBuildingCPS(upgrades, Building.javascriptConsole.level.toInt, Building.javascriptConsole.baseCps, javascriptConsoles, javascriptConsoleSynergyMap, javascriptConsoleExponentialUpgrades)
+
+  def calculateIdleversesCps(upgrades: Set[Upgrade]): Double =
+    if upgrades.isEmpty && idleverses == 0 && extraGrandmas == 0 && extraPortals == 0 && extraFractalEngines == 0 then
+      return Building.idleverse.storedTotalCps
+    calculateBuildingCPS(upgrades, Building.idleverse.level.toInt, Building.idleverse.baseCps, idleverses, idleverseSynergyMap, idleverseExponentialUpgrades)
+
   def apply(buildingRequirements: Set[BuildingRequirement] = Set.empty, upgrades: Set[Upgrade] = Set.empty, debug: Boolean = false): Double =
     val buildMult = godBuildingCpsMultiplier
     val requirementMap = buildingRequirements.map(req => req.gameBuyable -> req.missingAmount).toMap
@@ -549,6 +612,8 @@ object CPSCalculator {
     extraPrisms = requirementMap.getOrElse(Building.prism, 0)
     extraChancemakers = requirementMap.getOrElse(Building.chancemaker, 0)
     extraFractalEngines = requirementMap.getOrElse(Building.fractalEngine, 0)
+    extraJavascriptConsoles = requirementMap.getOrElse(Building.javascriptConsole, 0)
+    extraIdleverses = requirementMap.getOrElse(Building.idleverse, 0)
 
     cursors = Building.cursor.amount.toInt + extraCursors
     grandmas = Building.grandma.amount.toInt + extraGrandmas
@@ -566,9 +631,11 @@ object CPSCalculator {
     prisms = Building.prism.amount.toInt + extraPrisms
     chancemakers = Building.chancemaker.amount.toInt + extraChancemakers
     fractalEngines = Building.fractalEngine.amount.toInt + extraFractalEngines
+    javascriptConsoles = Building.javascriptConsole.amount.toInt + extraJavascriptConsoles
+    idleverses = Building.idleverse.amount.toInt + extraIdleverses
 
-    val nonCursors = grandmas + farms + mines + factories + banks + temples + wizardTowers + shipments + alchemyLabs + portals + timeMachines + antimatterCondensers + prisms + chancemakers + fractalEngines
-    extraNonCursors = extraGrandmas + extraFarms + extraMines + extraFactories + extraBanks + extraTemples + extraWizardTowers + extraShipments + extraAlchemyLabs + extraPortals + extraTimeMachines + extraAntimatterCondensers + extraPrisms + extraChancemakers + extraFractalEngines
+    val nonCursors = grandmas + farms + mines + factories + banks + temples + wizardTowers + shipments + alchemyLabs + portals + timeMachines + antimatterCondensers + prisms + chancemakers + fractalEngines + javascriptConsoles + idleverses
+    extraNonCursors = extraGrandmas + extraFarms + extraMines + extraFactories + extraBanks + extraTemples + extraWizardTowers + extraShipments + extraAlchemyLabs + extraPortals + extraTimeMachines + extraAntimatterCondensers + extraPrisms + extraChancemakers + extraFractalEngines + extraJavascriptConsoles + extraIdleverses
 
     val oldBuildingCps: Double = Building.all.sumBy(_.storedTotalCps)
 
@@ -593,8 +660,10 @@ object CPSCalculator {
     val prismsCps = calculatePrismsCps(upgrades)
     val chancemakersCps = calculateChancemakersCps(upgrades)
     val fractalCps = calculateFractalEnginesCps(upgrades)
+    val javascriptConsoleCps = calculateJavascriptConsolesCps(upgrades)
+    val idleverseCps = calculateIdleversesCps(upgrades)
 
-    val increase = cursorsCps + grandmasCps + farmsCps + minesCps + factoriesCps + banksCps + templesCps + wizardCps + shipmentsCps + alchemyCps + portalsCps + timeCps + antimatterCps + prismsCps + chancemakersCps + fractalCps
+    val increase = cursorsCps + grandmasCps + farmsCps + minesCps + factoriesCps + banksCps + templesCps + wizardCps + shipmentsCps + alchemyCps + portalsCps + timeCps + antimatterCps + prismsCps + chancemakersCps + fractalCps + javascriptConsoleCps + idleverseCps
 
     val cpsIncrease = ((increase * godBuildingCpsMultiplier * cookieUpgradesMultiplier - oldBuildingCps) * Game.globalCpsMult).round(4) max 0D
 
@@ -615,6 +684,8 @@ object CPSCalculator {
       Logger.debug(s"Prisms ${calculatePrismsCps(upgrades) - Building.prism.storedTotalCps}")
       Logger.debug(s"Chancemakers ${calculateChancemakersCps(upgrades) - Building.chancemaker.storedTotalCps}")
       Logger.debug(s"FractalEngines ${calculateFractalEnginesCps(upgrades) - Building.fractalEngine.storedTotalCps}")
+      Logger.debug(s"JavascriptConsoles ${calculateJavascriptConsolesCps(upgrades) - Building.javascriptConsole.storedTotalCps}")
+      Logger.debug(s"Idleverses ${calculateIdleversesCps(upgrades) - Building.idleverse.storedTotalCps}")
       Logger.debug(s"godBuildingCpsMultiplier $godBuildingCpsMultiplier")
       Logger.debug(s"cookieUpgradesMultiplier $cookieUpgradesMultiplier")
       Logger.debug(s"diff ${increase * godBuildingCpsMultiplier * cookieUpgradesMultiplier - oldBuildingCps}")

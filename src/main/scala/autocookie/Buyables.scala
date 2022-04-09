@@ -126,6 +126,8 @@ object Buyables {
       new BuildingUpgrade("Rainbow grandmas", new BuildingRequirement(Building.grandma, 1), new BuildingRequirement(Building.prism, 15)),
       new BuildingUpgrade("Lucky grandmas", new BuildingRequirement(Building.grandma, 1), new BuildingRequirement(Building.chancemaker, 15)),
       new BuildingUpgrade("Metagrandmas", new BuildingRequirement(Building.grandma, 1), new BuildingRequirement(Building.fractalEngine, 15)),
+      new BuildingUpgrade("Binary grandmas", new BuildingRequirement(Building.grandma, 1), new BuildingRequirement(Building.javascriptConsole, 15)),
+      new BuildingUpgrade("Alternate grandmas", new BuildingRequirement(Building.grandma, 1), new BuildingRequirement(Building.idleverse, 15)),
       //endregion,
       //region Farm
       new BuildingUpgradeWithAchievement("Cheap hoes", new BuildingRequirement(Building.farm, 1), "Bought the farm"),
@@ -202,7 +204,7 @@ object Buyables {
       new BuildingUpgradeWithAchievement("A novel idea", new BuildingRequirement(Building.temple, 450), "Vengeful and almighty"),
       new BuildingUpgradeWithAchievement("Apparitions", new BuildingRequirement(Building.temple, 500), "My world's on fire, how about yours"),
       //endregion,
-      //region Wizard tower,
+      //region Wizard tower
       new BuildingUpgradeWithAchievement("Pointier hats", new BuildingRequirement(Building.wizardTower, 1), "Bewitched"),
       new BuildingUpgrade("Beardlier beards", new BuildingRequirement(Building.wizardTower, 5)),
       new BuildingUpgrade("Ancient grimoires", new BuildingRequirement(Building.wizardTower, 25)),
@@ -216,7 +218,7 @@ object Buyables {
       new BuildingUpgradeWithAchievement("Electricity", new BuildingRequirement(Building.wizardTower, 400), "The Prestige"),
       new BuildingUpgradeWithAchievement("Spelling bees", new BuildingRequirement(Building.wizardTower, 450), "Spell it out for you"),
       new BuildingUpgradeWithAchievement("Wizard basements", new BuildingRequirement(Building.wizardTower, 500), "The meteor men beg to differ"),
-      //endregion,
+      //endregion
       //region Shipment
       new BuildingUpgradeWithAchievement("Vanilla nebulae", new BuildingRequirement(Building.shipment, 1), "Expedition"),
       new BuildingUpgrade("Wormholes", new BuildingRequirement(Building.shipment, 5)),
@@ -232,7 +234,7 @@ object Buyables {
       new BuildingUpgradeWithAchievement("Toroid universe", new BuildingRequirement(Building.shipment, 450), "Space space space space space"),
       new BuildingUpgradeWithAchievement("Prime directive", new BuildingRequirement(Building.shipment, 500), "Only shooting stars"),
       //endregion,
-      //region Alchemy lab,
+      //region Alchemy lab
       new BuildingUpgradeWithAchievement("Antimony", new BuildingRequirement(Building.alchemyLab, 1), "Transmutation"),
       new BuildingUpgrade("Essence of dough", new BuildingRequirement(Building.alchemyLab, 5)),
       new BuildingUpgrade("True chocolate", new BuildingRequirement(Building.alchemyLab, 25)),
@@ -246,7 +248,7 @@ object Buyables {
       new BuildingUpgradeWithAchievement("Public betterment", new BuildingRequirement(Building.alchemyLab, 400), "Worth its weight in lead"),
       new BuildingUpgradeWithAchievement("Hermetic reconciliation", new BuildingRequirement(Building.alchemyLab, 450), "Don't get used to yourself, you're gonna have to change"),
       new BuildingUpgradeWithAchievement("Chromatic cycling", new BuildingRequirement(Building.alchemyLab, 500), "We could all use a little change"),
-      //endregion,
+      //endregion
       //region Portal
       new BuildingUpgradeWithAchievement("Ancient tablet", new BuildingRequirement(Building.portal, 1), "A whole new world"),
       new BuildingUpgrade("Insane oatling workers", new BuildingRequirement(Building.portal, 5)),
@@ -262,7 +264,7 @@ object Buyables {
       new BuildingUpgradeWithAchievement("His advent", new BuildingRequirement(Building.portal, 450), "Objects in the mirror dimension are closer than they appear"),
       new BuildingUpgradeWithAchievement("Domestic rifts", new BuildingRequirement(Building.portal, 500), "Your brain gets smart but your head gets dumb"),
       //endregion,
-      //region Time machine,
+      //region Time machine
       new BuildingUpgradeWithAchievement("Flux capacitors", new BuildingRequirement(Building.timeMachine, 1), "Time warp"),
       new BuildingUpgrade("Time paradox resolver", new BuildingRequirement(Building.timeMachine, 5)),
       new BuildingUpgrade("Quantum conundrum", new BuildingRequirement(Building.timeMachine, 25)),
@@ -276,8 +278,8 @@ object Buyables {
       new BuildingUpgradeWithAchievement("Nostalgia", new BuildingRequirement(Building.timeMachine, 400), "Invited to yesterday's party"),
       new BuildingUpgradeWithAchievement("Split seconds", new BuildingRequirement(Building.timeMachine, 450), "Groundhog day"),
       new BuildingUpgradeWithAchievement("Patience abolished", new BuildingRequirement(Building.timeMachine, 500), "The years start coming"),
-      //endregion,
-      //region Antimatter condensers,
+      //endregion
+      //region Antimatter condensers
       new BuildingUpgradeWithAchievement("Sugar bosons", new BuildingRequirement(Building.antimatterCondenser, 1), "Antibatter"),
       new BuildingUpgrade("String theory", new BuildingRequirement(Building.antimatterCondenser, 5)),
       new BuildingUpgrade("Large macaron collider", new BuildingRequirement(Building.antimatterCondenser, 25)),
@@ -291,7 +293,7 @@ object Buyables {
       new BuildingUpgradeWithAchievement("The definite molecule", new BuildingRequirement(Building.antimatterCondenser, 400), "Downsizing"),
       new BuildingUpgradeWithAchievement("Flavor itself", new BuildingRequirement(Building.antimatterCondenser, 450), "A matter of perspective"),
       new BuildingUpgradeWithAchievement("Delicious pull", new BuildingRequirement(Building.antimatterCondenser, 500), "What a concept"),
-      //endregion,
+      //endregion
       //region Prisms
       new BuildingUpgradeWithAchievement("Gem polish", new BuildingRequirement(Building.prism, 1), "Lone photon"),
       new BuildingUpgrade("9th color", new BuildingRequirement(Building.prism, 5)),
@@ -322,7 +324,7 @@ object Buyables {
       new BuildingUpgradeWithAchievement("A touch of determinism", new BuildingRequirement(Building.chancemaker, 450), "Jackpot"),
       new BuildingUpgradeWithAchievement("On a streak", new BuildingRequirement(Building.chancemaker, 500), "You'll never know if you don't go"),
       //endregion,
-      //region Fractal Engine,
+      //region Fractal Engine
       new BuildingUpgradeWithAchievement("Metabakeries", new BuildingRequirement(Building.fractalEngine, 1), "Self-contained"),
       new BuildingUpgrade("Mandelbrown sugar", new BuildingRequirement(Building.fractalEngine, 5)),
       new BuildingUpgrade("Fractoids", new BuildingRequirement(Building.fractalEngine, 25)),
@@ -336,16 +338,46 @@ object Buyables {
       new BuildingUpgradeWithAchievement("The set of all sets", new BuildingRequirement(Building.fractalEngine, 400), "For more information on this achievement, please refer to its title"),
       new BuildingUpgradeWithAchievement("This upgrade", new BuildingRequirement(Building.fractalEngine, 450), "I'm so meta, even this achievement"),
       new BuildingUpgradeWithAchievement("A box", new BuildingRequirement(Building.fractalEngine, 500), "Never get bored"),
-      //endregion,
+      //endregion
+      //region Javascript Console
+      new BuildingUpgradeWithAchievement("The JavaScript console for dummies", new BuildingRequirement(Building.javascriptConsole, 1), "F12"),
+      new BuildingUpgrade("64bit arrays", new BuildingRequirement(Building.javascriptConsole, 5)),
+      new BuildingUpgrade("Stack overflow", new BuildingRequirement(Building.javascriptConsole, 25)),
+      new BuildingUpgradeWithAchievement("Enterprise compiler", new BuildingRequirement(Building.javascriptConsole, 50), "Variable success"),
+      new BuildingUpgradeWithAchievement("Syntactic sugar", new BuildingRequirement(Building.javascriptConsole, 100), "No comments"),
+      new BuildingUpgradeWithAchievement("A nice cup of coffee", new BuildingRequirement(Building.javascriptConsole, 150), "Up to code"),
+      new BuildingUpgradeWithAchievement("Just-in-time baking", new BuildingRequirement(Building.javascriptConsole, 200), "Works on my machine"),
+      new BuildingUpgradeWithAchievement("cookies++", new BuildingRequirement(Building.javascriptConsole, 250), "Technical debt"),
+      new BuildingUpgradeWithAchievement("Software updates", new BuildingRequirement(Building.javascriptConsole, 300), "Mind your language"),
+      new BuildingUpgradeWithAchievement("Game.Loop", new BuildingRequirement(Building.javascriptConsole, 350), "Inconsolable"),
+      new BuildingUpgradeWithAchievement("eval()", new BuildingRequirement(Building.javascriptConsole, 400), "Closure"),
+      new BuildingUpgradeWithAchievement("Your biggest fans", new BuildingRequirement(Building.javascriptConsole, 450), "Dude what if we're all living in a simulation like what if we're all just code on a computer somewhere"),
+      new BuildingUpgradeWithAchievement("Hacker shades", new BuildingRequirement(Building.javascriptConsole, 500), "Taking the back streets"),
+      //endregion
+      //region Idleverse
+      new BuildingUpgradeWithAchievement("Manifest destiny", new BuildingRequirement(Building.idleverse, 1), "They'll never know what hit 'em"),
+      new BuildingUpgrade("The multiverse in a nutshell", new BuildingRequirement(Building.idleverse, 5)),
+      new BuildingUpgrade("All-conversion", new BuildingRequirement(Building.idleverse, 25)),
+      new BuildingUpgradeWithAchievement("Multiverse agents", new BuildingRequirement(Building.idleverse, 50), "Well-versed"),
+      new BuildingUpgradeWithAchievement("Escape plan", new BuildingRequirement(Building.idleverse, 100), "Ripe for the picking"),
+      new BuildingUpgradeWithAchievement("Game design", new BuildingRequirement(Building.idleverse, 150), "Unreal"),
+      new BuildingUpgradeWithAchievement("Sandbox universes", new BuildingRequirement(Building.idleverse, 200), "Once you've seen one"),
+      new BuildingUpgradeWithAchievement("Multiverse wars", new BuildingRequirement(Building.idleverse, 250), "Spoils and plunder"),
+      new BuildingUpgradeWithAchievement("Mobile ports", new BuildingRequirement(Building.idleverse, 300), "Nobody exists on purpose, nobody belongs anywhere"),
+      new BuildingUpgradeWithAchievement("Encapsulated realities", new BuildingRequirement(Building.idleverse, 350), "Hyperspace expressway"),
+      new BuildingUpgradeWithAchievement("Extrinsic clicking", new BuildingRequirement(Building.idleverse, 400), "Versatile"),
+      new BuildingUpgradeWithAchievement("Universal idling", new BuildingRequirement(Building.idleverse, 450), "You are inevitable"),
+      new BuildingUpgradeWithAchievement("Break the fifth wall", new BuildingRequirement(Building.idleverse, 500), "Away from this place"),
+      //endregion
       //TODO: Heralds Upgrade,
-      //region Heavenly Chips Power,
+      //region Heavenly Chips Power
       new HeavenlyChipUpgrade("Heavenly chip secret", 5),
       new HeavenlyChipUpgradeWithSingleUpgradeRequired("Heavenly cookie stand", 20, "Heavenly chip secret"),
       new HeavenlyChipUpgradeWithSingleUpgradeRequired("Heavenly bakery", 25, "Heavenly cookie stand"),
       new HeavenlyChipUpgradeWithSingleUpgradeRequired("Heavenly confectionery", 25, "Heavenly bakery"),
       new HeavenlyChipUpgradeWithSingleUpgradeRequired("Heavenly key", 25, "Heavenly confectionery"),
-      //endregion,
-      //region Research/Bingo Center,
+      //endregion
+      //region Research/Bingo Center
       new ResearchUpgrade("Bingo center/Research facility"),
       new ResearchCookieUpgrade("Specialized chocolate chips", "Bingo center/Research facility", 1D),
       new ResearchCookieUpgrade("Designer cocoa beans", "Specialized chocolate chips", 2D),
@@ -356,7 +388,7 @@ object Buyables {
       new ResearchUpgrade("Communal brainsweep", "Exotic nuts"),
       new ResearchCookieUpgrade("Arcane sugar", "Communal brainsweep", 5D),
       new ResearchUpgrade("Elder Pact", "Arcane sugar"),
-      //endregion,
+      //endregion
       //region Kitten
       new KittenUpgrade("Kitten helpers", 0.52),
       new KittenUpgrade("Kitten workers", 1),
@@ -386,13 +418,13 @@ object Buyables {
       new MouseUpgrade("Plasmarble mouse"),
       new MouseUpgrade("Miraculite mouse"),
       //endregion,
-      //region Golden Cookie,
+      //region Golden Cookie
       new GoldenCookieUpgrade("Lucky day"),
       new GoldenCookieUpgrade("Serendipity"),
       new GoldenCookieUpgrade("Get lucky"),
       new GoldenCookieUpgrade("Golden goose egg"),
       new GoldenCookieUpgrade("Green yeast digestives"),
-      //endregion,
+      //endregion
       //region Cookies
       new CookieUpgrade("Plain cookies"),
       new CookieUpgrade("Sugar cookies"),
@@ -613,6 +645,8 @@ object Buyables {
       new BuildingUpgradeWithSingleUpgradeRequired("Paganism", "Synergies Vol. I", new BuildingRequirement(Building.temple, 15), new BuildingRequirement(Building.portal, 15)),
       new BuildingUpgradeWithSingleUpgradeRequired("Arcane knowledge", "Synergies Vol. I", new BuildingRequirement(Building.wizardTower, 15), new BuildingRequirement(Building.alchemyLab, 15)),
       new BuildingUpgradeWithSingleUpgradeRequired("Light magic", "Synergies Vol. I", new BuildingRequirement(Building.wizardTower, 15), new BuildingRequirement(Building.prism, 15)),
+      new BuildingUpgradeWithSingleUpgradeRequired("Script grannies", "Synergies Vol. I", new BuildingRequirement(Building.grandma, 15), new BuildingRequirement(Building.javascriptConsole, 15)),
+      new BuildingUpgradeWithSingleUpgradeRequired("Perforated mille-feuille cosmos", "Synergies Vol. I", new BuildingRequirement(Building.portal, 15), new BuildingRequirement(Building.idleverse, 15)),
 
 
       new BuildingUpgradeWithSingleUpgradeRequired("Chemical proficiency", "Synergies Vol. II", new BuildingRequirement(Building.alchemyLab, 75), new BuildingRequirement(Building.antimatterCondenser, 75)),
@@ -629,6 +663,8 @@ object Buyables {
       new BuildingUpgradeWithSingleUpgradeRequired("God particle", "Synergies Vol. II", new BuildingRequirement(Building.temple, 75), new BuildingRequirement(Building.antimatterCondenser, 75)),
       new BuildingUpgradeWithSingleUpgradeRequired("Mystical energies", "Synergies Vol. II", new BuildingRequirement(Building.temple, 75), new BuildingRequirement(Building.prism, 75)),
       new BuildingUpgradeWithSingleUpgradeRequired("Magical botany", "Synergies Vol. II", new BuildingRequirement(Building.wizardTower, 75), new BuildingRequirement(Building.farm, 75)),
+      new BuildingUpgradeWithSingleUpgradeRequired("Tombola computing", "Synergies Vol. II", new BuildingRequirement(Building.chancemaker, 75), new BuildingRequirement(Building.javascriptConsole, 75)),
+      new BuildingUpgradeWithSingleUpgradeRequired("Infraverses and superverses", "Synergies Vol. II", new BuildingRequirement(Building.fractalEngine, 75), new BuildingRequirement(Building.idleverse, 75)),
       //endregion
     ).map(upgrade => upgrade.name -> upgrade).toMap
 
@@ -872,6 +908,36 @@ object Buyables {
       new Achievement("Never get bored", new BuildingRequirement(Building.fractalEngine, 500)),
       new Achievement("Tautological", new BuildingRequirement(Building.fractalEngine, 550)),
       new Achievement("In and of itself", new BuildingRequirement(Building.fractalEngine, 600)),
+      //endregion
+      //region Javascript Console
+      new Achievement("F12", new BuildingRequirement(Building.javascriptConsole, 1)),
+      new Achievement("Variable success", new BuildingRequirement(Building.javascriptConsole, 50)),
+      new Achievement("No comments", new BuildingRequirement(Building.javascriptConsole, 100)),
+      new Achievement("Up to code", new BuildingRequirement(Building.javascriptConsole, 150)),
+      new Achievement("Works on my machine", new BuildingRequirement(Building.javascriptConsole, 200)),
+      new Achievement("Technical debt", new BuildingRequirement(Building.javascriptConsole, 250)),
+      new Achievement("Mind your language", new BuildingRequirement(Building.javascriptConsole, 300)),
+      new Achievement("Inconsolable", new BuildingRequirement(Building.javascriptConsole, 350)),
+      new Achievement("Closure", new BuildingRequirement(Building.javascriptConsole, 400)),
+      new Achievement("Dude what if we're all living in a simulation like what if we're all just code on a computer somewhere", new BuildingRequirement(Building.javascriptConsole, 450)),
+      new Achievement("Taking the back streets", new BuildingRequirement(Building.javascriptConsole, 500)),
+      new Achievement("Curly braces", new BuildingRequirement(Building.javascriptConsole, 550)),
+      new Achievement("Duck typing", new BuildingRequirement(Building.javascriptConsole, 600)),
+      //endregion
+      //region Idleverse
+      new Achievement("They'll never know what hit 'em", new BuildingRequirement(Building.idleverse, 1)),
+      new Achievement("Well-versed", new BuildingRequirement(Building.idleverse, 50)),
+      new Achievement("Ripe for the picking", new BuildingRequirement(Building.idleverse, 100)),
+      new Achievement("Unreal", new BuildingRequirement(Building.idleverse, 150)),
+      new Achievement("Once you've seen one", new BuildingRequirement(Building.idleverse, 200)),
+      new Achievement("Spoils and plunder", new BuildingRequirement(Building.idleverse, 250)),
+      new Achievement("Nobody exists on purpose, nobody belongs anywhere", new BuildingRequirement(Building.idleverse, 300)),
+      new Achievement("Hyperspace expressway", new BuildingRequirement(Building.idleverse, 350)),
+      new Achievement("Versatile", new BuildingRequirement(Building.idleverse, 400)),
+      new Achievement("You are inevitable", new BuildingRequirement(Building.idleverse, 450)),
+      new Achievement("Away from this place", new BuildingRequirement(Building.idleverse, 500)),
+      new Achievement("Everywhere at once", new BuildingRequirement(Building.idleverse, 550)),
+      new Achievement("Reject reality, substitute your own", new BuildingRequirement(Building.idleverse, 600)),
       //endregion
       //region All buildings
       new Achievement("One with everything", BuildingRequirement.generateRequirementsForAllBuildings(1): _*),
