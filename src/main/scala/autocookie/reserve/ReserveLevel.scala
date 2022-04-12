@@ -44,7 +44,7 @@ object ReserveLevel:
   def conjuredBakedGoods(): Double = (Game.unbuffedCps * 30 * 60) / .15
 
   def averageBuildingSpecial(): Double =
-    val buildings = AutoCookie.buildings.values.filter(_.amount > 0)
+    val buildings = AutoCookie.buildings.values.filter(_.amount > 10)
     1 + buildings.sumBy(_.amount) / buildings.size.toDouble / 10
 
   lazy val goldenCookieUpgrades = Seq("Lucky day", "Serendipity", "Get lucky").map(Upgrade.getByName)
