@@ -6,24 +6,17 @@ import autocookie.Helpers.*
 import autocookie.buyable.traits.UpgradesRequired
 import cookieclicker.buyables.GameUpgrade
 import cookieclicker.Game
+import scala.scalajs.js.annotation.{JSExportTopLevel, JSExport}
 
-object Upgrade {
+@JSExportTopLevel("Upgrade")
+object Upgrade:
+  @JSExport
   def getByName(name: String): Upgrade = AutoCookie.upgrades.getOrElse(name, throw new Exception(s"Unable to find Upgrade named \"$name\""))
 
-  def getGameUpgradeByName(name: String): GameUpgrade =
-    Game.upgradesByName(name)//.find(_.name == name).getOrElse(throw new Exception(s"Unable to find Game Upgrade named \"$name\""))
-}
+  def getGameUpgradeByName(name: String): GameUpgrade = Game.upgradesByName(name)
 
-abstract class Upgrade extends Buyable {
-  override type T = GameUpgrade
-  override lazy val gameBuyable: GameUpgrade = Upgrade.getGameUpgradeByName(name)
-
-  /**
-   * Can this be bought in this ascension? ie if this depends on a legacy upgrade we don't have this ascension this
-   * can't be bought.
-   */
-  override lazy val canEventuallyGet: Boolean =
-    lazy val canGet = this match {
+  def canEventuallyGet(upgrade: Upgrade): Boolean =
+    lazy val canGet = upgrade match {
       //case legacyUpgrade: LegacyUpgrade if legacyUpgrade.upgradeRequirements.isEmpty => owned
       case legacyUpgrade: LegacyUpgrade => false
       case upgrade: UpgradesRequired                                                 =>
@@ -34,7 +27,17 @@ abstract class Upgrade extends Buyable {
         }
       case _                                                                         => true
     }
-    !owned && canGet
+    !upgrade.owned && canGet
+
+abstract class Upgrade extends Buyable:
+  override type T = GameUpgrade
+  override lazy val gameBuyable: GameUpgrade = Upgrade.getGameUpgradeByName(name)
+
+  /**
+   * Can this be bought in this ascension? ie if this depends on a legacy upgrade we don't have this ascension this
+   * can't be bought.
+   */
+  override lazy val canEventuallyGet: Boolean = Upgrade.canEventuallyGet(this)
 
   def owned: Boolean = gameBuyable.bought
 
@@ -42,9 +45,12 @@ abstract class Upgrade extends Buyable {
     if !gameBuyable.unlocked then
       Logger.log(s"Trying to buy $name but its not unlocked yet!")
       unlockRequirements()
-    val text = s"Bought $name"
-    Logger.log(text)
-    Game.Notify(text, "")
-    removeFromBuyables()
-    gameBuyable.buy(false)
-}
+    if requirements.nonEmpty then
+      AutoCookie.stopped = true
+      Logger.error(s"Trying to buy upgrade $name but it still has requirements")
+    else
+      val text = s"Bought $name"
+      Logger.log(text)
+      Game.Notify(text, "")
+      removeFromBuyables()
+      gameBuyable.buy(false)

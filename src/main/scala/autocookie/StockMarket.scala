@@ -1,6 +1,6 @@
 package autocookie
 
-import autocookie.buyable.{Building, Buyable}
+import autocookie.buyable.{Building, Buyable, GameBuildings}
 import autocookie.Helpers.*
 import cookieclicker.stockmarket.{Good, StockMarket as GameStockMarket}
 import cookieclicker.Game
@@ -20,7 +20,7 @@ object StockMarket extends AutoSaveable {
   val STABILITY_MIN_PRICES = 5
   val STABILITY_MAX_PRICES = 10
 
-  private def minigame: GameStockMarket = Building.bank.minigame.get.asInstanceOf[GameStockMarket]
+  private def minigame: GameStockMarket = GameBuildings.bank.minigame.get.asInstanceOf[GameStockMarket]
 
   def sell(good: Good, amount: Int): Double =
     if minigame.sellGood(good.id, amount) then
@@ -83,7 +83,7 @@ object StockMarket extends AutoSaveable {
     good.active && good.prices.length >= STABILITY_MIN_PRICES && isProfitable(good, buyable.percentCpsIncrease)
   }.toSeq
 
-  def isActive: Boolean = Building.bank.amount > 0 && Building.bank.level > 0 && Building.bank.minigameLoaded
+  def isActive: Boolean = GameBuildings.bank.amount > 0 && GameBuildings.bank.level > 0 && GameBuildings.bank.minigameLoaded
 
   def moneyToCookies(money: Double, percentCpsIncrease: Double = 0): Double =
     val cps = if percentCpsIncrease == 0 then Game.cookiesPsRawHighest else Game.unbuffedCps * percentCpsIncrease

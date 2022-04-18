@@ -1,5 +1,6 @@
 package cookieclicker
 
+import autocookie.Season
 import cookieclicker.buyables.*
 
 import scala.scalajs.js
@@ -10,7 +11,6 @@ import scala.scalajs.js.annotation.{JSGlobal, JSName}
 object Game extends js.Object {
   val UnlockAt: js.Array[GameUpgrade] = js.native
   val cookiesEarned: Double = js.native
-  val season: String = js.native
   @JSName("ObjectsById")
   val buildings: js.Array[GameBuilding] = js.native
   @JSName("UpgradesById")
@@ -45,6 +45,8 @@ object Game extends js.Object {
   //val wrinklers: js.Array[Wrinkler]= js.native
   val BuildingsOwned: Double = js.native
   val cookiesMultByType: MapLike[String, Double] = js.native
+  @JSName("season")
+  val gameSeason: String = js.native
 
   @JSName("Has")
   def upgradeBought(upgradeName: String): 0 | 1 = js.native

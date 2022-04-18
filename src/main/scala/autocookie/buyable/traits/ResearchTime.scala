@@ -21,7 +21,7 @@ object ResearchTime {
 
 trait ResearchTime { this: Buyable =>
   override protected def calculatePayback(price: Double, cpsIncrease: Double): Double =
-    if Game.researchT == 0 && Achievement.getByName("Elder").won && ResearchTime.nextResearch.forall(_ != this) then
+    if Game.researchT <= 0 && Achievement.getByName("Elder").won && !ResearchTime.nextResearch.contains(this) then
       Buyable.calculatePayback(price, cpsIncrease)
     else
       Double.PositiveInfinity

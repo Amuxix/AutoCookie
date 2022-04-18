@@ -36,7 +36,7 @@ object AutoCookie extends Mod with AutoSaveable {
   var bestBuyable: Buyable = new Building("Cursor")
 
   lazy val notes: Seq[Note] = Seq(GoldenCookieSpawnNote, ReserveNote, InvestmentNote, GoalNote, NextBuyNote)
-  lazy val buildings: Map[String, Building] = Buyables.createBuildings
+  lazy val buildings: Map[String, Building] = Building.all.map(building => building.name -> building).toMap
   lazy val upgrades: Map[String, Upgrade] = Buyables.createUpgrades
   lazy val achievements: Map[String, Achievement] = Buyables.createAchievements
   var buyables: Set[Buyable] = Set.empty

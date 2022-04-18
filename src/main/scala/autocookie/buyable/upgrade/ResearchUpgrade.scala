@@ -1,7 +1,7 @@
 package autocookie.buyable.upgrade
 
 import autocookie.buyable.BuildingRequirement
-import autocookie.buyable.traits.{ResearchTime, SingleBuildingRequired, UpgradesRequired}
+import autocookie.buyable.traits.{ResearchTime, UpgradesRequired}
 
 class ResearchUpgrade(
   override val name: String,

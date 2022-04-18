@@ -1,7 +1,7 @@
 package autocookie.reserve
 
 import autocookie.{AutoCookie, Helpers}
-import autocookie.buyable.Building
+import autocookie.buyable.{Building, GameBuildings}
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.reserve.CookieEffect
 import autocookie.reserve.ReserveLevel.*
@@ -50,7 +50,7 @@ object ReserveLevel:
   lazy val goldenCookieUpgrades = Seq("Lucky day", "Serendipity", "Get lucky").map(Upgrade.getByName)
 
   def chainIsUnlocked(): Boolean = Game.cookiesEarned >= 100000
-  def bakedGoodsIsUnlocked(): Boolean = Building.wizardTower.level > 0 && Building.wizardTower.amount > 0
+  def bakedGoodsIsUnlocked(): Boolean = GameBuildings.wizardTower.level > 0 && GameBuildings.wizardTower.amount > 0
   def frenzyIsUnlocked(): Boolean = Game.elderWrath < 3
   def dragonHarvestIsUnlocked(): Boolean = Game.hasAura("Reaper of Fields")
   def allGoldenCookieUpgradesOwned(): Boolean = goldenCookieUpgrades.forall(_.owned)

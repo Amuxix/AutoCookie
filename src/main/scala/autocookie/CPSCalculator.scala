@@ -1,9 +1,10 @@
 package autocookie
 
 import autocookie.Helpers.*
+import autocookie.buyable.BuildingRequirements.BuildingRequirements
 import autocookie.buyable.traits.CookiePower
 import autocookie.buyable.upgrade.{CookieUpgrade, Upgrade}
-import autocookie.buyable.{Building, BuildingRequirement}
+import autocookie.buyable.{Building, BuildingRequirement, GameBuildings}
 import cookieclicker.buyables.GameBuilding
 import cookieclicker.Game
 
@@ -490,7 +491,7 @@ object CPSCalculator {
 
   def calculateCursorsCps(upgrades: Set[Upgrade], nonCursors: Int): Double =
     if upgrades.isEmpty && totalExtra == 0 then
-      return Building.cursor.storedTotalCps
+      return GameBuildings.cursor.storedTotalCps
     val fingersAdd =
       if hasOrIsInChoices(Upgrade.getByName("Thousand fingers"), upgrades) then
         nonCursors * fingerAdd.foldLeft(0.1) {
@@ -501,143 +502,142 @@ object CPSCalculator {
         0
 
     //0.1 is the cursor base CPS
-    calculateBuildingCPS(upgrades, Building.cursor.level.toInt, 0.1, cursors, cursorSynergyMap, cursorExponentialUpgrades, fingersAdd)
+    calculateBuildingCPS(upgrades, GameBuildings.cursor.level.toInt, 0.1, cursors, cursorSynergyMap, cursorExponentialUpgrades, fingersAdd)
 
   def calculateGrandmasCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraGrandmas == 0  && extraFractalEngines == 0 then
-      return Building.grandma.storedTotalCps
-    val baseCps = grandmaBaseIncreases.foldLeft(Building.grandma.baseCps) {
+      return GameBuildings.grandma.storedTotalCps
+    val baseCps = grandmaBaseIncreases.foldLeft(GameBuildings.grandma.baseCps) {
       case (baseIncrease, (upgrade, increaseF)) if hasOrIsInChoices(upgrade, upgrades) => baseIncrease + increaseF()
       case (baseIncrease, _)                                                           => baseIncrease
     }
-    calculateBuildingCPS(upgrades, Building.grandma.level.toInt, baseCps, grandmas, grandmaSynergyMap, grandmaExponentialUpgrades)
+    calculateBuildingCPS(upgrades, GameBuildings.grandma.level.toInt, baseCps, grandmas, grandmaSynergyMap, grandmaExponentialUpgrades)
 
   def calculateFarmsCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraFarms == 0 && extraGrandmas == 0 && extraTimeMachines == 0 && extraTemples == 0 && extraWizardTowers == 0 && extraPortals == 0 then
-      return Building.farm.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.farm.level.toInt, Building.farm.baseCps, farms, farmSynergyMap, farmExponentialUpgrades)
+      return GameBuildings.farm.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.farm.level.toInt, GameBuildings.farm.baseCps, farms, farmSynergyMap, farmExponentialUpgrades)
 
   def calculateMinesCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraMines == 0 && extraGrandmas == 0 && extraWizardTowers == 0 && extraShipments == 0 && extraAlchemyLabs == 0 && extraChancemakers == 0 then
-      return Building.mine.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.mine.level.toInt, Building.mine.baseCps, mines, mineSynergyMap, mineExponentialUpgrades)
+      return GameBuildings.mine.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.mine.level.toInt, GameBuildings.mine.baseCps, mines, mineSynergyMap, mineExponentialUpgrades)
 
   def calculateFactoriesCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraFactories == 0 && extraGrandmas == 0 && extraAntimatterCondensers == 0 && extraTimeMachines == 0 && extraBanks == 0 && extraShipments == 0 then
-      return Building.factory.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.factory.level.toInt, Building.factory.baseCps, factories, factorySynergyMap, factoryExponentialUpgrades)
+      return GameBuildings.factory.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.factory.level.toInt, GameBuildings.factory.baseCps, factories, factorySynergyMap, factoryExponentialUpgrades)
 
   def calculateBanksCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraBanks == 0 && extraGrandmas == 0 && extraPortals == 0 && extraFactories == 0 && extraAlchemyLabs == 0 && extraAntimatterCondensers == 0 then
-      return Building.bank.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.bank.level.toInt, Building.bank.baseCps, banks, bankSynergyMap, bankExponentialUpgrades)
+      return GameBuildings.bank.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.bank.level.toInt, GameBuildings.bank.baseCps, banks, bankSynergyMap, bankExponentialUpgrades)
 
   def calculateTemplesCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraTemples == 0 && extraGrandmas == 0 && extraFarms == 0 && extraPortals == 0 && extraAntimatterCondensers == 0 && extraPrisms == 0 then
-      return Building.temple.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.temple.level.toInt, Building.temple.baseCps, temples, templeSynergyMap, templeExponentialUpgrades)
+      return GameBuildings.temple.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.temple.level.toInt, GameBuildings.temple.baseCps, temples, templeSynergyMap, templeExponentialUpgrades)
 
   def calculateWizardTowersCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraWizardTowers == 0 && extraGrandmas == 0 && extraMines == 0 && extraAlchemyLabs == 0 && extraFarms == 0 && extraPrisms == 0 then
-      return Building.wizardTower.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.wizardTower.level.toInt, Building.wizardTower.baseCps, wizardTowers, wizardTowerSynergyMap, wizardTowerExponentialUpgrades)
+      return GameBuildings.wizardTower.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.wizardTower.level.toInt, GameBuildings.wizardTower.baseCps, wizardTowers, wizardTowerSynergyMap, wizardTowerExponentialUpgrades)
 
   def calculateShipmentsCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraShipments == 0 && extraGrandmas == 0 && extraMines == 0 && extraAlchemyLabs == 0 && extraFarms == 0 && extraPrisms == 0 then
-      return Building.shipment.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.shipment.level.toInt, Building.shipment.baseCps, shipments, shipmentSynergyMap, shipmentExponentialUpgrades)
+      return GameBuildings.shipment.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.shipment.level.toInt, GameBuildings.shipment.baseCps, shipments, shipmentSynergyMap, shipmentExponentialUpgrades)
 
   def calculateAlchemyLabsCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraAlchemyLabs == 0 && extraGrandmas == 0 && extraWizardTowers == 0 && extraMines == 0 && extraBanks == 0 && extraAntimatterCondensers == 0 then
-      return Building.alchemyLab.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.alchemyLab.level.toInt, Building.alchemyLab.baseCps, alchemyLabs, alchemyLabSynergyMap, alchemyLabExponentialUpgrades)
+      return GameBuildings.alchemyLab.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.alchemyLab.level.toInt, GameBuildings.alchemyLab.baseCps, alchemyLabs, alchemyLabSynergyMap, alchemyLabExponentialUpgrades)
 
   def calculatePortalsCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraPortals == 0 && extraGrandmas == 0 && extraBanks == 0 && extraTemples == 0 && extraFarms == 0 && extraPrisms == 0 then
-      return Building.portal.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.portal.level.toInt, Building.portal.baseCps, portals, portalSynergyMap, portalExponentialUpgrades)
+      return GameBuildings.portal.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.portal.level.toInt, GameBuildings.portal.baseCps, portals, portalSynergyMap, portalExponentialUpgrades)
 
   def calculateTimeMachinesCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraTimeMachines == 0 && extraGrandmas == 0 && extraFarms == 0 && extraFactories == 0 && extraShipments == 0 && extraPrisms == 0 then
-      return Building.timeMachine.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.timeMachine.level.toInt, Building.timeMachine.baseCps, timeMachines, timeMachineSynergyMap, timeMachineExponentialUpgrades)
+      return GameBuildings.timeMachine.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.timeMachine.level.toInt, GameBuildings.timeMachine.baseCps, timeMachines, timeMachineSynergyMap, timeMachineExponentialUpgrades)
 
   def calculateAntimatterCondensersCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraAntimatterCondensers == 0 && extraGrandmas == 0 && extraFactories == 0 && extraTemples == 0 && extraBanks == 0 && extraAlchemyLabs == 0 && extraChancemakers == 0 then
-      return Building.antimatterCondenser.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.antimatterCondenser.level.toInt, Building.antimatterCondenser.baseCps, antimatterCondensers, antimatterCondenserSynergyMap, antimatterCondenserExponentialUpgrades)
+      return GameBuildings.antimatterCondenser.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.antimatterCondenser.level.toInt, GameBuildings.antimatterCondenser.baseCps, antimatterCondensers, antimatterCondenserSynergyMap, antimatterCondenserExponentialUpgrades)
 
   def calculatePrismsCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraPrisms == 0 && extraGrandmas == 0 && extraPortals == 0 && extraTimeMachines == 0 && extraWizardTowers == 0 && extraTemples == 0 && extraAntimatterCondensers == 0 then
-      return Building.prism.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.prism.level.toInt, Building.prism.baseCps, prisms, prismSynergyMap, prismExponentialUpgrades)
+      return GameBuildings.prism.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.prism.level.toInt, GameBuildings.prism.baseCps, prisms, prismSynergyMap, prismExponentialUpgrades)
 
   def calculateChancemakersCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraChancemakers == 0 && extraGrandmas == 0 && extraMines == 0 && extraAntimatterCondensers == 0 then
-      return Building.chancemaker.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.chancemaker.level.toInt, Building.chancemaker.baseCps, chancemakers, chancemakerSynergyMap, chancemakerExponentialUpgrades)
+      return GameBuildings.chancemaker.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.chancemaker.level.toInt, GameBuildings.chancemaker.baseCps, chancemakers, chancemakerSynergyMap, chancemakerExponentialUpgrades)
 
   def calculateFractalEnginesCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraFractalEngines == 0 && extraGrandmas == 0 && extraPrisms == 0 && extraCursors == 0 then
-      return Building.fractalEngine.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.fractalEngine.level.toInt, Building.fractalEngine.baseCps, fractalEngines, fractalSynergyMap, fractalExponentialUpgrades)
+      return GameBuildings.fractalEngine.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.fractalEngine.level.toInt, GameBuildings.fractalEngine.baseCps, fractalEngines, fractalSynergyMap, fractalExponentialUpgrades)
 
   def calculateJavascriptConsolesCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && extraJavascriptConsoles == 0 && extraGrandmas == 0 && extraChancemakers == 0 then
-      return Building.javascriptConsole.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.javascriptConsole.level.toInt, Building.javascriptConsole.baseCps, javascriptConsoles, javascriptConsoleSynergyMap, javascriptConsoleExponentialUpgrades)
+      return GameBuildings.javascriptConsole.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.javascriptConsole.level.toInt, GameBuildings.javascriptConsole.baseCps, javascriptConsoles, javascriptConsoleSynergyMap, javascriptConsoleExponentialUpgrades)
 
   def calculateIdleversesCps(upgrades: Set[Upgrade]): Double =
     if upgrades.isEmpty && idleverses == 0 && extraGrandmas == 0 && extraPortals == 0 && extraFractalEngines == 0 then
-      return Building.idleverse.storedTotalCps
-    calculateBuildingCPS(upgrades, Building.idleverse.level.toInt, Building.idleverse.baseCps, idleverses, idleverseSynergyMap, idleverseExponentialUpgrades)
+      return GameBuildings.idleverse.storedTotalCps
+    calculateBuildingCPS(upgrades, GameBuildings.idleverse.level.toInt, GameBuildings.idleverse.baseCps, idleverses, idleverseSynergyMap, idleverseExponentialUpgrades)
 
-  def apply(buildingRequirements: Set[BuildingRequirement] = Set.empty, upgrades: Set[Upgrade] = Set.empty, debug: Boolean = false): Double =
+  def apply(buildingRequirements: BuildingRequirements = BuildingRequirements.empty, upgrades: Set[Upgrade] = Set.empty, debug: Boolean = false): Double =
     val buildMult = godBuildingCpsMultiplier
-    val requirementMap = buildingRequirements.map(req => req.gameBuyable -> req.missingAmount).toMap
-    
-    extraCursors = requirementMap.getOrElse(Building.cursor, 0)
-    extraGrandmas = requirementMap.getOrElse(Building.grandma, 0)
-    extraFarms = requirementMap.getOrElse(Building.farm, 0)
-    extraMines = requirementMap.getOrElse(Building.mine, 0)
-    extraFactories = requirementMap.getOrElse(Building.factory, 0)
-    extraBanks = requirementMap.getOrElse(Building.bank, 0)
-    extraTemples = requirementMap.getOrElse(Building.temple, 0)
-    extraWizardTowers = requirementMap.getOrElse(Building.wizardTower, 0)
-    extraShipments = requirementMap.getOrElse(Building.shipment, 0)
-    extraAlchemyLabs = requirementMap.getOrElse(Building.alchemyLab, 0)
-    extraPortals = requirementMap.getOrElse(Building.portal, 0)
-    extraTimeMachines = requirementMap.getOrElse(Building.timeMachine, 0)
-    extraAntimatterCondensers = requirementMap.getOrElse(Building.antimatterCondenser, 0)
-    extraPrisms = requirementMap.getOrElse(Building.prism, 0)
-    extraChancemakers = requirementMap.getOrElse(Building.chancemaker, 0)
-    extraFractalEngines = requirementMap.getOrElse(Building.fractalEngine, 0)
-    extraJavascriptConsoles = requirementMap.getOrElse(Building.javascriptConsole, 0)
-    extraIdleverses = requirementMap.getOrElse(Building.idleverse, 0)
 
-    cursors = Building.cursor.amount.toInt + extraCursors
-    grandmas = Building.grandma.amount.toInt + extraGrandmas
-    farms = Building.farm.amount.toInt + extraFarms
-    mines = Building.mine.amount.toInt + extraMines
-    factories = Building.factory.amount.toInt + extraFactories
-    banks = Building.bank.amount.toInt + extraBanks
-    temples = Building.temple.amount.toInt + extraTemples
-    wizardTowers = Building.wizardTower.amount.toInt + extraWizardTowers
-    shipments = Building.shipment.amount.toInt + extraShipments
-    alchemyLabs = Building.alchemyLab.amount.toInt + extraAlchemyLabs
-    portals = Building.portal.amount.toInt + extraPortals
-    timeMachines = Building.timeMachine.amount.toInt + extraTimeMachines
-    antimatterCondensers = Building.antimatterCondenser.amount.toInt + extraAntimatterCondensers
-    prisms = Building.prism.amount.toInt + extraPrisms
-    chancemakers = Building.chancemaker.amount.toInt + extraChancemakers
-    fractalEngines = Building.fractalEngine.amount.toInt + extraFractalEngines
-    javascriptConsoles = Building.javascriptConsole.amount.toInt + extraJavascriptConsoles
-    idleverses = Building.idleverse.amount.toInt + extraIdleverses
+    extraCursors = buildingRequirements.getMissingAmount(Building.cursor)
+    extraGrandmas = buildingRequirements.getMissingAmount(Building.grandma)
+    extraFarms = buildingRequirements.getMissingAmount(Building.farm)
+    extraMines = buildingRequirements.getMissingAmount(Building.mine)
+    extraFactories = buildingRequirements.getMissingAmount(Building.factory)
+    extraBanks = buildingRequirements.getMissingAmount(Building.bank)
+    extraTemples = buildingRequirements.getMissingAmount(Building.temple)
+    extraWizardTowers = buildingRequirements.getMissingAmount(Building.wizardTower)
+    extraShipments = buildingRequirements.getMissingAmount(Building.shipment)
+    extraAlchemyLabs = buildingRequirements.getMissingAmount(Building.alchemyLab)
+    extraPortals = buildingRequirements.getMissingAmount(Building.portal)
+    extraTimeMachines = buildingRequirements.getMissingAmount(Building.timeMachine)
+    extraAntimatterCondensers = buildingRequirements.getMissingAmount(Building.antimatterCondenser)
+    extraPrisms = buildingRequirements.getMissingAmount(Building.prism)
+    extraChancemakers = buildingRequirements.getMissingAmount(Building.chancemaker)
+    extraFractalEngines = buildingRequirements.getMissingAmount(Building.fractalEngine)
+    extraJavascriptConsoles = buildingRequirements.getMissingAmount(Building.javascriptConsole)
+    extraIdleverses = buildingRequirements.getMissingAmount(Building.idleverse)
+
+    cursors = GameBuildings.cursor.amount.toInt + extraCursors
+    grandmas = GameBuildings.grandma.amount.toInt + extraGrandmas
+    farms = GameBuildings.farm.amount.toInt + extraFarms
+    mines = GameBuildings.mine.amount.toInt + extraMines
+    factories = GameBuildings.factory.amount.toInt + extraFactories
+    banks = GameBuildings.bank.amount.toInt + extraBanks
+    temples = GameBuildings.temple.amount.toInt + extraTemples
+    wizardTowers = GameBuildings.wizardTower.amount.toInt + extraWizardTowers
+    shipments = GameBuildings.shipment.amount.toInt + extraShipments
+    alchemyLabs = GameBuildings.alchemyLab.amount.toInt + extraAlchemyLabs
+    portals = GameBuildings.portal.amount.toInt + extraPortals
+    timeMachines = GameBuildings.timeMachine.amount.toInt + extraTimeMachines
+    antimatterCondensers = GameBuildings.antimatterCondenser.amount.toInt + extraAntimatterCondensers
+    prisms = GameBuildings.prism.amount.toInt + extraPrisms
+    chancemakers = GameBuildings.chancemaker.amount.toInt + extraChancemakers
+    fractalEngines = GameBuildings.fractalEngine.amount.toInt + extraFractalEngines
+    javascriptConsoles = GameBuildings.javascriptConsole.amount.toInt + extraJavascriptConsoles
+    idleverses = GameBuildings.idleverse.amount.toInt + extraIdleverses
 
     val nonCursors = grandmas + farms + mines + factories + banks + temples + wizardTowers + shipments + alchemyLabs + portals + timeMachines + antimatterCondensers + prisms + chancemakers + fractalEngines + javascriptConsoles + idleverses
     extraNonCursors = extraGrandmas + extraFarms + extraMines + extraFactories + extraBanks + extraTemples + extraWizardTowers + extraShipments + extraAlchemyLabs + extraPortals + extraTimeMachines + extraAntimatterCondensers + extraPrisms + extraChancemakers + extraFractalEngines + extraJavascriptConsoles + extraIdleverses
 
-    val oldBuildingCps: Double = Building.all.sumBy(_.storedTotalCps)
+    val oldBuildingCps: Double = GameBuildings.all.sumBy(_.storedTotalCps)
 
     val cookieUpgradesMultiplier = upgrades.foldLeft(1D) {
       case (multiplier, upgrade: CookiePower) => multiplier * upgrade.powerMultiplier
@@ -668,24 +668,24 @@ object CPSCalculator {
     val cpsIncrease = ((increase * godBuildingCpsMultiplier * cookieUpgradesMultiplier - oldBuildingCps) * Game.globalCpsMult).round(4) max 0D
 
     if debug || cpsIncrease < 0 then
-      Logger.debug(s"Cursors ${calculateCursorsCps(upgrades, nonCursors) - Building.cursor.storedTotalCps}")
-      Logger.debug(s"Grandmas ${calculateGrandmasCps(upgrades) - Building.grandma.storedTotalCps}")
-      Logger.debug(s"Farms ${calculateFarmsCps(upgrades) - Building.farm.storedTotalCps}")
-      Logger.debug(s"Mines ${calculateMinesCps(upgrades) - Building.mine.storedTotalCps}")
-      Logger.debug(s"Factories ${calculateFactoriesCps(upgrades) - Building.factory.storedTotalCps}")
-      Logger.debug(s"Banks ${calculateBanksCps(upgrades) - Building.bank.storedTotalCps}")
-      Logger.debug(s"Temples ${calculateTemplesCps(upgrades) - Building.temple.storedTotalCps}")
-      Logger.debug(s"WizardTowers ${calculateWizardTowersCps(upgrades) - Building.wizardTower.storedTotalCps}")
-      Logger.debug(s"Shipments ${calculateShipmentsCps(upgrades) - Building.shipment.storedTotalCps}")
-      Logger.debug(s"AlchemyLabs ${calculateAlchemyLabsCps(upgrades) - Building.alchemyLab.storedTotalCps}")
-      Logger.debug(s"Portals ${calculatePortalsCps(upgrades) - Building.portal.storedTotalCps}")
-      Logger.debug(s"TimeMachines ${calculateTimeMachinesCps(upgrades) - Building.timeMachine.storedTotalCps}")
-      Logger.debug(s"AntimatterCondensers ${calculateAntimatterCondensersCps(upgrades) - Building.antimatterCondenser.storedTotalCps}")
-      Logger.debug(s"Prisms ${calculatePrismsCps(upgrades) - Building.prism.storedTotalCps}")
-      Logger.debug(s"Chancemakers ${calculateChancemakersCps(upgrades) - Building.chancemaker.storedTotalCps}")
-      Logger.debug(s"FractalEngines ${calculateFractalEnginesCps(upgrades) - Building.fractalEngine.storedTotalCps}")
-      Logger.debug(s"JavascriptConsoles ${calculateJavascriptConsolesCps(upgrades) - Building.javascriptConsole.storedTotalCps}")
-      Logger.debug(s"Idleverses ${calculateIdleversesCps(upgrades) - Building.idleverse.storedTotalCps}")
+      Logger.debug(s"Cursors ${calculateCursorsCps(upgrades, nonCursors) - GameBuildings.cursor.storedTotalCps}")
+      Logger.debug(s"Grandmas ${calculateGrandmasCps(upgrades) - GameBuildings.grandma.storedTotalCps}")
+      Logger.debug(s"Farms ${calculateFarmsCps(upgrades) - GameBuildings.farm.storedTotalCps}")
+      Logger.debug(s"Mines ${calculateMinesCps(upgrades) - GameBuildings.mine.storedTotalCps}")
+      Logger.debug(s"Factories ${calculateFactoriesCps(upgrades) - GameBuildings.factory.storedTotalCps}")
+      Logger.debug(s"Banks ${calculateBanksCps(upgrades) - GameBuildings.bank.storedTotalCps}")
+      Logger.debug(s"Temples ${calculateTemplesCps(upgrades) - GameBuildings.temple.storedTotalCps}")
+      Logger.debug(s"WizardTowers ${calculateWizardTowersCps(upgrades) - GameBuildings.wizardTower.storedTotalCps}")
+      Logger.debug(s"Shipments ${calculateShipmentsCps(upgrades) - GameBuildings.shipment.storedTotalCps}")
+      Logger.debug(s"AlchemyLabs ${calculateAlchemyLabsCps(upgrades) - GameBuildings.alchemyLab.storedTotalCps}")
+      Logger.debug(s"Portals ${calculatePortalsCps(upgrades) - GameBuildings.portal.storedTotalCps}")
+      Logger.debug(s"TimeMachines ${calculateTimeMachinesCps(upgrades) - GameBuildings.timeMachine.storedTotalCps}")
+      Logger.debug(s"AntimatterCondensers ${calculateAntimatterCondensersCps(upgrades) - GameBuildings.antimatterCondenser.storedTotalCps}")
+      Logger.debug(s"Prisms ${calculatePrismsCps(upgrades) - GameBuildings.prism.storedTotalCps}")
+      Logger.debug(s"Chancemakers ${calculateChancemakersCps(upgrades) - GameBuildings.chancemaker.storedTotalCps}")
+      Logger.debug(s"FractalEngines ${calculateFractalEnginesCps(upgrades) - GameBuildings.fractalEngine.storedTotalCps}")
+      Logger.debug(s"JavascriptConsoles ${calculateJavascriptConsolesCps(upgrades) - GameBuildings.javascriptConsole.storedTotalCps}")
+      Logger.debug(s"Idleverses ${calculateIdleversesCps(upgrades) - GameBuildings.idleverse.storedTotalCps}")
       Logger.debug(s"godBuildingCpsMultiplier $godBuildingCpsMultiplier")
       Logger.debug(s"cookieUpgradesMultiplier $cookieUpgradesMultiplier")
       Logger.debug(s"diff ${increase * godBuildingCpsMultiplier * cookieUpgradesMultiplier - oldBuildingCps}")

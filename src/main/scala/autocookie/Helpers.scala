@@ -30,14 +30,22 @@ object Helpers:
   extension[T] (xs: Iterable[T])
     def sumBy[U](f: T => U)(implicit N: Numeric[U]): U = xs.foldLeft(N.zero)((acc, x) => N.plus(acc, f(x)))
 
+  extension (upgrade: GameUpgrade)
+    def season: Option[Season] = upgrade.gameSeason.toOption.flatMap(Season.fromValue)
+
+  extension (game: Game.type)
+    def season: Option[Season] = Season.fromValue(game.gameSeason)
+
   def unlockRequirements(): Unit = Game.UnlockAt.foreach { unlock =>
     val enoughCookies = Game.cookiesEarned >= unlock.cookies
     val notOwned = !unlock.require.fold(false)(req => !Game.upgradeBought(req) && !Game.achievementWon(req))
-    val inSeason = !unlock.season.fold(false)(Game.season != _)
-    if (enoughCookies && notOwned && inSeason) {
+    val inSeason = (for
+      unlockSeason <- unlock.season
+      gameSeason <- Game.season
+    yield unlockSeason == gameSeason).getOrElse(false)
+    if enoughCookies && notOwned && inSeason then
       Game.Unlock(unlock.name)
       Game.Win(unlock.name)
-    }
   }
 
   extension (d: FiniteDuration)

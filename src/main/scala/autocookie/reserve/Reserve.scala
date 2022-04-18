@@ -4,7 +4,7 @@ import autocookie.LoopReason.ReserveLevelChanged
 import autocookie.{AutoCookie, LoopReason}
 import autocookie.reserve.ReserveLevel.Disabled
 
-object Reserve {
+object Reserve:
   private var possibleLevels = Set.empty[ReserveLevel]
 
   var level: ReserveLevel = Disabled
@@ -24,4 +24,3 @@ object Reserve {
     possibleLevels = possibleLevels - remove + add
     update()
     AutoCookie.loop(ReserveLevelChanged)
-}

@@ -1,21 +1,15 @@
 package autocookie.buyable
 
-import autocookie.Helpers
+import autocookie.{Helpers, Logger}
+import autocookie.Helpers.convertNumeral
 import cookieclicker.Game
 import cookieclicker.buyables.GameBuilding
 
-object BuildingRequirement {
-  def generateRequirementsForAllBuildings(amount: Int): Seq[BuildingRequirement] =
-    Game.buildings.map(building => new BuildingRequirement(building, amount)).toSeq
-}
+case class BuildingRequirement(building: Building, requiredAmount: Int) extends Buyable:
+  override type T = GameBuilding
+  override lazy val gameBuyable: GameBuilding = building.gameBuyable
+  override val name: String = building.name
 
-case class BuildingRequirement(buyable: GameBuilding, requiredAmount: Int) extends Building(buyable.name) {
-
-  override lazy val gameBuyable: GameBuilding = buyable
+  override protected def innerBuy(): Unit = Building.innerBuy(building)
 
   def missingAmount: Int = 0 max requiredAmount - gameBuyable.amount.toInt
-
-  lazy val building: Building = Building.getByName(name)
-
-  override def update(debug: Boolean = false): Unit = throw new Exception("Trying to update BuildingRequirement")
-}

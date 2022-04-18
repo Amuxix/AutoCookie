@@ -6,6 +6,7 @@ import autocookie.buyable.{Building, BuildingRequirement}
 import autocookie.buyable.upgrade.Upgrade
 import autocookie.buyable.traits.*
 import autocookie.buyable.Achievement
+import autocookie.buyable.BuildingRequirements.BuildingRequirements
 import autocookie.reserve.Reserve
 import cookieclicker.buyables.*
 import cookieclicker.Game
@@ -46,14 +47,14 @@ abstract class Buyable {
   /**
    * Calculates the price to buy this and all its requirements if any.
    */
-  protected def calculatePrice(buildingRequirements: Set[BuildingRequirement], upgradeRequirements: Set[Upgrade]): Double =
+  protected def calculatePrice(buildingRequirements: BuildingRequirements, upgradeRequirements: Set[Upgrade]): Double =
     val buildingsPrice = buildingRequirements.sumBy { requirement =>
-      requirement.gameBuyable.getSumPrice(requirement.missingAmount)
+      requirement.building.gameBuyable.getSumPrice(requirement.missingAmount)
     }
     val upgradesPrice = upgradeRequirements.sumBy(_.gameBuyable.getPrice())
     buildingsPrice + upgradesPrice
 
-  protected def calculateCpsIncrease(buildingRequirements: Set[BuildingRequirement], upgradeRequirements: Set[Upgrade], achievmentRequirements: Set[Achievement], debug: Boolean): Double =
+  protected def calculateCpsIncrease(buildingRequirements: BuildingRequirements, upgradeRequirements: Set[Upgrade], achievmentRequirements: Set[Achievement], debug: Boolean): Double =
     val extraMilk = 0.04 * achievmentRequirements.size
     val multiplier = Game.globalCpsMult / Helpers.getKittenMultiplier(Game.milkProgress) * getKittenMultiplier(Game.milkProgress + extraMilk)
     val cps = Helpers.cps
@@ -64,60 +65,53 @@ abstract class Buyable {
   protected def calculatePayback(price: Double, cpsIncrease: Double): Double =
     Buyable.calculatePayback(price, cpsIncrease)
 
-  private def calculateUpgradeRequirements: Set[Upgrade] =
-    val thisUpgrade: Set[Upgrade] = this match {
-      case upgrade: Upgrade => Set(upgrade)
-      case _                => Set.empty
-    }
-    val upgradesRequired: Set[Upgrade] = this match {
-      case upgradesRequired: UpgradesRequired => upgradesRequired.upgradeRequirements
-      case _                                  => Set.empty
-    }
-    (thisUpgrade ++ upgradesRequired).filter(!_.owned)
-
-  private def calculateBuildingRequirements(upgradeRequirements: Set[Upgrade]): Set[BuildingRequirement] =
-    val thisRequirements: Set[BuildingRequirement] = this match {
+  private def calculateBuildingRequirements(upgradeRequirements: Set[Upgrade]): BuildingRequirements =
+    val thisRequirements: BuildingRequirements = this match {
       case buildingsRequirement: BuildingRequirement =>
-        Set(buildingsRequirement)
+        BuildingRequirements(buildingsRequirement)
       case buildingsRequired: BuildingsRequired      =>
         buildingsRequired.buildingRequirements
       case _                                         =>
-        Set.empty
+        BuildingRequirements.empty
     }
-    val fromUpgrades: Set[BuildingRequirement] = upgradeRequirements.collect {
-      case buildingsRequired: BuildingsRequired => buildingsRequired.buildingRequirements
-    }.flatten
+    val fromUpgrades: BuildingRequirements = upgradeRequirements.foldLeft(BuildingRequirements.empty) {
+      case (requirements, buildingsRequired: BuildingsRequired) => requirements ++ buildingsRequired.buildingRequirements
+      case (requirements, _) => requirements
+    }
     (thisRequirements ++ fromUpgrades).filter(req => req.gameBuyable.amount < req.requiredAmount)
 
-  private def calculateAchievmentUnlocks(upgradeRequirements: Set[Upgrade]): Set[Achievement] =
-    val thisAchievement: Set[Achievement] = this match {
-      case achievement: Achievement => Set(achievement)
-      case _                        => Set.empty
-    }
+  private lazy val thisUpgrade: Set[Upgrade] = this match
+    case upgrade: Upgrade => Set(upgrade)
+    case _                => Set.empty
 
-    val fromUpgrades: Set[Achievement] = upgradeRequirements.collect {
-      case unlocksAchievment: UnlocksAchievment => unlocksAchievment.achievmentsUnlocked
-    }.flatten
-    (thisAchievement ++ fromUpgrades).filter(!_.won)
+  lazy val semiFinalUpgradeRequirements: Set[Upgrade] =
+    this match
+      case upgradesRequired: UpgradesRequired => upgradesRequired.upgradeRequirements.filter(!_.owned)
+      case _                                  => Set.empty
 
-  lazy val semiFinalUpgradeRequirements: Set[Upgrade] = calculateUpgradeRequirements
-  lazy val semiFinalBuildingRequirements: Set[BuildingRequirement] = calculateBuildingRequirements(semiFinalUpgradeRequirements)
-  lazy val semiFinalAchievmentUnlocks: Set[Achievement] = calculateAchievmentUnlocks(semiFinalUpgradeRequirements)
+  lazy val semiFinalBuildingRequirements: BuildingRequirements = calculateBuildingRequirements(thisUpgrade ++ semiFinalUpgradeRequirements)
+  lazy val semiFinalAchievementUnlocks: Set[Achievement] = (thisUpgrade ++ semiFinalUpgradeRequirements).collect {
+    case unlocksAchievement: UnlocksAchievment => unlocksAchievement.achievmentsUnlocked.filter(!_.won)
+  }.flatten
 
   def update(debug: Boolean = false): Unit =
     val upgradeRequirements: Set[Upgrade] = semiFinalUpgradeRequirements.filter(!_.owned)
-    val buildingRequirements: Set[BuildingRequirement] = semiFinalBuildingRequirements.filter(req => req.gameBuyable.amount < req.requiredAmount)
-    val achievmentUnlocks: Set[Achievement] = semiFinalAchievmentUnlocks.filter(!_.won)
+    val buildingRequirements: BuildingRequirements = semiFinalBuildingRequirements.filter(req => req.gameBuyable.amount < req.requiredAmount)
+    val achievementUnlocks: Set[Achievement] = semiFinalAchievementUnlocks.filter(!_.won)
 
     val thisBuilding = this match {
-      case building: Building => Set(BuildingRequirement(building.gameBuyable, building.amount + 1))
-      case _                  => Set.empty
+      case building: Building => BuildingRequirements(building -> (building.amount + 1))
+      case _                  => BuildingRequirements.empty
     }
 
-    requirements = upgradeRequirements ++ buildingRequirements ++ achievmentUnlocks
-    price = calculatePrice(buildingRequirements ++ thisBuilding, upgradeRequirements)
+    val thisAchievement: Set[Achievement] = this match
+      case achievement: Achievement => Set(achievement)
+      case _                        => Set.empty
+
+    requirements = upgradeRequirements ++ buildingRequirements.toSet ++ achievementUnlocks
+    price = calculatePrice(thisBuilding ++ buildingRequirements , thisUpgrade ++ upgradeRequirements)
     if debug then Logger.debug(s"price: $price")
-    cpsIncrease = calculateCpsIncrease(buildingRequirements ++ thisBuilding, upgradeRequirements, achievmentUnlocks, debug)
+    cpsIncrease = calculateCpsIncrease(thisBuilding ++ buildingRequirements, thisUpgrade ++ upgradeRequirements, thisAchievement ++ achievementUnlocks, debug)
     if debug then Logger.debug(s"cpsIncrease: $cpsIncrease")
     payback = calculatePayback(price, cpsIncrease)
     if debug then Logger.debug(s"payback: $payback")

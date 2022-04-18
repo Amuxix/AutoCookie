@@ -4,22 +4,26 @@ import autocookie.{AutoCookie, Helpers, Logger}
 import cookieclicker.buyables.GameAchievement
 import cookieclicker.Game
 import autocookie.Helpers.*
+import autocookie.buyable.BuildingRequirements.BuildingRequirements
 import org.scalajs.dom.console
 import autocookie.buyable.traits.{BuildingsRequired, UnlocksAchievment}
 
-object Achievement {
+import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
+
+@JSExportTopLevel("Achievement")
+object Achievement:
+  @JSExport
   def getByName(name: String): Achievement = AutoCookie.achievements
     .getOrElse(name, throw new Exception(s"Unable to find Achievement named \"$name\""))
 
   def getGameAchievementByName(name: String): GameAchievement =
     Game.achievementsByName(name)
       //.getOrElse(throw new Exception(s"Unable to find Game Achievement named \"$name\""))
-}
 
 class Achievement(
   val name: String,
-  override protected val buildingRequirementsSeq: BuildingRequirement*
-) extends Buyable with BuildingsRequired with UnlocksAchievment {
+  override protected val originalBuildingRequirements: BuildingRequirements = BuildingRequirements.empty
+) extends Buyable with BuildingsRequired with UnlocksAchievment:
   override type T = GameAchievement
   override lazy val gameBuyable: GameAchievement = Achievement.getGameAchievementByName(name)
   override protected val achievmentName: String = name
@@ -37,4 +41,3 @@ class Achievement(
     else
       Logger.error(s"Trying to buy Achievment $name")
 
-}

@@ -2,6 +2,7 @@ package autocookie.buyable.upgrade
 
 import autocookie.{AutoCookie, CPSCalculator, EmptyInvestment, Helpers, Investment}
 import autocookie.Helpers.{amountOfNonCursors, hasOrIsChoice, toBoolean}
+import autocookie.buyable.BuildingRequirements.BuildingRequirements
 import autocookie.buyable.upgrade.MouseUpgrade.{mouses, multipliers}
 import autocookie.buyable.{Achievement, BuildingRequirement}
 import cookieclicker.Buff
@@ -11,7 +12,7 @@ import scala.language.implicitConversions
 import scala.scalajs.js
 import scala.util.Try
 
-object MouseUpgrade {
+object MouseUpgrade:
   lazy val mouses = List(
     "Plastic mouse",
     "Iron mouse",
@@ -33,17 +34,20 @@ object MouseUpgrade {
     "Carpal tunnel prevention cream",
     "Ambidextrous"
   )
-}
 
-class MouseUpgrade(override val name: String) extends Upgrade {
+class MouseUpgrade(override val name: String) extends Upgrade:
   override def estimatedReturnPercent(newBrokers: Int): Double = 1D
   override protected def createInvestment: Investment = EmptyInvestment
 
-  override protected def calculateCpsIncrease(buildingRequirements: Set[BuildingRequirement], upgradeRequirements: Set[Upgrade], achievmentRequirements: Set[Achievement], debug: Boolean): Double =
+  override protected def calculateCpsIncrease(
+    buildingRequirements: BuildingRequirements,
+    upgradeRequirements: Set[Upgrade],
+    achievementRequirements: Set[Achievement], debug: Boolean,
+  ): Double =
     val clickBuffs = Helpers.buffs.filter(_.multClick.exists(_ > 0))
     if clickBuffs.isEmpty then return 0 //Only consider these upgrades if we have a buff
     val fingersAdd =
-      if (Game.upgradeBought("Thousand fingers")) then
+      if Game.upgradeBought("Thousand fingers") then
         amountOfNonCursors * CPSCalculator.fingerAdd.foldLeft(0.1) {
           case (totalAdd, (upgrade, multiplier)) if upgrade.owned => totalAdd * multiplier
           case (totalAdd, _)                                                    => totalAdd
@@ -58,4 +62,3 @@ class MouseUpgrade(override val name: String) extends Upgrade {
     val cpsIncrease = (cookiesPerClick - Game.mouseCps()) * AutoCookie.CLICKS_PER_SEC
     val longestBuffRemainingSeconds = clickBuffs.maxBy(_.remainingTicks).remainingTicks / Game.ticksPerSec
     if cpsIncrease * longestBuffRemainingSeconds > price then cpsIncrease else 0
-}
