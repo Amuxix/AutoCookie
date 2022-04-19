@@ -1,9 +1,0 @@
-{
-  "name": "auto-cookie",
-  "version": "6.1.0",
-  "description": "A mod that calculates the best building and upgrade to buy and buys it.",
-  "author": "Amuxix",
-  "dependencies": {
-    "typescript": "^4.4.3"
-  }
-}
